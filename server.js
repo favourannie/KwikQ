@@ -8,10 +8,16 @@ const DB = process.env.DB_URI;
 const organizationRoutes = require('./routes/organizationRoutes');
 
 
+const branchRouter = require('./routes/branchRoutes');
+
+const jwt = require("jsonwebtoken");
+
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+app.use('/api/v1/',branchRouter);
 
 app.use('/api/v1', organizationRoutes);
 app.use('/', (req, res) => {
