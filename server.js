@@ -6,10 +6,16 @@ const cors = require('cors');
 const PORT = process.env.PORT || 1234;
 const DB = process.env.DB_URI;
 
+const branchRouter = require('./routes/branchRoutes');
+
+const jwt = require("jsonwebtoken");
+
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+app.use('/api/v1/',branchRouter);
 
 app.use('/', (req, res) => {
   res.send('Connected to Backend Server')
