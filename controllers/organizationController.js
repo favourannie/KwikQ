@@ -1,11 +1,11 @@
 
-// const Branch = require('../models/branch');
+const Branch = require('../models/branchModel');
 const organizationModel = require('../models/organizationModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { registerOTP } = require('../utils/email');
+const { sendMail } = require('../middleware/brevo')
 
-
-// ✅ Create a new organization
 exports.createOrganization = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -28,10 +28,22 @@ exports.createOrganization = async (req, res) => {
       otp: otp,
       otpExpiredAt: Date.now() + 1000 * 120
     });
-
+    
+    const detail = {
+      email: org.email,
+      subject: 'Email Verification',
+      html: registerOTP(org.otp, `${org.name}`)
+    };
+    
+     await sendMail(detail);
+    await org.save();
+    const response = {
+      name: org.name,
+      email: org.email
+    };
     res.status(201).json({
       message: 'Organization created successfully',
-      data: org
+      data: response
     });
   } catch (error) {
     res.status(500).json({ 
@@ -64,10 +76,10 @@ exports.verifyOtp = async (req, res) => {
       })
     };
     
-    Object.assign(user, { isVerified: true, otp: null, otpExpiredAt: null });
-    await user.save();
+    Object.assign(org, { isVerified: true, otp: null, otpExpiredAt: null });
+    await org.save();
     res.status(200).json({
-      message: 'User verified successfully'
+      message: 'Organization verified successfully'
     })
   } catch (error) {
     res.status(500).json({
@@ -131,7 +143,7 @@ exports.login = async(req,res)=>{
       id: org._id,
       email: org.email,
       isAdmin: org.isAdmin
-    }, process.env.JWT_SECRET, {expiresIn: "1day"})
+    }, process.env.JWT_SECRET, {expiresIn: "3 days"})
     res.status(200).json({
       message: "Login successfull",
       data: org.fullName,
