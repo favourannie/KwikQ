@@ -17,12 +17,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.use('/api/v1/',branchRouter);
 
+// app.use('/', (req, res) => {
+//   res.send('Connected to Backend Server')
+// // });
+
+app.use('/api/v1/',branchRouter);
 app.use('/api/v1', organizationRoutes);
-app.use('/', (req, res) => {
-  res.send('Connected to Backend Server')
-});
 
 app.use((error, req, res, next) => {
   if (error) {
