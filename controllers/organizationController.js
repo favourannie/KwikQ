@@ -196,3 +196,94 @@ exports.getOrganizations = async (req, res) => {
   }
 };
 
+exports.googleAuthLogin = async (req,res)=>{
+  try {
+    const token = await jwt.sign({
+      id: req.user._id,
+      email: req.user.email,
+      isAdmin: req.user.isAdmin
+    },
+  process.env.JWT_SECRET, {expiresIn: "1day"}
+  )
+  res.status(200).json({
+    message: "User logged in successfully",
+    data: req.user.fullName,
+    token
+  })
+  } catch (error) {
+    res.status(500).json({
+      message: "Error logging in with google: " 
+    + error.mesaage
+    })
+  }
+}
+
+exports.getOrganizationsById = async (req, res) => {
+  try {
+    const {id} = req.params
+    const org = await organizationModel.findById(id).populate('branches');
+    if(org === null){
+      return res.status(404).json({
+        message: "Organization not found"
+      })
+    }
+    res.status(200).json({
+      message: "Organization fetched successfully",
+      data: org
+    })
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching organization",
+      error: error.message
+    })
+  }
+};
+
+exports.updateOrganization = async (req, res) => {
+  try {
+    const {id} = req.params
+    const {name } = req.body
+    const existingName = await organizationModel.findOne({ name: name });
+    if (existingName) {
+      return res.status(400).json({
+        message: "Organization with this name already exists"
+      })
+    }
+    const org = await organizationModel.findByIdAndUpdate(id, name, {new: true})
+    if(org === null){
+      return res.status(404).json({
+        message: "Organization not found"
+      })
+    }
+    res.status(200).json({
+      message: "Organization updated successfully",
+      data: org
+    })
+  } catch (error) {
+    res.status(500).json({
+      message: "Error updating organization",
+      error: error.message
+    })
+  }
+};
+
+exports.deleteOrganization = async (req, res) => {
+  try {
+    const {id} = req.params
+    const org = await organizationModel.findByIdAndDelete(id)
+    if(org === null){
+      return res.status(404).json({
+        message: "Organization not found"
+      })
+    }
+    res.status(200).json({
+      message: "Organization deleted successfully",
+      data: org
+    })
+  } catch (error) {
+    res.status(500).json({
+      message: "Error deleting organization",
+      error: error.message
+    })
+  }
+};

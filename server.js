@@ -1,4 +1,12 @@
+
 require('dotenv').config();
+// Log JWT_SECRET status for debugging (mask most of the value)
+if (process.env.JWT_SECRET) {
+  const secret = process.env.JWT_SECRET;
+  console.log('JWT_SECRET loaded:', secret.length > 6 ? secret.slice(0, 3) + '...' + secret.slice(-3) : secret);
+} else {
+  console.warn('JWT_SECRET is NOT set!');
+}
 
 const express = require('express');
 const mongoose = require('mongoose');
