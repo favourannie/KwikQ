@@ -10,8 +10,9 @@ exports.createOrganization = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    const existingOrg = await organizationModel.findOne({ email: email });
-    if (existingOrg) {
+    const existingEmail = await organizationModel.findOne({ email: email });
+    const existingName = await organizationModel.findOne({ name: name });
+    if (existingEmail || existingName) {
       return res.status(400).json({
          message: 'Organization already exists' 
         });

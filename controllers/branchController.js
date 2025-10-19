@@ -1,5 +1,5 @@
 const branchModel = require('../models/branchModel');
-// const organizationModel = require('../models/organizationModel'); 
+const organizationModel = require('../models/organizationModel'); 
 
 exports.createBranch = async (req, res) => {
   try {
