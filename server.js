@@ -57,7 +57,7 @@ const swaggerDefinition = {
       description: 'Development server',
     },
     {
-      url: 'http://localhost:6767',
+      url: 'https://kwikq-1.onrender.com',
       description: 'Development server',
     },
   ],
