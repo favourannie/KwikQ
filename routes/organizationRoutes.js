@@ -597,7 +597,7 @@ router.patch('/organizations/admin/:id', authenticate, adminAuth, makeAdmin);
  *                 error:
  *                   type: string
  */
-router.put("/change-password", authenticate, resendValidator, changePassword);
+router.put("/change-password/:id", authenticate, changePassword);
 
 /**
  * @swagger
