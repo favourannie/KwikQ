@@ -16,6 +16,17 @@ const organizationSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // OTP fields for email verification
+  otp: {
+    type: String,
+  },
+  otpExpiredAt: {
+    type: Date,
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
   isAdmin:{
     type: Boolean,
     default: false
