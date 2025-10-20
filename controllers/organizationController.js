@@ -8,9 +8,14 @@ const { sendMail } = require("../middleware/brevo");
 exports.createOrganization = async (req, res) => {
   try {
     const { businessName, email, password } = req.body;
+    const formattedName = businessName
+  .split(' ')
+  .filter() // remove extra spaces
+  .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+  .join(' ');
 
     const existingEmail = await organizationModel.findOne({ email: email });
-    const existingName = await organizationModel.findOne({ name: businessName });
+    const existingName = await organizationModel.findOne({ name: formattedName });
     if (existingEmail || existingName) {
       return res.status(400).json({
         message: "Organization already exists",
@@ -24,7 +29,7 @@ exports.createOrganization = async (req, res) => {
       .padStart(6, "0");
 
     const org = await organizationModel.create({
-      businessName,
+      formattedName,
       email,
       password: hashPassword,
       otp: otp,
