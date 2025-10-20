@@ -15,14 +15,20 @@ const analyticsSchema = new mongoose.Schema({
     default: Date.now
   },
   totalRequests: Number,
-  servedRequests: Number,
-  cancelledRequests: Number,
-  missedRequests: Number,
-  avgWaitTime: Number,
+  satisfiedRequests: Number,
+  avgWaitTimeTrend: Number,
+  serviceTypesDistribution: [{
+    serviceType: String,
+    count: Number
+  }],
   avgServiceTime: Number,
   peakHours: [{
     hour: Number, // 0–23
     count: Number
+  }],
+   weeklyCustomerVolume: [{
+    weekStart: Date,
+    requestCount: Number
   }],
   topServices: [{
     serviceType: String,
