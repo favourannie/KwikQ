@@ -26,11 +26,7 @@ app.use(express.json());
 app.use(cors());
 
 
-app.use('/', (req, res) => {
-  res.send('Connected to Backend Server')
-});
-
-app.use('/api/v1/',branchRouter);
+app.use('/api/v1',branchRouter);
 app.use('/api/v1', organizationRoutes);
 
 app.use((error, req, res, next) => {
@@ -42,6 +38,9 @@ app.use((error, req, res, next) => {
   next();
 });
 
+app.use('/', (req, res) => {
+  res.send('Connected to Backend Server')
+});
 
 mongoose.connect(DB).then(() => {
   console.log('Connected to Database')
