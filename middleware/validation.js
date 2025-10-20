@@ -15,10 +15,6 @@ exports.registerValidator = (req, res, next) => {
       'string.empty': 'Password is required',
       'string.pattern.base': 'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, a number, and a special character (@$!%_*#?&)',
     }),
-    confirmPassword: joi.string().required().valid(joi.ref('password')).messages({
-      'any.only': 'Passwords do not match',
-      'string.empty': 'Confirm password is required',
-    }),
     profile: joi.optional()
   });
 
