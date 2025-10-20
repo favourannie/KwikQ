@@ -126,10 +126,10 @@ exports.resendOtp = async (req, res) => {
 exports.login = async(req,res)=>{
   try {
     const {email, password} = req.body
-    const org = await organizationModel.findOne({email: email.toLowerCase()})
-   if(!org){
+    const org = await organizationModel.findOne({email: email.toLowerCase().trim()})
+   if(!org){  
       return res.status(404).json({
-        message: "Organization not found"
+        message: "Invalid credentials"
       })
     }
     const inputPassword = await bcrypt.compare(password, org.password)
@@ -139,7 +139,11 @@ exports.login = async(req,res)=>{
         message: "Invalid password"
       })
     }
-
+    if (!org.isVerified) {
+      return res.status(403).json({
+        message: "Account not verified. Please verify your email before logging in.",
+      });
+    }
     const token = await jwt.sign({
       id: org._id,
       email: org.email,
@@ -147,7 +151,7 @@ exports.login = async(req,res)=>{
     }, process.env.JWT_SECRET, {expiresIn: "3 days"})
     res.status(200).json({
       message: "Login successfull",
-      data: org.fullName,
+      data: org.name,
       token
     })
   } catch (error) {
