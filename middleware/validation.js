@@ -5,8 +5,7 @@ exports.registerValidator = (req, res, next) => {
   const schema = joi.object({
     name: joi.string().min(3).trim().required().pattern(/^[A-Za-z\s]+$/).messages({
       'string.empty': 'Name is required',
-      'string.min': 'Name must be at least 3 characters long',
-      'string.pattern.base': 'Name can only contain letters'
+      'string.min': 'Name must be at least 3 characters long'
     }),
     email: joi.string().email().trim().required().messages({
       'string.empty': 'Email is required',
