@@ -1,10 +1,9 @@
-
-const Branch = require('../models/branchModel');
-const organizationModel = require('../models/organizationModel');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { registerOTP } = require('../utils/email');
-const { sendMail } = require('../middleware/brevo')
+const Branch = require("../models/branchModel");
+const organizationModel = require("../models/organizationModel");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { registerOTP } = require("../utils/email");
+const { sendMail } = require("../middleware/brevo");
 
 exports.createOrganization = async (req, res) => {
   try {
@@ -14,42 +13,44 @@ exports.createOrganization = async (req, res) => {
     const existingName = await organizationModel.findOne({ name: name });
     if (existingEmail || existingName) {
       return res.status(400).json({
-         message: 'Organization already exists' 
-        });
+        message: "Organization already exists",
+      });
     }
 
-      const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
-    const otp = Math.round(Math.random() * 1e6).toString().padStart(6, "0");
-    
+    const otp = Math.round(Math.random() * 1e6)
+      .toString()
+      .padStart(6, "0");
+
     const org = await organizationModel.create({
       name,
       email,
       password: hashPassword,
       otp: otp,
-      otpExpiredAt: Date.now() + 1000 * 120
+      otpExpiredAt: Date.now() + 1000 * 120,
     });
-    
+
     const detail = {
       email: org.email,
-      subject: 'Email Verification',
-      html: registerOTP(org.otp, `${org.name}`)
+      subject: "Email Verification",
+      html: registerOTP(org.otp, `${org.name}`),
     };
-    
-     await sendMail(detail);
+
+    await sendMail(detail);
     await org.save();
     const response = {
       name: org.name,
-      email: org.email
+      email: org.email,
     };
     res.status(201).json({
-      message: 'Organization created successfully',
-      data: response
+      message: "Organization created successfully",
+      data: response,
     });
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Error creating organization',
-      error: error.message
+    res.status(500).json({
+      message: "Error creating organization",
+      error: error.message,
     });
   }
 };
@@ -61,32 +62,32 @@ exports.verifyOtp = async (req, res) => {
 
     if (!org) {
       return res.status(404).json({
-        message: 'Organization not found'
-      })
-    };
+        message: "Organization not found",
+      });
+    }
 
     if (Date.now() > org.otpExpiredAt) {
       return res.status(400).json({
-        message: 'OTP expired'
-      })
-    };
+        message: "OTP expired",
+      });
+    }
 
     if (otp !== org.otp) {
       return res.status(400).json({
-        message: 'Invalid otp'
-      })
-    };
-    
+        message: "Invalid otp",
+      });
+    }
+
     Object.assign(org, { isVerified: true, otp: null, otpExpiredAt: null });
     await org.save();
     res.status(200).json({
-      message: 'Organization verified successfully'
-    })
+      message: "Organization verified successfully",
+    });
   } catch (error) {
     res.status(500).json({
       message: "Error verifying organization: ",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
 };
 
@@ -97,240 +98,256 @@ exports.resendOtp = async (req, res) => {
 
     if (!org) {
       return res.status(404).json({
-        message: 'Organization not found'
-      })
-    };
+        message: "Organization not found",
+      });
+    }
 
-    const otp = Math.round(Math.random() * 1e6).toString().padStart(6, "0");
-    Object.assign(org, {otp: otp, otpExpiredAt: Date.now() + 1000 * 120});
+    const otp = Math.round(Math.random() * 1e6)
+      .toString()
+      .padStart(6, "0");
+    Object.assign(org, { otp: otp, otpExpiredAt: Date.now() + 1000 * 120 });
 
-      const detail = {
+    const detail = {
       email: org.email,
-      subject: 'Resend: Email Verification',
-      html: registerOTP(org.otp, `${org.name.split(' ')[0]}`)
+      subject: "Resend: Email Verification",
+      html: registerOTP(org.otp, `${org.name.split(" ")[0]}`),
     };
 
     await sendMail(detail);
     await org.save();
     res.status(200).json({
-      message: 'Otp sent, kindly check your email'
-    })
+      message: "Otp sent, kindly check your email",
+    });
   } catch (error) {
     res.status(500).json({
-      message: "Error resending otp" ,
-      error: error.message
-    })
+      message: "Error resending otp",
+      error: error.message,
+    });
   }
 };
 
-exports.login = async(req,res)=>{
+exports.login = async (req, res) => {
   try {
-    const {email, password} = req.body
-    const org = await organizationModel.findOne({email: email.toLowerCase()})
-   if(!org){
+    const { email, password } = req.body;
+    const org = await organizationModel.findOne({
+      email: email.toLowerCase().trim(),
+    });
+    if (!org) {
       return res.status(404).json({
-        message: "Organization not found"
-      })
+        message: "Invalid credentials",
+      });
     }
-    const inputPassword = await bcrypt.compare(password, org.password)
+    const inputPassword = await bcrypt.compare(password, org.password);
 
-    if(inputPassword === false){
+    if (inputPassword === false) {
       return res.status(400).json({
-        message: "Invalid password"
-      })
+        message: "Invalid password",
+      });
     }
-
-    const token = await jwt.sign({
-      id: org._id,
-      email: org.email,
-      isAdmin: org.isAdmin
-    }, process.env.JWT_SECRET, {expiresIn: "3 days"})
+    if (org.isVerified === false) {
+      return res.status(403).json({
+        message:
+          "Account not verified. Please verify your email before logging in.",
+      });
+    }
+    const token = await jwt.sign(
+      {
+        id: org._id,
+        email: org.email,
+        isAdmin: org.isAdmin,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "3 days" }
+    );
     res.status(200).json({
       message: "Login successfull",
-      data: org.fullName,
-      token
-    })
+      data: org.name,
+      token,
+    });
   } catch (error) {
     res.status(500).json({
       message: "Error signing in",
-      error: error.message
-    })
-  }
-}
-
-exports.makeAdmin = async(req,res)=>{
-  try {
-    const {id} = req.params
-    const org = await organizationModel.findById(id)
-    if(org === null){
-      return res.status(404).json({
-        message: "Organization not found"
-      })
-    }
-    org.isAdmin = true
-
-    await org.save()
-    res.status(200).json({
-      message: "Organization promoted to an admin successfully"
-    })
-  } catch (error) {
-    res.status(500).json({
-      message: "Error making organization an admin",
-      error: error.message
-    })
-  }
-}
-
-exports.getOrganizations = async (req, res) => {
-  try {
-    const orgs = await organizationModel.find().populate('branches');
-    res.status(200).json({
-      message: `All organizations fetched successfully, total: ${orgs.length}`,
-      data: orgs
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      message: 'Error fetching organizations',
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-exports.googleAuthLogin = async (req,res)=>{
+exports.makeAdmin = async (req, res) => {
   try {
-    const token = await jwt.sign({
-      id: req.user._id,
-      email: req.user.email,
-      isAdmin: req.user.isAdmin
-    },
-  process.env.JWT_SECRET, {expiresIn: "1day"}
-  )
-  res.status(200).json({
-    message: "User logged in successfully",
-    data: req.user.fullName,
-    token
-  })
+    const { id } = req.params;
+    const org = await organizationModel.findById(id);
+    if (org === null) {
+      return res.status(404).json({
+        message: "Organization not found",
+      });
+    }
+    org.isAdmin = true;
+
+    await org.save();
+    res.status(200).json({
+      message: "Organization promoted to an admin successfully",
+    });
   } catch (error) {
     res.status(500).json({
-      message: "Error logging in with google: " 
-    + error.mesaage
-    })
+      message: "Error making organization an admin",
+      error: error.message,
+    });
   }
-}
+};
+
+exports.getOrganizations = async (req, res) => {
+  try {
+    const orgs = await organizationModel.find().populate("branches");
+    res.status(200).json({
+      message: `All organizations fetched successfully, total: ${orgs.length}`,
+      data: orgs,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching organizations",
+      error: error.message,
+    });
+  }
+};
+
+exports.googleAuthLogin = async (req, res) => {
+  try {
+    const token = await jwt.sign(
+      {
+        id: req.user._id,
+        email: req.user.email,
+        isAdmin: req.user.isAdmin,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1day" }
+    );
+    res.status(200).json({
+      message: "User logged in successfully",
+      data: req.user.fullName,
+      token,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error logging in with google: " + error.mesaage,
+    });
+  }
+};
 
 exports.getOrganizationsById = async (req, res) => {
   try {
-    const {id} = req.params
-    const org = await organizationModel.findById(id).populate('branches');
-    if(org === null){
+    const { id } = req.params;
+    const org = await organizationModel.findById(id).populate("branches");
+    if (org === null) {
       return res.status(404).json({
-        message: "Organization not found"
-      })
+        message: "Organization not found",
+      });
     }
     res.status(200).json({
       message: "Organization fetched successfully",
-      data: org
-    })
+      data: org,
+    });
   } catch (error) {
     res.status(500).json({
       message: "Error fetching organization",
-                error: error.message
-    })
+      error: error.message,
+    });
   }
 };
 
 exports.forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body; 
+    const { email } = req.body;
     const org = await organizationModel.findOne({ email: email.toLowerCase() });
     if (!org) {
-        return res.status(404).json({ message: 'Organization not found' });
-    } 
-    const otp = Math.floor(100000 + Math.random() * 1e6).toString().padStart(6, '0');
+      return res.status(404).json({ message: "Organization not found" });
+    }
+    const otp = Math.floor(100000 + Math.random() * 1e6)
+      .toString()
+      .padStart(6, "0");
     org.otp = otp;
-    org.otpExpiry = Date.now() + 30 * 60 * 1000; 
+    org.otpExpiry = Date.now() + 30 * 60 * 1000;
     await org.save();
 
     const mailing = {
-        email: org.email,
-        subject: 'Password Reset OTP',
-        html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>This OTP is valid for 30 minutes.</p>`
+      email: org.email,
+      subject: "Password Reset OTP",
+      html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>This OTP is valid for 30 minutes.</p>`,
     };
     await sendEmail(mailing);
-    res.status(200).json({ message: 'OTP sent to email' });
+    res.status(200).json({ message: "OTP sent to email" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error',
-       error: error.message 
-      });
-  }   
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 };
 
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const {id} = req.params
+    const { id } = req.params;
     const org = await organizationModel.findById(id);
     if (!org) {
-        return res.status(404).json({ message: 'Organization not found' });
-    } 
+      return res.status(404).json({ message: "Organization not found" });
+    }
     const isMatch = await bcrypt.compare(currentPassword, org.password);
     if (!isMatch) {
-        return res.status(400).json({ message: 'Current password is incorrect' });
-    } 
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
     const salt = await bcrypt.genSalt(10);
     org.password = await bcrypt.hash(newPassword, salt);
     await org.save();
-    res.status(200).json({ message: 'Password changed successfully' });
+    res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }   
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 };
 
 exports.updateOrganization = async (req, res) => {
   try {
-    const {id} = req.params
-    const {name } = req.body
+    const { id } = req.params;
+    const { name } = req.body;
     const existingName = await organizationModel.findOne({ name: name });
     if (existingName) {
       return res.status(400).json({
-        message: "Organization with this name already exists"
-      })
+        message: "Organization with this name already exists",
+      });
     }
-    const org = await organizationModel.findByIdAndUpdate(id, name, {new: true})
-    if(org === null){
+    const org = await organizationModel.findByIdAndUpdate(id, name, {
+      new: true,
+    });
+    if (org === null) {
       return res.status(404).json({
-        message: "Organization not found"
-      })
+        message: "Organization not found",
+      });
     }
     res.status(200).json({
       message: "Organization updated successfully",
-      data: org
-    })
+      data: org,
+    });
   } catch (error) {
     res.status(500).json({
       message: "Error updating organization",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
 };
 
 exports.deleteOrganization = async (req, res) => {
   try {
-    const {id} = req.params
-    const org = await organizationModel.findByIdAndDelete(id)
-    if(org === null){
+    const { id } = req.params;
+    const org = await organizationModel.findByIdAndDelete(id);
+    if (org === null) {
       return res.status(404).json({
-        message: "Organization not found"
-      })
+        message: "Organization not found",
+      });
     }
     res.status(200).json({
       message: "Organization deleted successfully",
-      data: org
-    })
+      data: org,
+    });
   } catch (error) {
     res.status(500).json({
       message: "Error deleting organization",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
 };

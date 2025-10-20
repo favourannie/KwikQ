@@ -3,10 +3,9 @@ const joi = require('joi');
 
 exports.registerValidator = (req, res, next) => {
   const schema = joi.object({
-    name: joi.string().min(3).trim().required().pattern(/^[A-Za-z\s]+$/).messages({
+    name: joi.string().min(3).trim().required().messages({
       'string.empty': 'Name is required',
-      'string.min': 'Name must be at least 3 characters long',
-      'string.pattern.base': 'Name can only contain letters'
+      'string.min': 'Name must be at least 3 characters long'
     }),
     email: joi.string().email().trim().required().messages({
       'string.empty': 'Email is required',
@@ -15,10 +14,6 @@ exports.registerValidator = (req, res, next) => {
     password: joi.string().pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%_*#?&-])[A-Za-z\d@$!%_*#?&]{8,}$/).required().messages({
       'string.empty': 'Password is required',
       'string.pattern.base': 'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, a number, and a special character (@$!%_*#?&)',
-    }),
-    confirmPassword: joi.string().required().valid(joi.ref('password')).messages({
-      'any.only': 'Passwords do not match',
-      'string.empty': 'Confirm password is required',
     }),
     profile: joi.optional()
   });
