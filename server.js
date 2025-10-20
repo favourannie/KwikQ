@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const PORT = process.env.PORT || 1234;
 const DB = process.env.DB_URI;
+const organizationRoutes = require('./routes/organizationRoutes');
+
 
 const branchRouter = require('./routes/branchRoutes');
 
@@ -17,6 +19,7 @@ app.use(cors());
 
 app.use('/api/v1/',branchRouter);
 
+app.use('/api/v1', organizationRoutes);
 app.use('/', (req, res) => {
   res.send('Connected to Backend Server')
 });

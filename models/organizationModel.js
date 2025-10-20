@@ -16,6 +16,10 @@ const organizationSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  isAdmin:{
+    type: Boolean,
+    default: false
+  },
   branches: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "branches"
