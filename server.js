@@ -1,4 +1,12 @@
+
 require('dotenv').config();
+// Log JWT_SECRET status for debugging (mask most of the value)
+if (process.env.JWT_SECRET) {
+  const secret = process.env.JWT_SECRET;
+  console.log('JWT_SECRET loaded:', secret.length > 6 ? secret.slice(0, 3) + '...' + secret.slice(-3) : secret);
+} else {
+  console.warn('JWT_SECRET is NOT set!');
+}
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -17,12 +25,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.use('/api/v1/',branchRouter);
 
+// app.use('/', (req, res) => {
+//   res.send('Connected to Backend Server')
+// // });
+
+app.use('/api/v1/',branchRouter);
 app.use('/api/v1', organizationRoutes);
-app.use('/', (req, res) => {
-  res.send('Connected to Backend Server')
-});
 
 app.use((error, req, res, next) => {
   if (error) {

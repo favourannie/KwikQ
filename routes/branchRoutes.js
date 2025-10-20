@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {createBranch, getAllBranches, getBranchById, updateBranch, deleteBranch } = require('../controllers/branchController');
-const { authenticate, adminAuth } = require('../middleware/auth');
+const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 
 router.post('/create-branch', authenticate, adminAuth, createBranch);
