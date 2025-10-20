@@ -1,4 +1,4 @@
-const { login, createOrganization, makeAdmin, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword} = require('../controllers/organizationController');
+const { login, createOrganization, makeAdmin, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword, resetPassword} = require('../controllers/organizationController');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 const { googleAuth, googleCallback } = require('../middleware/passport');
 const { registerValidator, verifyValidator, resendValidator } = require('../middleware/validation');
@@ -12,6 +12,7 @@ router.post("/login", login)
 router.post("/resend-otp", resendValidator, resendOtp)
 router.get("/organizations", authenticate, getOrganizations)
 router.patch('/organizations/:id', authenticate, updateOrganization);
+router.patch("/organizations/:id/reset-password", resetPassword);
 router.patch('/organizations/admin/:id', authenticate, adminAuth, makeAdmin);
 router.get("/auth/google", googleAuth )
 router.get("/auth/google/callback", googleCallback)

@@ -7,10 +7,10 @@ const { sendMail } = require("../middleware/brevo");
 
 exports.createOrganization = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { businessName, email, password } = req.body;
 
     const existingEmail = await organizationModel.findOne({ email: email });
-    const existingName = await organizationModel.findOne({ name: name });
+    const existingName = await organizationModel.findOne({ name: businessName });
     if (existingEmail || existingName) {
       return res.status(400).json({
         message: "Organization already exists",
@@ -24,7 +24,7 @@ exports.createOrganization = async (req, res) => {
       .padStart(6, "0");
 
     const org = await organizationModel.create({
-      name,
+      businessName,
       email,
       password: hashPassword,
       otp: otp,
@@ -34,13 +34,13 @@ exports.createOrganization = async (req, res) => {
     const detail = {
       email: org.email,
       subject: "Email Verification",
-      html: registerOTP(org.otp, `${org.name}`),
+      html: registerOTP(org.otp, `${org.businessName}`),
     };
 
     await sendMail(detail);
     await org.save();
     const response = {
-      name: org.name,
+      name: org.businessName,
       email: org.email,
     };
     res.status(201).json({
@@ -214,21 +214,22 @@ exports.googleAuthLogin = async (req, res) => {
   try {
     const token = await jwt.sign(
       {
-        id: req.user._id,
-        email: req.user.email,
-        isAdmin: req.user.isAdmin,
+        id: req.org._id,
+        email: req.org.email,
+        isAdmin: req.org.isAdmin,
       },
       process.env.JWT_SECRET,
       { expiresIn: "1day" }
     );
     res.status(200).json({
-      message: "User logged in successfully",
-      data: req.user.fullName,
+      message: "Organization logged in successfully",
+      data: req.org.businessName,
       token,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error logging in with google: " + error.mesaage,
+      message: "Error logging in with google: ",
+      error: error.message,
     });
   }
 };
@@ -280,20 +281,57 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+exports.resetPassword = async(req,res)=>{
+    try {
+        
+        const {password, confirmPassword} = req.body
+        if(password !== confirmPassword){
+            return res.status(400).json({
+                message: "Passwords does not match"
+            })
+        }
+        const saltRound = await bcrypt.genSalt(10)
+        const hash = await bcrypt.hash(confirmPassword, saltRound)
+        const org = await organizationModel.findById(req.params.id)
+        // Verify reset token
+        jwt.verify(org.token, "suliya", async(err,result)=>{
+            if(err){
+                // If token expired, return a response
+                return res.status(400).json({
+                    message: "Email expired"
+                })
+            } else{
+                // Update organization's password and clear token
+                await organizationModel.findByIdAndUpdate(result.id, {password:hash,token:null}, {new:true})
+            }
+        })
+        // Return a response
+        res.status(200).json({
+            message: "Password Successfully Changed"
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Internal Server Error",
+            error: error.message
+        });  
+    }
+}
+
+
 exports.changePassword = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const { confirmPassword, password } = req.body;
     const { id } = req.params;
     const org = await organizationModel.findById(id);
     if (!org) {
       return res.status(404).json({ message: "Organization not found" });
     }
-    const isMatch = await bcrypt.compare(currentPassword, org.password);
+    const isMatch = await bcrypt.compare(password, org.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
     const salt = await bcrypt.genSalt(10);
-    org.password = await bcrypt.hash(newPassword, salt);
+    org.password = await bcrypt.hash(confirmPassword, salt);
     await org.save();
     res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
