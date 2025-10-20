@@ -3,7 +3,7 @@ const joi = require('joi');
 
 exports.registerValidator = (req, res, next) => {
   const schema = joi.object({
-    name: joi.string().min(3).trim().required().messages({
+    businessName: joi.string().min(3).trim().required().messages({
       'string.empty': 'Name is required',
       'string.min': 'Name must be at least 3 characters long'
     }),
