@@ -234,9 +234,56 @@ exports.getOrganizationsById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error fetching organization",
-      error: error.message
+                error: error.message
     })
   }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body; 
+    const org = await organizationModel.findOne({ email: email.toLowerCase() });
+    if (!org) {
+        return res.status(404).json({ message: 'Organization not found' });
+    } 
+    const otp = Math.floor(100000 + Math.random() * 1e6).toString().padStart(6, '0');
+    org.otp = otp;
+    org.otpExpiry = Date.now() + 30 * 60 * 1000; 
+    await org.save();
+
+    const mailing = {
+        email: org.email,
+        subject: 'Password Reset OTP',
+        html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>This OTP is valid for 30 minutes.</p>`
+    };
+    await sendEmail(mailing);
+    res.status(200).json({ message: 'OTP sent to email' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error',
+       error: error.message 
+      });
+  }   
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const {id} = req.params
+    const org = await organizationModel.findById(id);
+    if (!org) {
+        return res.status(404).json({ message: 'Organization not found' });
+    } 
+    const isMatch = await bcrypt.compare(currentPassword, org.password);
+    if (!isMatch) {
+        return res.status(400).json({ message: 'Current password is incorrect' });
+    } 
+    const salt = await bcrypt.genSalt(10);
+    org.password = await bcrypt.hash(newPassword, salt);
+    await org.save();
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }   
 };
 
 exports.updateOrganization = async (req, res) => {
