@@ -1,4 +1,4 @@
-const { login, createOrganization, makeAdmin, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword} = require('../controllers/organizationController');
+const { login, createOrganization, makeAdmin, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword, resetPassword} = require('../controllers/organizationController');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 const { googleAuth, googleCallback } = require('../middleware/passport');
 const { registerValidator, verifyValidator, resendValidator } = require('../middleware/validation');
