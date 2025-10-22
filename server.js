@@ -46,11 +46,11 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: 'http://localhost:1230',
-      description: 'Development server',
+      url: 'https://kwikq-1.onrender.com',
+      description: 'Production server',
     },
     {
-      url: 'https://kwikq-1.onrender.com',
+      url: 'http://localhost:6767',
       description: 'Development server',
     },
   ],

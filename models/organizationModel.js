@@ -27,9 +27,9 @@ const organizationSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  isAdmin:{
-    type: Boolean,
-    default: false
+  role:{
+    type: String,
+    default: "admin"
   },
   branches: [{
     type: mongoose.Schema.Types.ObjectId,
