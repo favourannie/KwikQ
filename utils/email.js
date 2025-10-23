@@ -49,7 +49,7 @@ return `
             style="color: #ffffff; margin: 0 auto;">
             <tr>
               <td align="center">
-                <h3 style="margin: 0; font-size: 25px;">QwikQ</h3>
+                <h3 style="margin: 0; font-size: 25px;">KwikQ</h3>
                 <p style="margin: 8px 0 20px; font-size: 12px;">
                   <b> KwikQ</b>. Real-Time Queues for Real-Life Ease...
                 </p>
@@ -63,8 +63,8 @@ return `
                 </table>
                 <p style="margin: 10px 0 0; font-size: 12px;">
                   Contact us: &nbsp; +234 805 1897 781 &nbsp;
-                  <a href="mailto:KwikQofficial@gmail.com" style="color: #ffffff; text-decoration: underline;">
-                    KwikQofficial@gmail.com
+                  <a href="mailto:supportkq@gmail.com" style="color: #ffffff; text-decoration: underline;">
+                    supportkq@gmail.com
                   </a>
                 </p>
               </td>
