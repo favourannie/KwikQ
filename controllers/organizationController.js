@@ -175,28 +175,6 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.makeAdmin = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const org = await organizationModel.findById(id);
-    if (org === null) {
-      return res.status(404).json({
-        message: "Organization not found",
-      });
-    }
-    org.isAdmin = true;
-
-    await org.save();
-    res.status(200).json({
-      message: "Organization promoted to an admin successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error making organization an admin",
-      error: error.message,
-    });
-  }
-};
 
 exports.getOrganizations = async (req, res) => {
   try {
