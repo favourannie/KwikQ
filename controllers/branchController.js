@@ -1,30 +1,38 @@
-const branchModel = require('../models/branchModel');
-const organizationModel = require('../models/organizationModel'); 
+const Branch = require('../models/branchModel'); 
+const Organization = require('../models/organizationModel');
 
 exports.createBranch = async (req, res) => {
   try {
-    const { organization, name, location, managerName, contactNumber, email } = req.body;
+    const {
+      organizationName,
+      industryServiceType,
+      headOfficeAddress,
+      city,
+      state,
+      fullName,
+      emailAddress,
+      phoneNumber
+    } = req.body;
 
-    if (!organization || !name) {
+    if ( !organizationName || !industryServiceType || !headOfficeAddress || !city || !state) {
       return res.status(400).json({ 
-        message: "Organization ID and branch name are required" 
-    });
+        message: "Missing required fields" 
+      });
     }
 
-    const orgExists = await organizationModel.findById(organization);
-    if (!orgExists) {
-      return res.status(404).json({ 
-        message: "Organization not found" 
-    });
-    }
+  
+    const orgExists = await Organization.findById(organization);
+    if (!orgExists) return res.status(404).json({ message: "Organization not found" });
 
-    const newBranch = new branchModel({
-      organization,
-      name,
-      location,
-      managerName,
-      contactNumber,
-      email,
+    const newBranch = await Branch.create({
+      organizationName,
+      industryServiceType,
+      headOfficeAddress,
+      city,
+      state,
+      fullName,
+      emailAddress,
+      phoneNumber
     });
 
     await newBranch.save();
@@ -41,96 +49,82 @@ exports.createBranch = async (req, res) => {
   }
 };
 
-
 exports.getAllBranches = async (req, res) => {
   try {
-    const { organization } = req.query;
-    const filter = organization ? { organization } : {};
-
-    const branches = await branchModel.find(filter)
-      .populate('organization', 'name email') 
-      .sort({ name: 1 });
+    const branches = await Branch.find().populate('organization');
 
     res.status(200).json({
-      count: branches.length,
-      message: "Branches fetched successfully",
-      data: branches,
+      message: `All branches fetched successfully, total: ${branches.length}`,
+      data: branches
     });
   } catch (error) {
     res.status(500).json({
       message: "Error fetching branches",
-      error: error.message,
+      error: error.message
     });
   }
 };
 
-
 exports.getBranchById = async (req, res) => {
   try {
-    const branch = await branchModel.findById(req.params.id)
-      .populate('organization', 'name email');
-
+    const branch = await Branch.findById(req.params.id).populate('organization');
     if (!branch) {
-      return res.status(404).json({ 
-        message: "Branch not found" 
-    });
+      return res.status(404).json({ message: "Branch not found" });
     }
 
     res.status(200).json({
-      message: "Branch fetched successfully", 
-      data: branch,
+      message: "Branch fetched successfully",
+      data: branch
     });
   } catch (error) {
     res.status(500).json({
       message: "Error fetching branch",
-      error: error.message,
+      error: error.message
     });
   }
 };
 
-
 exports.updateBranch = async (req, res) => {
   try {
-    const updates = req.body;
-    const branch = await branchModel.findByIdAndUpdate(req.params.id, updates, { new: true });
+    const updatedBranch = await Branch.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
 
-    if (!branch) {
+    if (!updatedBranch) {
       return res.status(404).json({ 
-        message: "Branch not found",
-        error: error.message, 
-    });
+        message: "Branch not found" });
     }
 
     res.status(200).json({
       message: "Branch updated successfully",
-      data: branch,
+      data: updatedBranch
     });
   } catch (error) {
     res.status(500).json({
       message: "Error updating branch",
-      error: error.message,
+      error: error.message
     });
   }
 };
 
-
 exports.deleteBranch = async (req, res) => {
   try {
-    const branch = await branchModel.findByIdAndDelete(req.params.id);
-
-    if (!branch) {
-      return res.status(404).json({ success: false, message: "Branch not found" });
+    const deletedBranch = await Branch.findByIdAndDelete(req.params.id);
+    if (!deletedBranch) {
+      return res.status(404).json({ 
+        message: "Branch not found" 
+      });
     }
 
     res.status(200).json({
-      success: true,
-      message: "Branch deleted successfully",
+      message: "Branch deleted successfully"
     });
   } catch (error) {
     res.status(500).json({
-      success: false,
       message: "Error deleting branch",
-      error: error.message,
+      error: error.message
     });
   }
 };
