@@ -57,21 +57,30 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               - organization
  *               - name
  *             properties:
- *               organization:
+ *               organizationName:
  *                 type: string
  *                 description: Organization ID
- *               name:
+ *               industryServiceType:
  *                 type: string
- *                 description: Branch name
- *               location:
+ *                 description: Industry/Service Type
+ *               headOfficeAddress:
  *                 type: string
- *               managerName:
+ *                 description: Head Office Address
+ *               city:
  *                 type: string
- *               contactNumber:
+ *                 description: City
+ *               state:
  *                 type: string
- *               email:
+ *                 description: State
+ *               fullName:
  *                 type: string
- *                 format: email
+ *                 description: Full Name
+ *               emailAddress:
+ *                 type: string
+ *                 description: Email Address
+ *               phoneNumber:
+ *                 type: string
+ *                 description: Phone Number
  *     responses:
  *       201:
  *         description: Branch created successfully
