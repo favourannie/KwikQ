@@ -7,10 +7,15 @@ const { sendMail } = require("../middleware/brevo");
 
 exports.createOrganization = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { businessName, email, password } = req.body;
+    const name = businessName
+  .split(' ')
+  .filter(word => word.length > 0) // remove extra spaces
+  .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+  .join(' ');
 
     const existingEmail = await organizationModel.findOne({ email: email });
-    const existingName = await organizationModel.findOne({ name: name });
+    const existingName = await organizationModel.findOne({ businessName: name });
     if (existingEmail || existingName) {
       return res.status(400).json({
         message: "Organization already exists",
@@ -24,7 +29,7 @@ exports.createOrganization = async (req, res) => {
       .padStart(6, "0");
 
     const org = await organizationModel.create({
-      name,
+      businessName: name,
       email,
       password: hashPassword,
       otp: otp,
@@ -34,13 +39,13 @@ exports.createOrganization = async (req, res) => {
     const detail = {
       email: org.email,
       subject: "Email Verification",
-      html: registerOTP(org.otp, `${org.name}`),
+      html: registerOTP(org.otp, `${org.businessName}`),
     };
 
     await sendMail(detail);
     await org.save();
     const response = {
-      name: org.name,
+      businessName: org.businessName,
       email: org.email,
     };
     res.status(201).json({
@@ -107,13 +112,11 @@ exports.resendOtp = async (req, res) => {
       .padStart(6, "0");
     Object.assign(org, { otp: otp, otpExpiredAt: Date.now() + 1000 * 120 });
 
-    const detail = {
+      const detail = {
       email: org.email,
       subject: "Resend: Email Verification",
-      html: registerOTP(org.otp, `${org.name.split(" ")[0]}`),
-    };
-
-    await sendMail(detail);
+      html: registerOTP(org.otp, `${org.businessName.split(" ")[0]}`),
+    };    await sendMail(detail);
     await org.save();
     res.status(200).json({
       message: "Otp sent, kindly check your email",
@@ -172,28 +175,6 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.makeAdmin = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const org = await organizationModel.findById(id);
-    if (org === null) {
-      return res.status(404).json({
-        message: "Organization not found",
-      });
-    }
-    org.isAdmin = true;
-
-    await org.save();
-    res.status(200).json({
-      message: "Organization promoted to an admin successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error making organization an admin",
-      error: error.message,
-    });
-  }
-};
 
 exports.getOrganizations = async (req, res) => {
   try {
@@ -214,21 +195,22 @@ exports.googleAuthLogin = async (req, res) => {
   try {
     const token = await jwt.sign(
       {
-        id: req.user._id,
-        email: req.user.email,
-        isAdmin: req.user.isAdmin,
+        id: req.org._id,
+        email: req.org.email,
+        isAdmin: req.org.isAdmin,
       },
       process.env.JWT_SECRET,
       { expiresIn: "1day" }
     );
     res.status(200).json({
-      message: "User logged in successfully",
-      data: req.user.fullName,
+      message: "Organization logged in successfully",
+      data: req.org.businessName,
       token,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error logging in with google: " + error.mesaage,
+      message: "Error logging in with google: ",
+      error: error.message,
     });
   }
 };
@@ -254,46 +236,145 @@ exports.getOrganizationsById = async (req, res) => {
   }
 };
 
-exports.forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const org = await organizationModel.findOne({ email: email.toLowerCase() });
-    if (!org) {
-      return res.status(404).json({ message: "Organization not found" });
-    }
-    const otp = Math.floor(100000 + Math.random() * 1e6)
-      .toString()
-      .padStart(6, "0");
-    org.otp = otp;
-    org.otpExpiry = Date.now() + 30 * 60 * 1000;
-    await org.save();
+exports.forgotPassword = async(req,res)=>{
+    try {
+        const {email} = req.body
+        const org = await organizationModel.findOne({email: email.toLowerCase().trim()})
+        if(!org){
+            return res.status(400).json({
+                message: "Invalid email provided"
+            })
+        }
 
-    const mailing = {
-      email: org.email,
-      subject: "Password Reset OTP",
-      html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>This OTP is valid for 30 minutes.</p>`,
-    };
-    await sendEmail(mailing);
-    res.status(200).json({ message: "OTP sent to email" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
+        // Generate reset token
+        const resetToken = jwt.sign(
+            {id: org._id}, 
+            process.env.JWT_SECRET, 
+            {expiresIn: "24h"}
+        );
+        
+        // Save token to DB
+        await organizationModel.findByIdAndUpdate(
+            org._id, 
+            {token: resetToken},
+            {new: true}
+        );
+        
+        // Frontend URL for password reset
+        const resetLink = `${'http://localhost:6767'}/reset-password/${resetToken}`;
+        
+        // Send reset email
+        await sendMail({
+            email: org.email,
+            subject: "Reset Your Password",
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2>Reset Your Password</h2>
+                    <p>Hello ${org.businessName},</p>
+                    <p>We received a request to reset your password. Click the link below to set a new password:</p>
+                    <p><a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #f3bf04; color: black; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
+                    <p>This link will expire in 24 hours.</p>
+                    <p>If you didn't request this, you can safely ignore this email.</p>
+                    <br>
+                    <p>Best regards,</p>
+                    <p>The KwikQ Team</p>
+                </div>
+            `
+        });
+
+        // Don't expose token in response
+        res.status(200).json({
+            message: "Password reset instructions sent to your email"
+        });
+    } catch (error) {
+        console.error('Password reset error:', error);
+        res.status(500).json({
+            message: "Failed to process password reset request",
+            error: error.message
+        });  
+    }
+}
+
+exports.resetPassword = async(req,res)=>{
+    try {
+        const { token } = req.params;
+        const { password, confirmPassword } = req.body;
+
+        if(!token) {
+            return res.status(400).json({
+                message: "Reset token is required"
+            });
+        }
+
+        if(password !== confirmPassword) {
+            return res.status(400).json({
+                message: "Passwords do not match"
+            });
+        }
+
+        // Verify the token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            return res.status(400).json({
+                message: "Reset link has expired or is invalid"
+            });
+        }
+
+        // Find organization and verify token matches
+        const org = await organizationModel.findOne({
+            _id: decoded.id,
+            token: token
+        });
+
+        if (!org) {
+            return res.status(400).json({
+                message: "Invalid or expired reset link"
+            });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        // Update password and clear reset token
+        await organizationModel.findByIdAndUpdate(
+            org._id,
+            {
+                password: hash,
+                token: null  // Clear the reset token
+            },
+            { new: true }
+        );
+
+        res.status(200).json({
+            message: "Password has been reset successfully"
+        });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({
+            message: "Failed to reset password",
+            error: error.message
+        });
+    }
+}
+
 
 exports.changePassword = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const { confirmPassword, password } = req.body;
     const { id } = req.params;
     const org = await organizationModel.findById(id);
     if (!org) {
       return res.status(404).json({ message: "Organization not found" });
     }
-    const isMatch = await bcrypt.compare(currentPassword, org.password);
+    const isMatch = await bcrypt.compare(password, org.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
     const salt = await bcrypt.genSalt(10);
-    org.password = await bcrypt.hash(newPassword, salt);
+    org.password = await bcrypt.hash(confirmPassword, salt);
     await org.save();
     res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {

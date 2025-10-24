@@ -39,12 +39,12 @@ exports.createBranch = async (req, res) => {
 
     res.status(201).json({
       message: "Branch created successfully",
-      data: newBranch
+      data: newBranch,
     });
   } catch (error) {
     res.status(500).json({
       message: "Error creating branch",
-      error: error.message
+      error: error.message,
     });
   }
 };

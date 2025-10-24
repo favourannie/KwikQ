@@ -1,4 +1,4 @@
-const { login, createOrganization, makeAdmin, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword} = require('../controllers/organizationController');
+const { login, createOrganization, makeAdmin, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword, resetPassword} = require('../controllers/organizationController');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 const { googleAuth, googleCallback } = require('../middleware/passport');
 const { registerValidator, verifyValidator, resendValidator } = require('../middleware/validation');
@@ -284,10 +284,9 @@ router.post("/login", login);
  * @swagger
  * /api/v1/resend-otp:
  *   post:
+ *     summary: Resend a new OTP to an organization's email.
  *     tags:
- *       - Organizations
- *     summary: Resend OTP for email verification
- *     description: Generate and resend a new OTP to the organization's email for verification.
+ *       - Organization
  *     requestBody:
  *       required: true
  *       content:
@@ -299,7 +298,38 @@ router.post("/login", login);
  *             properties:
  *               email:
  *                 type: string
- *                 format: email
+ *                 example: example@company.com
+ *     responses:
+ *       200:
+ *         description: OTP has been resent successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Otp sent, kindly check your email
+ *       404:
+ *         description: Organization not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Organization not found
+ *       500:
+ *         description: Error resending OTP.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error resending otp
  */
 router.post("/resend-otp", resendValidator, resendOtp);
 
@@ -465,70 +495,6 @@ router.patch('/organizations/:id', authenticate, updateOrganization);
  */
 router.delete("/organizations/:id", authenticate, adminAuth, deleteOrganization);
 
-/**
- * @swagger
- * /api/v1/organizations/admin/{id}:
- *   patch:
- *     tags:
- *       - Organizations
- *     summary: Grant admin role to organization
- *     description: Promote an organization to admin status. Requires admin privileges to perform this action.
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID of the organization to promote to admin
- *     responses:
- *       '200':
- *         description: Admin role granted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Organization promoted to an admin successfully
- *       '401':
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Authentication required
- *       '403':
- *         description: Forbidden
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Admin privileges required
- *       '404':
- *         description: Organization not found
- *       '500':
- *         description: Server Error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Error making organization an admin
- *                 error:
- *                   type: string
- */
-router.patch('/organizations/admin/:id', authenticate, adminAuth, makeAdmin);
 
 /**
  * @swagger
@@ -597,7 +563,7 @@ router.patch('/organizations/admin/:id', authenticate, adminAuth, makeAdmin);
  *                 error:
  *                   type: string
  */
-router.put("/change-password", authenticate, resendValidator, changePassword);
+router.put("/change-password/:id", authenticate, changePassword);
 
 /**
  * @swagger

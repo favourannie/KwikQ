@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 
 const express = require('express');
@@ -7,13 +6,14 @@ const cors = require('cors');
 const PORT = process.env.PORT || 1234;
 const DB = process.env.DB_URI;
 const organizationRoutes = require('./routes/organizationRoutes');
-const branchRouter = require('./routes/branchRoutes');
-const passport = require('passport');
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 const session = require('express-session');
+const passport = require('passport');
+
+const branchRouter = require('./routes/branchRoutes');
 
 const jwt = require("jsonwebtoken");
-const swaggerJSDoc = require('swagger-jsdoc');
-const swaggerUi= require('swagger-ui-express');
 
 
 const app = express();
@@ -46,11 +46,11 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: 'http://localhost:1230',
-      description: 'Development server',
+      url: 'https://kwikq-1.onrender.com',
+      description: 'Production server',
     },
     {
-      url: 'https://kwikq-1.onrender.com',
+      url: 'http://localhost:6767',
       description: 'Development server',
     },
   ],
@@ -81,9 +81,16 @@ const swaggerSpec = swaggerJSDoc(options);
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use('/api/v1',branchRouter);
+// Root route for basic server check
+app.get('/', (req, res) => {
+  res.send('Connected to Backend Server')
+});
+
+// API routes
+app.use('/api/v1/', branchRouter);
 app.use('/api/v1', organizationRoutes);
 
+// Error handling middleware
 app.use((error, req, res, next) => {
   if (error) {
     return res.status(500).json({
@@ -91,10 +98,6 @@ app.use((error, req, res, next) => {
     })
   };
   next();
-});
-
-app.use('/', (req, res) => {
-  res.send('Connected to Backend Server')
 });
 
 mongoose.connect(DB).then(() => {
