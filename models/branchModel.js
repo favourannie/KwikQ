@@ -1,27 +1,36 @@
 const mongoose = require('mongoose');
 
 const branchSchema = new mongoose.Schema({
-  organization: {
+  organizationName: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "organizations",
     required: true
   },
-  name: {
+  industryServiceType: {
     type: String,
     required: true
   },
-  location: {
+  headOfficeAddress: {
+    type: String,
+    required: true
+  }, 
+  city: {
+    type: String,
+    required: true
+  },
+  state: {
+    type: String,
+    required: true
+  },
+  fullName: {
     type: String,
   },
-  managerName: {
+  emailAddress: {
     type: String,
   },
-  contactNumber: {
+  phoneNumber: {
     type: String,
   },
-  email: {
-    type: String,
-  }
 });
 
 module.exports = mongoose.model("branches", branchSchema);
