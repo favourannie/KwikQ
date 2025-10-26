@@ -567,7 +567,7 @@ router.put("/change-password/:id", authenticate, changePassword);
 
 /**
  * @swagger
- * /api/auth/forgot-password:
+ * /api/forgot-password:
  *   post:
  *     summary: Send OTP for password reset
  *     description: Sends a one-time password (OTP) to the organization's registered email to initiate the password reset process.
