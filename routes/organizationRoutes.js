@@ -1,4 +1,4 @@
-const { login, createOrganization, makeAdmin, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword, resetPassword} = require('../controllers/organizationController');
+const { login, createOrganization, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword, resetPassword, resetPasswordRequest} = require('../controllers/organizationController');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 const { googleAuth, googleCallback } = require('../middleware/passport');
 const { registerValidator, verifyValidator, resendValidator } = require('../middleware/validation');
@@ -567,12 +567,12 @@ router.put("/change-password/:id", authenticate, changePassword);
 
 /**
  * @swagger
- * /api/v1/forgot-password:
+ * /api/auth/forgot-password:
  *   post:
+ *     summary: Send OTP for password reset
+ *     description: Sends a one-time password (OTP) to the organization's registered email to initiate the password reset process.
  *     tags:
- *       - Organizations
- *     summary: Initiate password reset
- *     description: Sends a password reset OTP to the organization's email. The OTP is valid for 30 minutes.
+ *       - Authentication
  *     requestBody:
  *       required: true
  *       content:
@@ -585,11 +585,10 @@ router.put("/change-password/:id", authenticate, changePassword);
  *               email:
  *                 type: string
  *                 format: email
- *                 example: vcare@gmail.com
- *                 description: Registered email address
+ *                 example: orgadmin@example.com
  *     responses:
- *       '200':
- *         description: Reset OTP sent successfully
+ *       200:
+ *         description: OTP sent successfully
  *         content:
  *           application/json:
  *             schema:
@@ -597,9 +596,9 @@ router.put("/change-password/:id", authenticate, changePassword);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: OTP sent to email
- *       '404':
- *         description: Organization not found
+ *                   example: Otp sent, kindly check your email
+ *       400:
+ *         description: Invalid email or organization not found
  *         content:
  *           application/json:
  *             schema:
@@ -607,9 +606,9 @@ router.put("/change-password/:id", authenticate, changePassword);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization not found
- *       '500':
- *         description: Server Error
+ *                   example: Invalid email provided
+ *       500:
+ *         description: Server error while resending OTP
  *         content:
  *           application/json:
  *             schema:
@@ -617,32 +616,134 @@ router.put("/change-password/:id", authenticate, changePassword);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Server error
+ *                   example: Error resending otp
  *                 error:
  *                   type: string
+ *                   example: Internal Server Error
  */
 router.post("/forgot-password", forgotPassword);
 
-/**
- * @swagger
- * /api/v1/auth/google:
- *   get:
- *     tags:
- *       - Auth
- *     summary: Google OAuth redirect
- */
-router.get("/auth/google", googleAuth);
 
 /**
  * @swagger
- * /api/v1/auth/google/callback:
- *   get:
+ * /reset-password-otp:
+ *   post:
+ *     summary: Verify the OTP sent to email before allowing password reset
+ *     description: >
+ *       This endpoint verifies the OTP code sent to the organization's registered email.
+ *       Once verified, the organization can proceed to reset their password using the reset-password endpoint.
  *     tags:
- *       - Auth
- *     summary: Google OAuth callback
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: kwikq@gmail.com
+ *               otp:
+ *                 type: string
+ *                 example: "729187"
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Otp verified successfully"
+ *       400:
+ *         description: Invalid or expired OTP or email not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Otp expired"
+ *       500:
+ *         description: Server error while verifying OTP.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error resetting password"
+ *                 error:
+ *                   type: string
+ *                   example: "Internal server error"
  */
-router.get("/auth/google/callback", googleCallback);
 
-module.exports = router;
+router.post("/reset-password-otp", resetPasswordRequest);
 
+/**
+ * @swagger
+ * /api/reset-password:
+ *   post:
+ *     summary: Reset an organization's password
+ *     description: Allows an organization to reset their password using their registered email.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - confirmPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "org@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "newSecurePassword123!"
+ *               confirmPassword:
+ *                 type: string
+ *                 example: "newSecurePassword123!"
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Password reset successfully
+ *       400:
+ *         description: Invalid email or passwords do not match
+ *         content:
+ *           application/json:
+ *             examples:
+ *               invalidEmail:
+ *                 summary: Invalid email
+ *                 value:
+ *                   message: Invalid email provided
+ *               passwordMismatch:
+ *                 summary: Passwords do not match
+ *                 value:
+ *                   message: Passwords do not match
+ *       500:
+ *         description: Server error while resetting password
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Error resetting password
+ *               error: <error_message>
+ */
+router.post("/reset-password", resetPassword);
 module.exports = router;
