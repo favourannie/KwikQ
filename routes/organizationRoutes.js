@@ -567,7 +567,7 @@ router.put("/change-password/:id", authenticate, changePassword);
 
 /**
  * @swagger
- * /api/forgot-password:
+ * /api/v1/forgot-password:
  *   post:
  *     summary: Send OTP for password reset
  *     description: Sends a one-time password (OTP) to the organization's registered email to initiate the password reset process.
@@ -626,7 +626,7 @@ router.post("/forgot-password", forgotPassword);
 
 /**
  * @swagger
- * /reset-password-otp:
+ * /api/v1/reset-password-otp:
  *   post:
  *     summary: Verify the OTP sent to email before allowing password reset
  *     description: >
@@ -691,7 +691,7 @@ router.post("/reset-password-otp", resetPasswordRequest);
 
 /**
  * @swagger
- * /api/reset-password:
+ * /api/v1/reset-password:
  *   post:
  *     summary: Reset an organization's password
  *     description: Allows an organization to reset their password using their registered email.
