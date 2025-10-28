@@ -1,7 +1,8 @@
 require('dotenv').config();
+const mongoose = require("mongoose")
 
 const express = require('express');
-const mongoose = require('mongoose');
+
 const cors = require('cors');
 const PORT = process.env.PORT || 1234;
 const DB = process.env.DB_URI;
@@ -12,6 +13,10 @@ const session = require('express-session');
 const passport = require('passport');
 const superAdminOverviewRoutes = require('./routes/superAdminOverviewRoutes');
 const branchRouter = require('./routes/branchRoutes');
+const queueRouter = require("./routes/queueRouter");
+const analyticsRouter = require('./routes/analyticsRoutes');
+const dashboardRouter = require('./routes/dashboardRoutes');
+
 const customerRouter = require('./routes/customerRoutes');
 const qrCodeRoutes = require('./routes/qrCodeRoutes');
 const superAdminOrgSettings = require('./routes/superAdminOrgSettings');
@@ -35,7 +40,7 @@ app.use(passport.session())
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-  title: 'API Documentation for KWIKQ App',
+    title: 'API Documentation for KWIKQ App',
     version: '1.0.0',
     description:
       'API Documentation for all Endpoints.',
@@ -93,6 +98,9 @@ app.get('/', (req, res) => {
 // API routes
 app.use('/api/v1/', branchRouter);
 app.use('/api/v1', organizationRoutes);
+app.use("/api/v1", queueRouter);
+app.use('/api/v1/', analyticsRouter);
+app.use('/api/v1/', dashboardRouter);
 app.use('/api/v1/', customerRouter);
 app.use('/api/v1/', qrCodeRoutes);
 app.use('/api/v1/', superAdminOverviewRoutes);
