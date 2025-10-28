@@ -10,9 +10,13 @@ const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const session = require('express-session');
 const passport = require('passport');
-
+const superAdminOverviewRoutes = require('./routes/superAdminOverviewRoutes');
 const branchRouter = require('./routes/branchRoutes');
-
+const customerRouter = require('./routes/customerRoutes');
+const qrCodeRoutes = require('./routes/qrCodeRoutes');
+const superAdminOrgSettings = require('./routes/superAdminOrgSettings');
+const superAdminBranchMgt = require('./routes/superAdminBranchMgt');
+const superAdminAnalytics = require('./routes/superAdminAnalytics');
 const jwt = require("jsonwebtoken");
 
 
@@ -89,6 +93,13 @@ app.get('/', (req, res) => {
 // API routes
 app.use('/api/v1/', branchRouter);
 app.use('/api/v1', organizationRoutes);
+app.use('/api/v1/', customerRouter);
+app.use('/api/v1/', qrCodeRoutes);
+app.use('/api/v1/', superAdminOverviewRoutes);
+app.use('/api/v1/', superAdminOrgSettings);
+app.use('/api/v1/', superAdminBranchMgt);
+app.use('/api/v1/', superAdminAnalytics);
+
 
 // Error handling middleware
 app.use((error, req, res, next) => {
