@@ -5,16 +5,26 @@ exports.createBranch = async (req, res) => {
   try {
     const {id} = req.params
     const {
+      organizationName,
       industryServiceType,
       headOfficeAddress,
       city,
       state,
       fullName,
       emailAddress,
-      phoneNumber
+      phoneNumber,
+      branchName,
+      branchCode,
+      address,
+      state,
+      city,
+      serviceType,
+      managerName,
+      managerEmail,
+      managerPhone
     } = req.body;
 
-    if (!industryServiceType || !headOfficeAddress || !city || !state) {
+    if ( !organizationName  || !industryServiceType || !headOfficeAddress || !city || !state) {
       return res.status(400).json({ 
         message: "Missing required fields" 
       });
@@ -27,13 +37,23 @@ exports.createBranch = async (req, res) => {
     const newBranch = await Branch.create({
       organization: orgExists._id,
       businessName: orgExists.businessName,
+      organizationName,
       industryServiceType,
       headOfficeAddress,
       city,
       state,
       fullName,
       emailAddress,
-      phoneNumber
+      phoneNumber,
+      branchName,
+      branchCode,
+      address,
+      state,
+      city,
+      serviceType,
+      managerName,
+      managerEmail,
+      managerPhone
     });
 
     await newBranch.save();
