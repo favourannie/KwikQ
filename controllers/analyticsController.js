@@ -16,7 +16,8 @@ const calculateAverageWaitTime = (customers) => {
 
 exports.getBranchAnalytics = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { branchId } = req.params;
+        const org = await organizationModel.findById(req.org._id);
         const { startDate, endDate } = req.query;
         const end = endDate ? new Date(endDate) : new Date();
         const start = startDate ? 
@@ -68,8 +69,9 @@ exports.getBranchAnalytics = async (req, res) => {
         ).length;
 
         const analytics = await analyticsModel.create({
-            organization: req.org._id,
-            branch: id,
+
+            organization: org,
+            branch: branchId,
             date: new Date(),
             totalRequests: totalCustomers,
             satisfiedRequests: satisfiedCustomers,

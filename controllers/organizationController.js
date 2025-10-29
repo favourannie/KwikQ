@@ -33,7 +33,7 @@ exports.createOrganization = async (req, res) => {
       email,
       password: hashPassword,
       otp: otp,
-      otpExpiredAt: Date.now() + 1000 * 120,
+      otpExpiredAt: Date.now() + 1000 * 540,
     });
 
     const detail = {
@@ -110,7 +110,7 @@ exports.resendOtp = async (req, res) => {
     const otp = Math.round(Math.random() * 1e6)
       .toString()
       .padStart(6, "0");
-    Object.assign(org, { otp: otp, otpExpiredAt: Date.now() + 1000 * 120 });
+    Object.assign(org, { otp: otp, otpExpiredAt: Date.now() + 1000 * 540 });
 
       const detail = {
       email: org.email,
@@ -166,6 +166,7 @@ exports.login = async (req, res) => {
       message: "Login successfull",
       data: org.name,
       token,
+      org: org._id
     });
   } catch (error) {
     res.status(500).json({
@@ -409,24 +410,19 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-exports.updateOrganization = async (req, res) => {
+exports.updateOrganizationDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
-    const existingName = await organizationModel.findOne({ name: name });
-    if (existingName) {
-      return res.status(400).json({
-        message: "Organization with this name already exists",
-      });
+    const { industryServiceType, headOfficeAddress, city, state, fullName, phoneNumber } = req.body;
+    const organization = await organizationModel.findById(id)
+    if(!organization){
+      return res.status(404).json({
+        message: "Organization not found"
+      })
     }
-    const org = await organizationModel.findByIdAndUpdate(id, name, {
+    const org = await organizationModel.findByIdAndUpdate(id, industryServiceType, headOfficeAddress, city, state, fullName, phoneNumber, {
       new: true,
     });
-    if (org === null) {
-      return res.status(404).json({
-        message: "Organization not found",
-      });
-    }
     res.status(200).json({
       message: "Organization updated successfully",
       data: org,
