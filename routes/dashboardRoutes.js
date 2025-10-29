@@ -5,7 +5,7 @@ const { getDashboardMetrics,} = require("../controllers/dashboardController");
 
 /**
  * @swagger
- * api/v1/dashboard:
+ * /api/v1/dashboard:
  *   get:
  *     summary: Get dashboard metrics
  *     description: Returns queue and service statistics for the specified branch or all branches.
