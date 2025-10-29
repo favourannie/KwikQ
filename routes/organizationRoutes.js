@@ -286,7 +286,7 @@ router.post("/login", login);
  *   post:
  *     summary: Resend a new OTP to an organization's email.
  *     tags:
- *       - Organization
+ *       - Organizations
  *     requestBody:
  *       required: true
  *       content:

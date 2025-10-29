@@ -1,5 +1,5 @@
 const queueModel = require("../models/queueModel");
-const activityModel = ("../models/recentActivityModel")
+const activityModel = require("../models/recentActivityModel")
 exports.getQueueStats = async (req, res) => {
   try {
     const { branchId } = req.params;
@@ -14,13 +14,6 @@ exports.getQueueStats = async (req, res) => {
         ? Math.round(queues.reduce((sum, q) => sum + q.averageWaitTime, 0) / queues.length)
         : 0;
     const servedToday = queues.reduce((sum, q) => sum + q.servedToday, 0);
-
-
-
-
-
-
-    
 
     const activities = await activityModel.find({ branch: branchId })
       .sort({ createdAt: -1 })
