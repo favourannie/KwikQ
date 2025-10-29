@@ -31,6 +31,40 @@ const branchSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
   },
+  branchName: {
+    type: String,
+    required: true
+  },
+  branchCode: {
+    type: String,
+    reqiured: true
+  },
+  address: {
+    type: String,
+    required: true
+  },
+  state: {
+    type: String
+  },
+  city: {
+    type: String
+  },
+  serviceType: {
+    type: String,
+    required: true
+  },
+  managerName: {
+    type: String,
+    required: true
+  },
+  managerEmail: {
+    type: String,
+    required: true
+  },
+  managerPhone: {
+    type: String,
+    required: true
+  },
 });
 
 module.exports = mongoose.model("branches", branchSchema);
