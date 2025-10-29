@@ -16,14 +16,14 @@ const calculateAverageWaitTime = (customers) => {
 
 exports.getBranchAnalytics = async (req, res) => {
     try {
-        const { branchId } = req.params;
+        const { id } = req.params;
         const { startDate, endDate } = req.query;
         const end = endDate ? new Date(endDate) : new Date();
         const start = startDate ? 
             new Date(startDate) : 
             new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
         const customers = await customerModel.find({
-            branchId,
+            id,
             joinTime: { $gte: start, $lte: end }
         });
 
@@ -69,7 +69,7 @@ exports.getBranchAnalytics = async (req, res) => {
 
         const analytics = await analyticsModel.create({
             organization: req.org._id,
-            branch: branchId,
+            branch: id,
             date: new Date(),
             totalRequests: totalCustomers,
             satisfiedRequests: satisfiedCustomers,
