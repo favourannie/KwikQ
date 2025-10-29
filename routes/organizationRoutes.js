@@ -20,7 +20,7 @@ const router = require('express').Router();
  *         id:
  *           type: string
  *           example: "612e3b6f9f1b8e3a4c4d2f1a"
- *         name:
+ *         businessName:
  *           type: string
  *           example: "VCare Foundation"
  *         email:
