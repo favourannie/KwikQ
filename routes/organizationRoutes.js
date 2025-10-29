@@ -7,50 +7,12 @@ const router = require('express').Router();
 
 /**
  * @swagger
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
- *   schemas:
- *     Organization:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           example: "612e3b6f9f1b8e3a4c4d2f1a"
- *         businessName:
- *           type: string
- *           example: "VCare Foundation"
- *         email:
- *           type: string
- *           format: email
- *           example: "vcare@gmail.com"
- *         isVerified:
- *           type: boolean
- *           example: false
- *         isAdmin:
- *           type: boolean
- *           example: false
- *     AuthResponse:
- *       type: object
- *       properties:
- *         message:
- *           type: string
- *         token:
- *           type: string
- *           description: JWT token for authenticated requests
- */
-
-/**
- * @swagger
- * /api/v1/create:
+ * /api/v1/organization/create:
  *   post:
+ *     summary: Register a new organization
+ *     description: Creates a new organization account and sends an OTP email for verification.
  *     tags:
- *       - Organizations
- *     summary: Create a new organization
- *     description: Register a new organization, send OTP for email verification, and return organization details (password excluded). The OTP is valid for 120 seconds.
+ *       - Organization
  *     requestBody:
  *       required: true
  *       content:
@@ -58,28 +20,27 @@ const router = require('express').Router();
  *           schema:
  *             type: object
  *             required:
- *               - name
+ *               - businessName
  *               - email
  *               - password
  *             properties:
- *               name:
+ *               businessName:
  *                 type: string
- *                 example: VCare Foundation
- *                 description: Unique organization name
+ *                 example: "Kwikq Technologies"
+ *                 description: Name of the organization. Automatically formatted to title case.
  *               email:
  *                 type: string
  *                 format: email
- *                 example: vcare@gmail.com
- *                 description: Unique email address
+ *                 example: "info@kwikq.com"
+ *                 description: Organization’s email address.
  *               password:
  *                 type: string
  *                 format: password
- *                 minLength: 6
- *                 example: Pass@123
- *                 description: Password will be hashed before storage
+ *                 example: "StrongPass123!"
+ *                 description: Password for the organization account.
  *     responses:
- *       '201':
- *         description: Organization created successfully
+ *       201:
+ *         description: Organization created successfully.
  *         content:
  *           application/json:
  *             schema:
@@ -87,18 +48,18 @@ const router = require('express').Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization created successfully
+ *                   example: "Organization created successfully"
  *                 data:
  *                   type: object
  *                   properties:
- *                     name:
+ *                     businessName:
  *                       type: string
- *                       example: VCare Foundation
+ *                       example: "Kwikq Technologies"
  *                     email:
  *                       type: string
- *                       example: vcare@gmail.com
- *       '400':
- *         description: Bad Request
+ *                       example: "info@kwikq.com"
+ *       400:
+ *         description: Organization already exists (duplicate email or business name)
  *         content:
  *           application/json:
  *             schema:
@@ -106,9 +67,9 @@ const router = require('express').Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization already exists
- *       '500':
- *         description: Server Error
+ *                   example: "Organization already exists"
+ *       500:
+ *         description: Internal server error while creating the organization
  *         content:
  *           application/json:
  *             schema:
@@ -116,10 +77,12 @@ const router = require('express').Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error creating organization
+ *                   example: "Error creating organization"
  *                 error:
  *                   type: string
+ *                   example: "Database connection failed"
  */
+
 router.post("/create", registerValidator, createOrganization);
 
 /**
