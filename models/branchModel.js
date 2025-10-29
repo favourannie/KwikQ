@@ -4,7 +4,7 @@ const branchSchema = new mongoose.Schema({
   organizationName: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "organizations",
-    required: true
+    required: false
   },
   industryServiceType: {
     type: String,
