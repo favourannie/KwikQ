@@ -21,7 +21,7 @@ exports.createBranch = async (req, res) => {
     }
 
   
-    const orgExists = await Organization.find({organization: organizationName);
+    const orgExists = await Organization.find({organization: organizationName});
     if (!orgExists) return res.status(404).json({ message: "Organization not found" });
 
     const newBranch = await Branch.create({
