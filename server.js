@@ -13,12 +13,9 @@ const session = require('express-session');
 const passport = require('passport');
 const superAdminOverviewRoutes = require('./routes/superAdminOverviewRoutes');
 const branchRouter = require('./routes/branchRoutes');
-
 const queueRouter = require("./routes/queueRouter");
 const analyticsRouter = require('./routes/analyticsRoutes');
 const dashboardRouter = require('./routes/dashboardRoutes');
-
-
 const customerRouter = require('./routes/customerRoutes');
 const qrCodeRoutes = require('./routes/qrCodeRoutes');
 const superAdminOrgSettings = require('./routes/superAdminOrgSettings');
