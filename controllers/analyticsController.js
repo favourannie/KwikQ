@@ -24,7 +24,7 @@ exports.getBranchAnalytics = async (req, res) => {
             new Date(startDate) : 
             new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
         const customers = await customerModel.find({
-            branchId,
+            id,
             joinTime: { $gte: start, $lte: end }
         });
 
@@ -69,6 +69,7 @@ exports.getBranchAnalytics = async (req, res) => {
         ).length;
 
         const analytics = await analyticsModel.create({
+
             organization: org,
             branch: branchId,
             date: new Date(),
