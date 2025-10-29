@@ -21,7 +21,7 @@ exports.createBranch = async (req, res) => {
     }
 
   
-    const orgExists = await Organization.findById(organization);
+    const orgExists = await Organization.findById(organizationName);
     if (!orgExists) return res.status(404).json({ message: "Organization not found" });
 
     const newBranch = await Branch.create({
@@ -35,7 +35,7 @@ exports.createBranch = async (req, res) => {
       phoneNumber
     });
 
-    await newBranch.save();
+    // await newBranch.save();
 
     res.status(201).json({
       message: "Branch created successfully",

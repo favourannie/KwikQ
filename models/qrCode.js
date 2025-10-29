@@ -27,6 +27,9 @@ const qrCodeSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  qrImageFile: {
+    type: String,
+  },
 
   // Metadata
   isActive: { type: Boolean, default: true },

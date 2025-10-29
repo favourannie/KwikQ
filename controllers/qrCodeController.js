@@ -1,6 +1,9 @@
 const QRCode = require('qrcode');
 const QRCodeModel = require('../models/qrCode');
 const RequestModel = require('../models/qrRequest'); 
+const fs = require('fs');
+const cloudinary = require('../config/cloudinary');
+const path = require('path');
 
 exports.generateQRCode = async (req, res) => {
   try {
@@ -10,32 +13,42 @@ exports.generateQRCode = async (req, res) => {
       return res.status(400).json({ message: 'Organization and Branch IDs are required' });
     }
 
-    let existingQRCode = await QRCodeModel.findOne({
-      organization: organizationId,
-      branch: branchId,
-    });
-
+    let existingQRCode = await QRCodeModel.findOne({ organization: organizationId, branch: branchId });
     if (existingQRCode) {
       return res.status(200).json({
         message: 'Existing permanent QR code retrieved',
         qrCode: existingQRCode.qrCode,
         formLink: existingQRCode.formLink,
-        qrImage: existingQRCode.qrImage,
+        qrImageUrl: existingQRCode.qrImageUrl,
       });
     }
 
-    const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const qrCode = `KQ-${randomString}`;
-    const formLink = `${process.env.CLIENT_URL || 'https://qless.app'}/access/${qrCode}`;
+    const randomNumber = Math.floor(100000 + Math.random() * 900000);
+    const qrCode = `KQ-${randomNumber}`;
 
-    const qrImage = await QRCode.toDataURL(formLink);
+  
+    const formLink = `${process.env.CLIENT_URL || 'https://kwik-q.vercel.app/#/queue_form'}`;
+
+    const qrImageBase64 = await QRCode.toDataURL(formLink);
+    const base64Data = qrImageBase64.replace(/^data:image\/png;base64,/, ''); // remove header
+
+
+    const uploadResponse = await cloudinary.uploader.upload(
+      `data:image/png;base64,${base64Data}`,
+      {
+        folder: 'qrcodes',
+        public_id: `branch-${branchId}-${qrCode}`,
+        overwrite: true,
+      }
+    );
 
     const newQRCode = new QRCodeModel({
       organization: organizationId,
       branch: branchId,
       qrCode,
-      qrImage,
       formLink,
+      qrImage: qrImageBase64,
+      qrImageUrl: uploadResponse.secure_url,
       createdAt: new Date(),
       isActive: true,
     });
@@ -43,15 +56,14 @@ exports.generateQRCode = async (req, res) => {
     await newQRCode.save();
 
     res.status(201).json({
-      message: 'Permanent QR code generated successfully for this branch',
+      message: 'Permanent QR code uploaded successfully to Cloudinary',
       qrCode,
       formLink,
-      qrImage,
+      qrImageUrl: uploadResponse.secure_url,
     });
-
   } catch (error) {
-    console.error('Error generating QR Code:', error);
-    res.status(500).json({ message: 'Error generating QR code' });
+    console.error('Error generating/uploading QR Code:', error);
+    res.status(500).json({ message: 'Error generating or uploading QR code', error: error.message });
   }
 };
 
@@ -88,7 +100,6 @@ exports.validateQRCodeScan = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error validating QR code scan:', error);
     res.status(500).json({ message: 'Error validating QR code scan' });
   }
 };
@@ -132,5 +143,36 @@ exports.getFormByQrCode = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching form' });
+  }
+};
+
+exports.getBranchQRCode = async (req, res) => {
+  try {
+    const { branchId } = req.params;
+
+    if (!branchId) {
+      return res.status(400).json({ message: 'Branch ID is required' });
+    }
+
+    const qrCodeR = await QRCodeModel.findOne({ branch: branchId });
+
+    if (!qrCodeR) {
+      return res.status(404).json({
+        message: 'No QR code found for this branch',
+      });
+    }
+
+    
+    res.status(200).json({
+      message: 'QR code retrieved successfully',
+      qrCode: qrCodeR.qrCode,
+      formLink: qrCodeR.formLink,
+      qrImageUrl: qrCodeR.qrImageUrl,
+      createdAt: qrCodeR.createdAt,
+      isActive: qrCodeR.isActive,
+    });
+  } catch (error) {
+    console.error('Error retrieving branch QR code:', error);
+    res.status(500).json({ message: 'Error retrieving branch QR code', error: error.message });
   }
 };
