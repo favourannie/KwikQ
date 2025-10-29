@@ -39,14 +39,21 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * /api/v1/create-branch:
+ * /api/v1/branches/create-branch/{id}:
  *   post:
+ *     summary: Create a new branch under an organization
+ *     description: This endpoint allows an authenticated organization to create a new branch by providing the branch details.
  *     tags:
- *       - Branches
- *     summary: Create a new branch
- *     description: Create a new branch for an organization.
+ *       - Branch
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the organization to associate the branch with
  *     requestBody:
  *       required: true
  *       content:
@@ -54,33 +61,32 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *           schema:
  *             type: object
  *             required:
- *               - organization
- *               - name
+ *               - industryServiceType
+ *               - headOfficeAddress
+ *               - city
+ *               - state
  *             properties:
- *               organizationName:
- *                 type: string
- *                 description: Organization ID
  *               industryServiceType:
  *                 type: string
- *                 description: Industry/Service Type
+ *                 example: Banking
  *               headOfficeAddress:
  *                 type: string
- *                 description: Head Office Address
+ *                 example: 45 Adeola Odeku Street
  *               city:
  *                 type: string
- *                 description: City
+ *                 example: Lagos
  *               state:
  *                 type: string
- *                 description: State
+ *                 example: Lagos State
  *               fullName:
  *                 type: string
- *                 description: Full Name
+ *                 example: John Doe
  *               emailAddress:
  *                 type: string
- *                 description: Email Address
+ *                 example: johndoe@example.com
  *               phoneNumber:
  *                 type: string
- *                 description: Phone Number
+ *                 example: "+2348123456789"
  *     responses:
  *       201:
  *         description: Branch created successfully
@@ -93,9 +99,40 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *                   type: string
  *                   example: Branch created successfully
  *                 data:
- *                   $ref: '#/components/schemas/Branch'
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: 671be8bfcfd2b12aa46783fa
+ *                     organization:
+ *                       type: string
+ *                       example: 671be8a2cfb2a9ba935ab04d
+ *                     businessName:
+ *                       type: string
+ *                       example: Annie's Delight
+ *                     industryServiceType:
+ *                       type: string
+ *                       example: Banking
+ *                     headOfficeAddress:
+ *                       type: string
+ *                       example: 45 Adeola Odeku Street
+ *                     city:
+ *                       type: string
+ *                       example: Lagos
+ *                     state:
+ *                       type: string
+ *                       example: Lagos State
+ *                     fullName:
+ *                       type: string
+ *                       example: John Doe
+ *                     emailAddress:
+ *                       type: string
+ *                       example: johndoe@example.com
+ *                     phoneNumber:
+ *                       type: string
+ *                       example: "+2348123456789"
  *       400:
- *         description: Invalid request
+ *         description: Missing required fields
  *         content:
  *           application/json:
  *             schema:
@@ -103,15 +140,33 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization ID and branch name are required
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden - Admin access required
+ *                   example: Missing required fields
  *       404:
  *         description: Organization not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Organization not found
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error creating branch
+ *                 error:
+ *                   type: string
+ *                   example: "Internal server error message"
  */
-router.post('/create-branch', authenticate, createBranch);
+
+router.post('/create-branch/:id', authenticate, createBranch);
 
 /**
  * @swagger

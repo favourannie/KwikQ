@@ -3,8 +3,8 @@ const Organization = require('../models/organizationModel');
 
 exports.createBranch = async (req, res) => {
   try {
+    const {id} = req.params
     const {
-      organizationName,
       industryServiceType,
       headOfficeAddress,
       city,
@@ -14,18 +14,19 @@ exports.createBranch = async (req, res) => {
       phoneNumber
     } = req.body;
 
-    if ( !organizationName || !industryServiceType || !headOfficeAddress || !city || !state) {
+    if (!industryServiceType || !headOfficeAddress || !city || !state) {
       return res.status(400).json({ 
         message: "Missing required fields" 
       });
     }
 
   
-    const orgExists = await Organization.find({organization: businessName});
+    const orgExists = await Organization.findById(id);
     if (!orgExists) return res.status(404).json({ message: "Organization not found" });
 
     const newBranch = await Branch.create({
-      organizationName,
+      organization: orgExists._id,
+      businessName: orgExists.businessName,
       industryServiceType,
       headOfficeAddress,
       city,
