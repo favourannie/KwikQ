@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
 const branchSchema = new mongoose.Schema({
-  organizationName: {
+  organization: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "organizations",
     required: false
+  },
+  orgainzationName: {
+    type: String,
+    required: true
   },
   industryServiceType: {
     type: String,
