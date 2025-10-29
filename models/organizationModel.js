@@ -10,11 +10,14 @@ const organizationSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    lowercase: true
+    lowercase: true,
+    trim:true
   },
   password: {
     type: String,
-    required: true
+    required: true,
+    trim: true
+
   },
   // OTP fields for email verification
   otp: {
@@ -30,6 +33,31 @@ const organizationSchema = new mongoose.Schema({
   role:{
     type: String,
     default: "admin"
+  },
+  industryServiceType:{
+    type: String,
+    trim: true
+  },
+  headOfficeAddress: {
+    type: String,
+    trim:true
+  },
+  city : {
+    type: String,
+    trim: true
+  },
+  state: {
+    type: String,
+    trim: true,
+    
+  },
+  fullName: {
+    type: String,
+    trim: true
+  },
+  phoneNumber: {
+    type: String,
+    trim: true
   },
   branches: [{
     type: mongoose.Schema.Types.ObjectId,

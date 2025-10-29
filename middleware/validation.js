@@ -11,12 +11,13 @@ exports.registerValidator = (req, res, next) => {
       'string.empty': 'Email is required',
       'string.email': 'Please provide a valid email address',
     }),
-    password: joi.string().pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%_*#?&-])[A-Za-z\d@$!%_*#?&]{8,}$/).required().messages({
+    password: joi.string().trim().pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%_*#?&\s])[A-Za-z\d@$!%_*#?&\s]{8,}$/).required().messages({
       'string.empty': 'Password is required',
-      'string.pattern.base': 'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, a number, and a special character (@$!%_*#?&)',
+      'string.pattern.base': 'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, a number, and a special character (@$!%_*#?&)'
     }),
     profile: joi.optional()
   });
+
 
   const { error } = schema.validate(req.body, { abortEarly: true });
   if (error) {
