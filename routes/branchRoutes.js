@@ -39,7 +39,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * /api/v1/branches/create-branch/{id}:
+ * /api/v1/create-branch/{id}:
  *   post:
  *     summary: Create a new branch under an organization
  *     description: This endpoint allows an authenticated organization to create a new branch by providing the branch details.
