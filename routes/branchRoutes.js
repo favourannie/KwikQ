@@ -44,7 +44,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *     tags:
  *       - Branches
  *     summary: Create a new branch
- *     description: Create a new branch for an organization. Requires admin authentication.
+ *     description: Create a new branch for an organization.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -111,7 +111,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *       404:
  *         description: Organization not found
  */
-router.post('/create-branch', authenticate, adminAuth, createBranch);
+router.post('/create-branch', authenticate, createBranch);
 
 /**
  * @swagger
