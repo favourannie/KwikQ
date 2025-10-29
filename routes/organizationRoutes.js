@@ -7,7 +7,7 @@ const router = require('express').Router();
 
 /**
  * @swagger
- * /api/v1/organization/create:
+ * /api/v1/create:
  *   post:
  *     summary: Register a new organization
  *     description: Creates a new organization account and sends an OTP email for verification.
