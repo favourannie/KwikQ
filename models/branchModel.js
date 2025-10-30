@@ -1,19 +1,11 @@
 const mongoose = require('mongoose');
 
 const branchSchema = new mongoose.Schema({
-  organizationName: {
+  organizationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "organizations",
-    required: true
+    required: false
   },
-  industryServiceType: {
-    type: String,
-    required: true
-  },
-  headOfficeAddress: {
-    type: String,
-    required: true
-  }, 
   city: {
     type: String,
     required: true
@@ -22,15 +14,34 @@ const branchSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  fullName: {
+  branchName: {
     type: String,
+    required: true
   },
-  emailAddress: {
+  branchCode: {
     type: String,
+    reqiured: true
   },
-  phoneNumber: {
+  address: {
     type: String,
+    required: true
+  },
+  serviceType: {
+    type: String,
+    required: true
+  },
+  managerName: {
+    type: String,
+    required: true
+  },
+  managerEmail: {
+    type: String,
+    required: true
+  },
+  managerPhone: {
+    type: String,
+    required: true
   },
 });
 
-module.exports = mongoose.model("branches", branchSchema);
+module.exports = mongoose.model("branch", branchSchema);

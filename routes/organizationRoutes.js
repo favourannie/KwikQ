@@ -1,4 +1,4 @@
-const { login, createOrganization, makeAdmin, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword, resetPassword} = require('../controllers/organizationController');
+const { login, createOrganization, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganizationDetails, deleteOrganization, changePassword, forgotPassword, resetPassword, resetPasswordRequest} = require('../controllers/organizationController');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 const { googleAuth, googleCallback } = require('../middleware/passport');
 const { registerValidator, verifyValidator, resendValidator } = require('../middleware/validation');
@@ -16,41 +16,47 @@ const router = require('express').Router();
  *   schemas:
  *     Organization:
  *       type: object
+ *       required:
+ *         - businessName
+ *         - email
  *       properties:
- *         id:
+ *         _id:
  *           type: string
- *           example: "612e3b6f9f1b8e3a4c4d2f1a"
- *         name:
+ *           example: 671be8bfcfd2b12aa46783fa
+ *         businessName:
  *           type: string
- *           example: "VCare Foundation"
+ *           example: Kwikq Technologies
  *         email:
  *           type: string
  *           format: email
- *           example: "vcare@gmail.com"
+ *           example: info@kwikq.com
  *         isVerified:
  *           type: boolean
  *           example: false
- *         isAdmin:
+ *         isActive:
  *           type: boolean
- *           example: false
- *     AuthResponse:
- *       type: object
- *       properties:
- *         message:
+ *           example: true
+ *         branches:
+ *           type: array
+ *           items:
+ *             type: object
+ *           description: List of branches for this organization
+ *         createdAt:
  *           type: string
- *         token:
+ *           format: date-time
+ *         updatedAt:
  *           type: string
- *           description: JWT token for authenticated requests
+ *           format: date-time
  */
 
 /**
  * @swagger
  * /api/v1/create:
  *   post:
+ *     summary: Register a new organization
+ *     description: Creates a new organization account and sends an OTP email for verification.
  *     tags:
- *       - Organizations
- *     summary: Create a new organization
- *     description: Register a new organization, send OTP for email verification, and return organization details (password excluded). The OTP is valid for 120 seconds.
+ *       - Organization Management
  *     requestBody:
  *       required: true
  *       content:
@@ -58,28 +64,27 @@ const router = require('express').Router();
  *           schema:
  *             type: object
  *             required:
- *               - name
+ *               - businessName
  *               - email
  *               - password
  *             properties:
- *               name:
+ *               businessName:
  *                 type: string
- *                 example: VCare Foundation
- *                 description: Unique organization name
+ *                 example: "Kwikq Technologies"
+ *                 description: Name of the organization. Automatically formatted to title case.
  *               email:
  *                 type: string
  *                 format: email
- *                 example: vcare@gmail.com
- *                 description: Unique email address
+ *                 example: "info@kwikq.com"
+ *                 description: Organization’s email address.
  *               password:
  *                 type: string
  *                 format: password
- *                 minLength: 6
- *                 example: Pass@123
- *                 description: Password will be hashed before storage
+ *                 example: "StrongPass123!"
+ *                 description: Password for the organization account.
  *     responses:
- *       '201':
- *         description: Organization created successfully
+ *       201:
+ *         description: Organization created successfully.
  *         content:
  *           application/json:
  *             schema:
@@ -87,18 +92,18 @@ const router = require('express').Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization created successfully
+ *                   example: "Organization created successfully"
  *                 data:
  *                   type: object
  *                   properties:
- *                     name:
+ *                     businessName:
  *                       type: string
- *                       example: VCare Foundation
+ *                       example: "Kwikq Technologies"
  *                     email:
  *                       type: string
- *                       example: vcare@gmail.com
- *       '400':
- *         description: Bad Request
+ *                       example: "info@kwikq.com"
+ *       400:
+ *         description: Organization already exists (duplicate email or business name)
  *         content:
  *           application/json:
  *             schema:
@@ -106,9 +111,9 @@ const router = require('express').Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization already exists
- *       '500':
- *         description: Server Error
+ *                   example: "Organization already exists"
+ *       500:
+ *         description: Internal server error while creating the organization
  *         content:
  *           application/json:
  *             schema:
@@ -116,10 +121,12 @@ const router = require('express').Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error creating organization
+ *                   example: "Error creating organization"
  *                 error:
  *                   type: string
+ *                   example: "Database connection failed"
  */
+
 router.post("/create", registerValidator, createOrganization);
 
 /**
@@ -127,7 +134,7 @@ router.post("/create", registerValidator, createOrganization);
  * /api/v1/verify:
  *   post:
  *     tags:
- *       - Organizations
+ *       - Authentication
  *     summary: Verify organization email using OTP
  *     description: Validate mailbox OTP for organization account verification. The OTP must be valid and not expired.
  *     requestBody:
@@ -204,7 +211,7 @@ router.post("/verify", verifyValidator, verifyOtp);
  * /api/v1/login:
  *   post:
  *     tags:
- *       - Organizations
+ *       - Authentication
  *     summary: Login organization account
  *     description: Authenticate an organization using email and password and return a JWT token valid for 3 days.
  *     requestBody:
@@ -286,7 +293,7 @@ router.post("/login", login);
  *   post:
  *     summary: Resend a new OTP to an organization's email.
  *     tags:
- *       - Organizations
+ *       - Authentication
  *     requestBody:
  *       required: true
  *       content:
@@ -338,7 +345,7 @@ router.post("/resend-otp", resendValidator, resendOtp);
  * /api/v1/organizations:
  *   get:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Get list of organizations
  *     description: Retrieve a list of all organizations with their branch information. Requires authentication.
  *     security:
@@ -392,7 +399,7 @@ router.get("/organizations", authenticate, getOrganizations);
  * /api/v1/organizations/{id}:
  *   get:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Get organization by ID
  *     security:
  *       - bearerAuth: []
@@ -410,7 +417,7 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  * /api/v1/organizations/{id}:
  *   patch:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Update organization
  *     description: Update organization name. The new name must be unique.
  *     security:
@@ -475,14 +482,14 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  *                 error:
  *                   type: string
  */
-router.patch('/organizations/:id', authenticate, updateOrganization);
+router.patch('/organizations/:id', authenticate, updateOrganizationDetails);
 
 /**
  * @swagger
  * /api/v1/organizations/{id}:
  *   delete:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Delete organization
  *     security:
  *       - bearerAuth: []
@@ -501,7 +508,7 @@ router.delete("/organizations/:id", authenticate, adminAuth, deleteOrganization)
  * /api/v1/change-password:
  *   put:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Change organization password
  *     description: Update organization's password after verifying the current password. Requires authentication.
  *     security:
@@ -569,10 +576,10 @@ router.put("/change-password/:id", authenticate, changePassword);
  * @swagger
  * /api/v1/forgot-password:
  *   post:
+ *     summary: Send OTP for password reset
+ *     description: Sends a one-time password (OTP) to the organization's registered email to initiate the password reset process.
  *     tags:
- *       - Organizations
- *     summary: Initiate password reset
- *     description: Sends a password reset OTP to the organization's email. The OTP is valid for 30 minutes.
+ *       - Authentication
  *     requestBody:
  *       required: true
  *       content:
@@ -585,11 +592,10 @@ router.put("/change-password/:id", authenticate, changePassword);
  *               email:
  *                 type: string
  *                 format: email
- *                 example: vcare@gmail.com
- *                 description: Registered email address
+ *                 example: orgadmin@example.com
  *     responses:
- *       '200':
- *         description: Reset OTP sent successfully
+ *       200:
+ *         description: OTP sent successfully
  *         content:
  *           application/json:
  *             schema:
@@ -597,9 +603,9 @@ router.put("/change-password/:id", authenticate, changePassword);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: OTP sent to email
- *       '404':
- *         description: Organization not found
+ *                   example: Otp sent, kindly check your email
+ *       400:
+ *         description: Invalid email or organization not found
  *         content:
  *           application/json:
  *             schema:
@@ -607,9 +613,9 @@ router.put("/change-password/:id", authenticate, changePassword);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization not found
- *       '500':
- *         description: Server Error
+ *                   example: Invalid email provided
+ *       500:
+ *         description: Server error while resending OTP
  *         content:
  *           application/json:
  *             schema:
@@ -617,32 +623,134 @@ router.put("/change-password/:id", authenticate, changePassword);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Server error
+ *                   example: Error resending otp
  *                 error:
  *                   type: string
+ *                   example: Internal Server Error
  */
 router.post("/forgot-password", forgotPassword);
 
-/**
- * @swagger
- * /api/v1/auth/google:
- *   get:
- *     tags:
- *       - Auth
- *     summary: Google OAuth redirect
- */
-router.get("/auth/google", googleAuth);
 
 /**
  * @swagger
- * /api/v1/auth/google/callback:
- *   get:
+ * /api/v1/reset-password-otp:
+ *   post:
+ *     summary: Verify the OTP sent to email before allowing password reset
+ *     description: >
+ *       This endpoint verifies the OTP code sent to the organization's registered email.
+ *       Once verified, the organization can proceed to reset their password using the reset-password endpoint.
  *     tags:
- *       - Auth
- *     summary: Google OAuth callback
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: kwikq@gmail.com
+ *               otp:
+ *                 type: string
+ *                 example: "729187"
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Otp verified successfully"
+ *       400:
+ *         description: Invalid or expired OTP or email not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Otp expired"
+ *       500:
+ *         description: Server error while verifying OTP.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error resetting password"
+ *                 error:
+ *                   type: string
+ *                   example: "Internal server error"
  */
-router.get("/auth/google/callback", googleCallback);
 
-module.exports = router;
+router.post("/reset-password-otp", resetPasswordRequest);
 
+/**
+ * @swagger
+ * /api/v1/reset-password:
+ *   post:
+ *     summary: Reset an organization's password
+ *     description: Allows an organization to reset their password using their registered email.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - confirmPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "org@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "newSecurePassword123!"
+ *               confirmPassword:
+ *                 type: string
+ *                 example: "newSecurePassword123!"
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Password reset successfully
+ *       400:
+ *         description: Invalid email or passwords do not match
+ *         content:
+ *           application/json:
+ *             examples:
+ *               invalidEmail:
+ *                 summary: Invalid email
+ *                 value:
+ *                   message: Invalid email provided
+ *               passwordMismatch:
+ *                 summary: Passwords do not match
+ *                 value:
+ *                   message: Passwords do not match
+ *       500:
+ *         description: Server error while resetting password
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Error resetting password
+ *               error: <error_message>
+ */
+router.post("/reset-password", resetPassword);
 module.exports = router;

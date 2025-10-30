@@ -1,130 +1,222 @@
-const Branch = require('../models/branchModel'); 
-const Organization = require('../models/organizationModel');
+const jwt = require("jsonwebtoken");
+const Branch = require("../models/branchModel");
+const Organization = require("../models/organizationModel");
 
 exports.createBranch = async (req, res) => {
   try {
-    const {
-      organizationName,
-      industryServiceType,
-      headOfficeAddress,
-      city,
-      state,
-      fullName,
-      emailAddress,
-      phoneNumber
-    } = req.body;
+    console.log('requst user:', req.user)
+    const id = req.user.id;
+    const organization = await Organization.findById(id);
 
-    if ( !organizationName || !industryServiceType || !headOfficeAddress || !city || !state) {
-      return res.status(400).json({ 
-        message: "Missing required fields" 
-      });
+    if (!organization) {
+      return res.status(404).json({ message: "Organization not found" });
     }
 
-  
-    const orgExists = await Organization.findById(organizationName);
-    if (!orgExists) return res.status(404).json({ message: "Organization not found" });
+    if (organization.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can create branches" });
+    }
 
-    const newBranch = await Branch.create({
-      organizationName,
-      industryServiceType,
-      headOfficeAddress,
+    const {
       city,
       state,
-      fullName,
-      emailAddress,
-      phoneNumber
+      branchName,
+      address,
+      serviceType,
+      managerName,
+      managerEmail,
+      managerPhone,
+    } = req.body;
+
+    const branchExists = await Branch.findOne({ branchName, address });
+
+    if (branchExists) {
+      return res.status(400).json({ message: "Branch already exists" });
+    }
+
+    const newBranch = await Branch.create({
+      organizationId: organization._id,
+      branchName,
+      branchCode : Math.random().toString(36).substring(2, 8).toUpperCase(),
+      address,
+      state,
+      city,
+      serviceType,
+      managerName,
+      managerEmail,
+      managerPhone,
     });
 
-    // await newBranch.save();
-
-    res.status(201).json({
+    organization.branches.push(newBranch._id);
+    await organization.save();
+    return res.status(201).json({
       message: "Branch created successfully",
       data: newBranch,
     });
+
   } catch (error) {
-    res.status(500).json({
+    console.log("Error creating branch:", error);
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: "session expired login to continue" });
+    }
+    return res.status(500).json({
       message: "Error creating branch",
+      error: error,
+    });
+  }
+};
+
+
+exports.branchLogin = async (req, res) => {
+  try {
+    const { managerEmail, branchCode } = req.body;
+
+    if (!managerEmail || !branchCode) {
+      return res.status(400).json({
+        message: "Manager email and branch code are required",
+      });
+    }
+
+    const branch = await Branch.findOne({ managerEmail, branchCode });
+
+    if (!branch) {
+      return res.status(404).json({
+        message: "Invalid manager email or branch code",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Branch login successful",
+      branch: {
+        id: branch._id,
+        branchName: branch.branchName,
+        branchCode: branch.branchCode,
+        managerName: branch.managerName,
+        managerEmail: branch.managerEmail
+
+      },
+    });
+  } catch (error) {
+    console.error("Error logging in branch:", error);
+    return res.status(500).json({
+      message: "Server error while logging in branch",
       error: error.message,
     });
   }
 };
 
+
+
 exports.getAllBranches = async (req, res) => {
   try {
-    const branches = await Branch.find().populate('organization');
+  
+    const branches = await Branch.find()
+      .populate('organizationId', 'organizationName email') 
+      .sort({ createdAt: -1 }); 
 
-    res.status(200).json({
-      message: `All branches fetched successfully, total: ${branches.length}`,
-      data: branches
+    if (!branches || branches.length === 0) {
+      return res.status(404).json({ message: "No branches found" });
+    }
+
+    return res.status(200).json({
+      message: "Branches fetched successfully",
+      count: branches.length,
+      data: branches,
     });
+
   } catch (error) {
-    res.status(500).json({
+    console.error("Error fetching branches:", error);
+    return res.status(500).json({
       message: "Error fetching branches",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
 exports.getBranchById = async (req, res) => {
   try {
-    const branch = await Branch.findById(req.params.id).populate('organization');
+     const { id } = req.params; // Branch ID from route
+
+    const branch = await Branch.findById(id)
+      .populate('organizationId', 'organizationName email') // optional
+      .lean();
+
     if (!branch) {
       return res.status(404).json({ message: "Branch not found" });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Branch fetched successfully",
-      data: branch
+      data: branch,
     });
+
   } catch (error) {
-    res.status(500).json({
+    console.error("Error fetching branch:", error);
+    return res.status(500).json({
       message: "Error fetching branch",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
 exports.updateBranch = async (req, res) => {
   try {
-    const updatedBranch = await Branch.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    const { id } = req.params;
+    const updates = req.body; 
 
-    if (!updatedBranch) {
-      return res.status(404).json({ 
-        message: "Branch not found" });
+
+    const branch = await Branch.findById(id);
+    if (!branch) {
+      return res.status(404).json({ message: "Branch not found" });
     }
 
-    res.status(200).json({
+    const updatedBranch = await Branch.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true, runValidators: true } // return updated doc, validate schema
+    ).populate('organizationId', 'organizationName email');
+
+    return res.status(200).json({
       message: "Branch updated successfully",
-      data: updatedBranch
+      data: updatedBranch,
     });
+
   } catch (error) {
-    res.status(500).json({
+    console.error("Error updating branch:", error);
+    return res.status(500).json({
       message: "Error updating branch",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
 exports.deleteBranch = async (req, res) => {
-  try {
-    const deletedBranch = await Branch.findByIdAndDelete(req.params.id);
-    if (!deletedBranch) {
-      return res.status(404).json({ 
-        message: "Branch not found" 
-      });
+try {
+    const { id } = req.params; 
+
+    const branch = await Branch.findById(id);
+    if (!branch) {
+      return res.status(404).json({ message: "Branch not found" });
     }
 
-    res.status(200).json({
-      message: "Branch deleted successfully"
+    if (branch.organizationId) {
+      await Organization.findByIdAndUpdate(
+        branch.organizationId,
+        { $pull: { branches: branch._id } }
+      );
+    }
+
+    await Branch.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      message: "Branch deleted successfully",
+      deletedBranchId: id,
     });
+
   } catch (error) {
-    res.status(500).json({
+    console.error("Error deleting branch:", error);
+    return res.status(500).json({
       message: "Error deleting branch",
-      error: error.message
+      error: error.message,
     });
   }
 };
