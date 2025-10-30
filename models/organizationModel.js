@@ -59,6 +59,8 @@ const organizationSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  
+  // References to branches
   branches: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "branches"

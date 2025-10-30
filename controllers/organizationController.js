@@ -153,11 +153,19 @@ exports.login = async (req, res) => {
           "Account not verified. Please verify your email before logging in.",
       });
     }
-    const token = await jwt.sign(
+
+    const payload = {
+      id: org._id,
+      email: org.email,
+      isAdmin: org.isAdmin,
+      organizationId: org._id
+    };
+
+    const token = await jwt.sign(payload,
       {
         id: org._id,
         email: org.email,
-        isAdmin: org.isAdmin,
+        role: org.role,
       },
       process.env.JWT_SECRET,
       { expiresIn: "3 days" }
@@ -337,7 +345,7 @@ exports.login = async (req, res) => {
                 isAdmin: org.isAdmin,
             },
             process.env.JWT_SECRET,
-            { expiresIn: "3 days" }
+            { expiresIn: "1d" }
         );
         res.status(200).json({
             message: "Login successfull",

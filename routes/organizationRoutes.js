@@ -7,12 +7,56 @@ const router = require('express').Router();
 
 /**
  * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *   schemas:
+ *     Organization:
+ *       type: object
+ *       required:
+ *         - businessName
+ *         - email
+ *       properties:
+ *         _id:
+ *           type: string
+ *           example: 671be8bfcfd2b12aa46783fa
+ *         businessName:
+ *           type: string
+ *           example: Kwikq Technologies
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: info@kwikq.com
+ *         isVerified:
+ *           type: boolean
+ *           example: false
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *         branches:
+ *           type: array
+ *           items:
+ *             type: object
+ *           description: List of branches for this organization
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
  * /api/v1/create:
  *   post:
  *     summary: Register a new organization
  *     description: Creates a new organization account and sends an OTP email for verification.
  *     tags:
- *       - Organization
+ *       - Organization Management
  *     requestBody:
  *       required: true
  *       content:
@@ -90,7 +134,7 @@ router.post("/create", registerValidator, createOrganization);
  * /api/v1/verify:
  *   post:
  *     tags:
- *       - Organizations
+ *       - Authentication
  *     summary: Verify organization email using OTP
  *     description: Validate mailbox OTP for organization account verification. The OTP must be valid and not expired.
  *     requestBody:
@@ -167,7 +211,7 @@ router.post("/verify", verifyValidator, verifyOtp);
  * /api/v1/login:
  *   post:
  *     tags:
- *       - Organizations
+ *       - Authentication
  *     summary: Login organization account
  *     description: Authenticate an organization using email and password and return a JWT token valid for 3 days.
  *     requestBody:
@@ -249,7 +293,7 @@ router.post("/login", login);
  *   post:
  *     summary: Resend a new OTP to an organization's email.
  *     tags:
- *       - Organizations
+ *       - Authentication
  *     requestBody:
  *       required: true
  *       content:
@@ -301,7 +345,7 @@ router.post("/resend-otp", resendValidator, resendOtp);
  * /api/v1/organizations:
  *   get:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Get list of organizations
  *     description: Retrieve a list of all organizations with their branch information. Requires authentication.
  *     security:
@@ -355,7 +399,7 @@ router.get("/organizations", authenticate, getOrganizations);
  * /api/v1/organizations/{id}:
  *   get:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Get organization by ID
  *     security:
  *       - bearerAuth: []
@@ -373,7 +417,7 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  * /api/v1/organizations/{id}:
  *   patch:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Update organization
  *     description: Update organization name. The new name must be unique.
  *     security:
@@ -445,7 +489,7 @@ router.patch('/organizations/:id', authenticate, updateOrganizationDetails);
  * /api/v1/organizations/{id}:
  *   delete:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Delete organization
  *     security:
  *       - bearerAuth: []
@@ -464,7 +508,7 @@ router.delete("/organizations/:id", authenticate, adminAuth, deleteOrganization)
  * /api/v1/change-password:
  *   put:
  *     tags:
- *       - Organizations
+ *       - Organization Management
  *     summary: Change organization password
  *     description: Update organization's password after verifying the current password. Requires authentication.
  *     security:
