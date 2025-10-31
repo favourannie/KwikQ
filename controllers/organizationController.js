@@ -167,7 +167,7 @@ exports.login = async (req, res) => {
       organizationId: org._id
     };
 
-    const token = await jwt.sign(payload,
+    const token = await jwt.sign(
       {
         id: org._id,
         email: org.email,
