@@ -4,8 +4,7 @@ const organizationFormSchema = new mongoose.Schema({
     emailAddress: {
         type: String,
         required: true,
-        trim: true,
-        unique: true
+        trim: true
     },
     industryServiceType: {
         type: String,

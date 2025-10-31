@@ -4,6 +4,7 @@ const organizationSchema = new mongoose.Schema({
   businessName: {
     type: String,
     required: true,
+    trim: true
   },
   email: {
     type: String,
@@ -33,54 +34,39 @@ const organizationSchema = new mongoose.Schema({
     type: String,
     default: "admin"
   },
+  industryServiceType:{
+    type: String,
+    trim: true
+  },
+  headOfficeAddress: {
+    type: String,
+    trim:true
+  },
+  city : {
+    type: String,
+    trim: true
+  },
+  state: {
+    type: String,
+    trim: true,
+    
+  },
+  fullName: {
+    type: String,
+    trim: true
+  },
+  phoneNumber: {
+    type: String,
+    trim: true
+  },
   organizationForms: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "organizationforms"
   },
-    emailAddress: {
-          type: String,
-          required: true,
-          trim: true,
-          unique: true
-      },
-      industryServiceType: {
-          type: String,
-          required: true,
-          trim: true
-      },
-      headOfficeAddress : {
-          type: String,
-          required: true,
-          trim: true
-      },
-      city: {
-          type: String,
-          required: false,
-          trim: true
-      },
-      state: {
-          type:String,
-          required: false,
-          trim: true
-      },
-      fullName: {
-          type: String,
-          required: false,
-          trim: true
-      },
-      phoneNumber: {
-          type: String,
-          required: false,
-          trim: true
-      },
-      branch: [{
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "branches"
-      }],
-      organizations : {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "organizations"
-      }
+  branches: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "branches"
+  }]
 });
 
 
