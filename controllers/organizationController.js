@@ -172,9 +172,12 @@ exports.login = async (req, res) => {
     );
     res.status(200).json({
       message: "Login successfull",
-      data: org.name,
+      data: {
+        name: org.name,
+         org: org._id
+        },
       token,
-      org: org._id
+      
     });
   } catch (error) {
     res.status(500).json({
@@ -313,53 +316,6 @@ exports.resetPasswordRequest = async(req,res)=>{
         });
     }
     }
-
-exports.login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const org = await organizationModel.findOne({
-            email: email.toLowerCase().trim(),
-        });
-        if (!org) {
-            return res.status(404).json({
-                message: "Invalid credentials",
-            });
-        }
-        const inputPassword = await bcrypt.compare(password, org.password);
-
-        if (inputPassword === false) {
-            return res.status(400).json({
-                message: "Invalid password",
-            });
-        }
-        if (org.isVerified === false) {
-            return res.status(403).json({
-                message:
-                    "Account not verified. Please verify your email before logging in.",
-            });
-        }
-        const token = await jwt.sign(
-            {
-                id: org._id,
-                email: org.email,
-                isAdmin: org.isAdmin,
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
-        );
-        res.status(200).json({
-            message: "Login successfull",
-            data: org.name,
-            token,
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: "Error signing in",
-            error: error.message,
-        });
-    }
-};
-
 
 exports.getOrganizations = async (req, res) => {
     try {
