@@ -13,7 +13,11 @@ exports.authenticate = async (req,res, next) =>{
         }
         console.log('SECERT', process.env.JWT_SECRET)
         const decoded = await jwt.verify(token, process.env.JWT_SECRET)
+
+        // console.log(decoded)
+
         console.log('Decoded', decoded)
+
         const org = await organizationModel.findById(decoded.id)
         if(org == null){
             return res.status(404).json({

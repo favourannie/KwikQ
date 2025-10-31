@@ -3,9 +3,10 @@ const joi = require('joi');
 
 exports.registerValidator = (req, res, next) => {
   const schema = joi.object({
-    businessName: joi.string().min(3).trim().required().messages({
+    businessName: joi.string().min(3).trim().pattern(/^[A-Za-z\s]+$/).required().messages({
       'string.empty': 'Business name is required',
-      'string.min': 'Business name must be at least 3 characters long'
+      'string.min': 'Business name must be at least 3 characters long',
+      'string.pattern.base': 'Business name must contain only letters and spaces'
     }),
     email: joi.string().email().trim().required().messages({
       'string.empty': 'Email is required',
@@ -17,8 +18,6 @@ exports.registerValidator = (req, res, next) => {
     }),
     profile: joi.optional()
   });
-
-
   const { error } = schema.validate(req.body, { abortEarly: true });
   if (error) {
     return res.status(400).json({
@@ -29,6 +28,63 @@ exports.registerValidator = (req, res, next) => {
   next();
 };
 
+
+ exports.organizationFormValidator = (req,res,next) => {
+      const schema = joi.object({
+    industryServiceType: joi.string().min(3).pattern(/^[A-Za-z\s]+$/).trim().required().messages({
+      'string.empty': 'Industry service type is required',
+      'string.min': 'Industry service type must be at least 3 characters long',
+      'string.pattern.base': 'Industry service type must contain only letters and spaces'
+    }),
+    emailAddress: joi.string().email().trim().required().messages({
+      'string.empty': 'Email is required',
+      'string.email': 'Please provide a valid email address',
+    }),
+    headOfficeAddress: joi.string().min(3).trim().pattern(/^[A-Za-z\s]+$/).required().messages({
+      'string.empty': 'Head office address is required',
+      'string.min': 'Head office address must be at least 3 characters long',
+      'string.pattern.base': 'Head office address must contain only letters and spaces'
+    }),
+    city: joi.string().min(3).trim().pattern(/^[A-Za-z\s]+$/).required().messages({
+      'string.empty': 'City is required',
+      'string.min': 'City must be at least 3 characters long',
+      'string.pattern.base': 'City must contain only letters and spaces'
+    }),
+    state: joi.string().min(3).trim().pattern(/^[A-Za-z\s]+$/).required().messages({
+      'string.empty': 'State is required',
+      'string.min': 'State must be at least 3 characters long',
+      'string.pattern.base': 'State must contain only letters and spaces'
+    }),
+    fullName: joi.string()
+  .min(3)
+  .trim()
+  .pattern(/^[A-Za-z\s]+$/)
+  .required()
+  .messages({
+    'string.empty': 'Full name is required',
+    'string.min': 'Full name must be at least 3 characters long',
+    'string.pattern.base': 'Full name must contain only letters and spaces'
+  }),
+   phoneNumber: joi.string()
+  .min(11)
+  .trim()
+  .pattern(/^[0-9]+$/)
+  .required()
+  .messages({
+    'string.empty': 'Phone number is required',
+    'string.min': 'Phone number must be at least 11 digits long',
+    'string.pattern.base': 'Phone number must contain only numbers'
+  }),
+
+  })
+    const { error } = schema.validate(req.body, { abortEarly: true });
+  if (error) {
+    return res.status(400).json({
+      message: 'Validation error: ' + error.message
+    });
+  }
+  next();
+  }
 
 exports.verifyValidator = (req, res, next) => {
   const schema = joi.object({

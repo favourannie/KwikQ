@@ -1,11 +1,6 @@
 const mongoose = require('mongoose');
 
 const organizationSchema = new mongoose.Schema({
-  businessName: {
-    type: String,
-    required: true,
-    trim: true
-  },
   email: {
     type: String,
     required: true,
@@ -34,30 +29,9 @@ const organizationSchema = new mongoose.Schema({
     type: String,
     default: "admin"
   },
-  industryServiceType:{
-    type: String,
-    trim: true
-  },
-  headOfficeAddress: {
-    type: String,
-    trim:true
-  },
-  city : {
-    type: String,
-    trim: true
-  },
-  state: {
-    type: String,
-    trim: true,
-    
-  },
-  fullName: {
-    type: String,
-    trim: true
-  },
-  phoneNumber: {
-    type: String,
-    trim: true
+  organizationForms: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "organizationforms"
   },
   
   // References to branches
@@ -66,5 +40,6 @@ const organizationSchema = new mongoose.Schema({
     ref: "branches"
   }]
 });
+
 
 module.exports = mongoose.model("organizations", organizationSchema);
