@@ -15,29 +15,27 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *     Branch:
  *       type: object
  *       required:
- *         - organization
- *         - industryServiceType
- *         - headOfficeAddress
- *         - city
- *         - state
+ *         - organizationId
+ *         - branchName
+ *         - address
  *       properties:
  *         _id:
  *           type: string
  *           description: Auto-generated branch ID
  *           example: 671be8bfcfd2b12aa46783fa
- *         organization:
+ *         organizationId:
  *           type: string
  *           description: ID of the organization this branch belongs to
  *           example: 671be8a2cfb2a9ba935ab04d
- *         businessName:
+ *         branchName:
  *           type: string
- *           description: Business name of the branch
+ *           description: Human-friendly branch name
  *           example: Annie's Delight - VI Branch
- *         industryServiceType:
+ *         branchCode:
  *           type: string
- *           description: Type of industry or service
- *           example: Banking
- *         headOfficeAddress:
+ *           description: Auto-generated short branch code
+ *           example: AB12CD
+ *         address:
  *           type: string
  *           description: Physical address of the branch
  *           example: 45 Adeola Odeku Street
@@ -49,18 +47,22 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *           type: string
  *           description: State where branch is located
  *           example: Lagos State
- *         fullName:
+ *         serviceType:
  *           type: string
- *           description: Name of the branch manager
+ *           description: Service or industry type the branch serves
+ *           example: Banking
+ *         managerName:
+ *           type: string
+ *           description: Branch manager's name
  *           example: John Doe
- *         emailAddress:
+ *         managerEmail:
  *           type: string
  *           format: email
- *           description: Email address for the branch
- *           example: vi.branch@anniesdelight.com
- *         phoneNumber:
+ *           description: Manager's contact email
+ *           example: manager@branch.com
+ *         managerPhone:
  *           type: string
- *           description: Contact number for the branch
+ *           description: Manager's phone number
  *           example: "+2348123456789"
  *         isActive:
  *           type: boolean
@@ -80,21 +82,14 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * /api/v1/create-branch/{id}:
+ * /api/v1/create-branch:
  *   post:
- *     summary: Create a new branch under an organization
- *     description: This endpoint allows an authenticated organization to create a new branch by providing the branch details.
+ *     summary: Create a new branch under the authenticated organization
+ *     description: Creates a branch for the authenticated organization (uses the authenticated user's organization). Only admins can create branches.
  *     tags:
  *       - Branch Management
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the organization to associate the branch with
  *     requestBody:
  *       required: true
  *       content:
@@ -102,30 +97,32 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *           schema:
  *             type: object
  *             required:
- *               - industryServiceType
- *               - headOfficeAddress
- *               - city
- *               - state
+ *               - branchName
+ *               - address
  *             properties:
- *               industryServiceType:
+ *               branchName:
  *                 type: string
- *                 example: Banking
- *               headOfficeAddress:
+ *                 example: "VI Branch"
+ *               address:
  *                 type: string
- *                 example: 45 Adeola Odeku Street
+ *                 example: "45 Adeola Odeku Street"
  *               city:
  *                 type: string
- *                 example: Lagos
+ *                 example: "Lagos"
  *               state:
  *                 type: string
- *                 example: Lagos State
- *               fullName:
+ *                 example: "Lagos State"
+ *               serviceType:
  *                 type: string
- *                 example: John Doe
- *               emailAddress:
+ *                 example: "Banking"
+ *               managerName:
  *                 type: string
- *                 example: johndoe@example.com
- *               phoneNumber:
+ *                 example: "John Doe"
+ *               managerEmail:
+ *                 type: string
+ *                 format: email
+ *                 example: "manager@branch.com"
+ *               managerPhone:
  *                 type: string
  *                 example: "+2348123456789"
  *     responses:
@@ -140,40 +137,9 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *                   type: string
  *                   example: Branch created successfully
  *                 data:
- *                   type: object
- *                   properties:
- *                     _id:
- *                       type: string
- *                       example: 671be8bfcfd2b12aa46783fa
- *                     organization:
- *                       type: string
- *                       example: 671be8a2cfb2a9ba935ab04d
- *                     businessName:
- *                       type: string
- *                       example: Annie's Delight
- *                     industryServiceType:
- *                       type: string
- *                       example: Banking
- *                     headOfficeAddress:
- *                       type: string
- *                       example: 45 Adeola Odeku Street
- *                     city:
- *                       type: string
- *                       example: Lagos
- *                     state:
- *                       type: string
- *                       example: Lagos State
- *                     fullName:
- *                       type: string
- *                       example: John Doe
- *                     emailAddress:
- *                       type: string
- *                       example: johndoe@example.com
- *                     phoneNumber:
- *                       type: string
- *                       example: "+2348123456789"
+ *                   $ref: '#/components/schemas/Branch'
  *       400:
- *         description: Missing required fields
+ *         description: Branch already exists or missing required fields
  *         content:
  *           application/json:
  *             schema:
@@ -181,7 +147,11 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Missing required fields
+ *                   example: Branch already exists
+ *       401:
+ *         description: Unauthorized - invalid or expired token
+ *       403:
+ *         description: Forbidden - only admins can create branches
  *       404:
  *         description: Organization not found
  *         content:
@@ -202,12 +172,9 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *                 message:
  *                   type: string
  *                   example: Error creating branch
- *                 error:
- *                   type: string
- *                   example: "Internal server error message"
  */
 
-router.post('/create-branch' , authenticate, createBranch);
+router.post('/create-branch', authenticate, createBranch);
 /**
  * @swagger
  * /api/v1/branches:
@@ -291,7 +258,7 @@ router.get('/branch/:id', getBranchById);
  *     tags:
  *       - Branch Management
  *     summary: Update branch details
- *     description: Update branch information. Requires admin authentication.
+ *     description: Update branch information. Requires authentication.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -307,29 +274,29 @@ router.get('/branch/:id', getBranchById);
  *           schema:
  *             type: object
  *             properties:
- *               businessName:
+ *               branchName:
  *                 type: string
- *                 example: Annie's Delight - VI Branch
- *               industryServiceType:
+ *                 example: "VI Branch"
+ *               address:
  *                 type: string
- *                 example: Banking
- *               headOfficeAddress:
- *                 type: string
- *                 example: 45 Adeola Odeku Street
+ *                 example: "45 Adeola Odeku Street"
  *               city:
  *                 type: string
- *                 example: Lagos
+ *                 example: "Lagos"
  *               state:
  *                 type: string
- *                 example: Lagos State
- *               fullName:
+ *                 example: "Lagos State"
+ *               serviceType:
  *                 type: string
- *                 example: John Doe
- *               emailAddress:
+ *                 example: "Banking"
+ *               managerName:
+ *                 type: string
+ *                 example: "Jane Smith"
+ *               managerEmail:
  *                 type: string
  *                 format: email
- *                 example: vi.branch@anniesdelight.com
- *               phoneNumber:
+ *                 example: "manager@branch.com"
+ *               managerPhone:
  *                 type: string
  *                 example: "+2348123456789"
  *     responses:
@@ -363,7 +330,7 @@ router.patch('/update-branch/:id', authenticate,updateBranch);
  *     tags:
  *       - Branch Management
  *     summary: Delete a branch
- *     description: Delete a branch by ID. Requires admin authentication.
+ *     description: Delete a branch by ID. Requires authentication.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -381,12 +348,13 @@ router.patch('/update-branch/:id', authenticate,updateBranch);
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
  *                 message:
  *                   type: string
  *                   example: Branch deleted successfully
+ *                 deletedBranchId:
+ *                   type: string
+ *                   description: ID of the deleted branch
+ *                   example: 671be8bfcfd2b12aa46783fa
  *       401:
  *         description: Unauthorized
  *       403:
@@ -404,8 +372,8 @@ router.delete('/delete-branch/:id', authenticate, deleteBranch);
  *   post:
  *     tags:
  *       - Branch Authentication
- *     summary: Branch login endpoint
- *     description: Authenticate a branch user and get access token
+ *     summary: Branch login by manager email and branch code
+ *     description: Authenticate a branch using the manager's email and branch code. Returns basic branch details on success.
  *     requestBody:
  *       required: true
  *       content:
@@ -413,20 +381,19 @@ router.delete('/delete-branch/:id', authenticate, deleteBranch);
  *           schema:
  *             type: object
  *             required:
- *               - email
- *               - password
+ *               - managerEmail
+ *               - branchCode
  *             properties:
- *               email:
+ *               managerEmail:
  *                 type: string
  *                 format: email
- *                 example: branch@example.com
- *               password:
+ *                 example: manager@branch.com
+ *               branchCode:
  *                 type: string
- *                 format: password
- *                 example: "********"
+ *                 example: AB12CD
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: Branch login successful
  *         content:
  *           application/json:
  *             schema:
@@ -434,14 +401,28 @@ router.delete('/delete-branch/:id', authenticate, deleteBranch);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Login successful
- *                 token:
- *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *                   example: Branch login successful
  *                 branch:
- *                   $ref: '#/components/schemas/Branch'
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: 671be8bfcfd2b12aa46783fa
+ *                     branchName:
+ *                       type: string
+ *                       example: VI Branch
+ *                     branchCode:
+ *                       type: string
+ *                       example: AB12CD
+ *                     managerName:
+ *                       type: string
+ *                       example: John Doe
+ *                     managerEmail:
+ *                       type: string
+ *                       format: email
+ *                       example: manager@branch.com
  *       400:
- *         description: Invalid credentials
+ *         description: Missing managerEmail or branchCode
  *         content:
  *           application/json:
  *             schema:
@@ -449,9 +430,9 @@ router.delete('/delete-branch/:id', authenticate, deleteBranch);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Invalid email or password
+ *                   example: Manager email and branch code are required
  *       404:
- *         description: Branch not found
+ *         description: Invalid manager email or branch code
  *         content:
  *           application/json:
  *             schema:
@@ -459,9 +440,9 @@ router.delete('/delete-branch/:id', authenticate, deleteBranch);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Branch not found
+ *                   example: Invalid manager email or branch code
  *       500:
- *         description: Server error
+ *         description: Server error during branch login
  *         content:
  *           application/json:
  *             schema:
@@ -469,7 +450,7 @@ router.delete('/delete-branch/:id', authenticate, deleteBranch);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error during login
+ *                   example: Server error while logging in branch
  *                 error:
  *                   type: string
  */
