@@ -4,7 +4,7 @@ const { authenticate } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * /api/v1/analytics/{id}:
+ * /api/v1/analytics/{branchId}:
  *   get:
  *     summary: Get branch analytics data
  *     description: >
@@ -111,6 +111,6 @@ const { authenticate } = require('../middleware/authenticate');
  *                   example: Branch ID not found or invalid date range
  */
 
-router.get('/analytics/:id', getBranchAnalytics);
+router.get('/analytics/:branchId', authenticate, getBranchAnalytics);
 
 module.exports = router;
