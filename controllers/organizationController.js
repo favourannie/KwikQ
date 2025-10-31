@@ -22,6 +22,12 @@ exports.createOrganization = async (req, res) => {
       });
     }
 
+    // if (email.slice(-10) !== '@gmail.com') {
+    //   return res.status(400).json({
+    //     message: "Please input a valid email address"
+    //   })
+    // }
+
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
     const otp = Math.round(Math.random() * 1e6)
