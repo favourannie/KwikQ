@@ -39,7 +39,7 @@ exports.createOrganization = async (req, res) => {
     const detail = {
       email: org.email,
       subject: "Email Verification",
-      html: registerOTP(org.otp, `${org.businessName}`),
+      html: registerOTP(org.otp, org.businessName),
     };
 
     await sendMail(detail);
