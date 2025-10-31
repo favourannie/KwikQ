@@ -36,7 +36,7 @@ return `
         <tr>
           <td style="height: 350px">
             <h1 style="font-size: 35px; font-weight: bold; margin: 0 0 10px;">Email Verification</h1>
-            <h2 style="font-size: 20px; margin: 0 0 10px;">Welcome to KwikQ App ${businessName},</h2>
+            <h2 style="font-size: 20px; margin: 0 0 10px;">Welcome to KwikQ App <br/> <em>${businessName}</em>,</h2>
             <p style="font-size: 17px; margin: 0 0 20px;">To complete your registration, Here's your 4-digit code, enter it to verify your email and unlock the KwikQ's fast experience!</p>
             <h2 style="font-size: 35px; font-weight: bold; background: #c2cfd3; padding: 10px; border-radius: 5px; text-align: center;">${otp}</h2>
             <p style="font-size: 17px; margin: 20px 0px 10px 0px;">Need help? Reach out to our support team below.</p>
