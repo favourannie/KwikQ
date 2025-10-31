@@ -84,10 +84,10 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  * @swagger
  * /api/v1/create-branch:
  *   post:
- *     summary: Create a new branch under the authenticated organization
- *     description: Creates a branch for the authenticated organization (uses the authenticated user's organization). Only admins can create branches.
  *     tags:
- *       - Branch Management
+ *       - Branches
+ *     summary: Create a new branch under an organization
+ *     description: This endpoint allows an admin organization to create a new branch. Requires authentication via Bearer token.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -99,32 +99,38 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *             required:
  *               - branchName
  *               - address
+ *               - city
+ *               - state
+ *               - serviceType
+ *               - managerName
+ *               - managerEmail
+ *               - managerPhone
  *             properties:
  *               branchName:
  *                 type: string
- *                 example: "VI Branch"
+ *                 example: Lekki Branch
  *               address:
  *                 type: string
- *                 example: "45 Adeola Odeku Street"
+ *                 example: 12 Admiralty Way
  *               city:
  *                 type: string
- *                 example: "Lagos"
+ *                 example: Lagos
  *               state:
  *                 type: string
- *                 example: "Lagos State"
+ *                 example: Lagos State
  *               serviceType:
  *                 type: string
- *                 example: "Banking"
+ *                 example: Financial Services
  *               managerName:
  *                 type: string
- *                 example: "John Doe"
+ *                 example: John Doe
  *               managerEmail:
  *                 type: string
  *                 format: email
- *                 example: "manager@branch.com"
+ *                 example: johndoe@example.com
  *               managerPhone:
  *                 type: string
- *                 example: "+2348123456789"
+ *                 example: +2348012345678
  *     responses:
  *       201:
  *         description: Branch created successfully
@@ -137,9 +143,43 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *                   type: string
  *                   example: Branch created successfully
  *                 data:
- *                   $ref: '#/components/schemas/Branch'
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: 6548c3bfc74f8f2e54e12a93
+ *                     organizationId:
+ *                       type: string
+ *                       example: 6548a2e1f88a9e3d0bc92f33
+ *                     branchName:
+ *                       type: string
+ *                       example: Lekki Branch
+ *                     branchCode:
+ *                       type: string
+ *                       example: A1B2C3
+ *                     address:
+ *                       type: string
+ *                       example: 12 Admiralty Way
+ *                     city:
+ *                       type: string
+ *                       example: Lagos
+ *                     state:
+ *                       type: string
+ *                       example: Lagos State
+ *                     serviceType:
+ *                       type: string
+ *                       example: Financial Services
+ *                     managerName:
+ *                       type: string
+ *                       example: John Doe
+ *                     managerEmail:
+ *                       type: string
+ *                       example: johndoe@example.com
+ *                     managerPhone:
+ *                       type: string
+ *                       example: +2348012345678
  *       400:
- *         description: Branch already exists or missing required fields
+ *         description: Branch already exists or invalid data
  *         content:
  *           application/json:
  *             schema:
@@ -149,9 +189,25 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *                   type: string
  *                   example: Branch already exists
  *       401:
- *         description: Unauthorized - invalid or expired token
+ *         description: Unauthorized or expired session
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: session expired login to continue
  *       403:
- *         description: Forbidden - only admins can create branches
+ *         description: Forbidden — only admins can create branches
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Only admins can create branches
  *       404:
  *         description: Organization not found
  *         content:
@@ -163,7 +219,7 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *                   type: string
  *                   example: Organization not found
  *       500:
- *         description: Server error
+ *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
@@ -172,6 +228,9 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
  *                 message:
  *                   type: string
  *                   example: Error creating branch
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error message
  */
 
 router.post('/create-branch', authenticate, createBranch);
