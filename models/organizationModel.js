@@ -37,12 +37,50 @@ const organizationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "organizationforms"
   },
-  
-  // References to branches
-  branches: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "branches"
-  }]
+    emailAddress: {
+          type: String,
+          required: true,
+          trim: true,
+          unique: true
+      },
+      industryServiceType: {
+          type: String,
+          required: true,
+          trim: true
+      },
+      headOfficeAddress : {
+          type: String,
+          required: true,
+          trim: true
+      },
+      city: {
+          type: String,
+          required: false,
+          trim: true
+      },
+      state: {
+          type:String,
+          required: false,
+          trim: true
+      },
+      fullName: {
+          type: String,
+          required: false,
+          trim: true
+      },
+      phoneNumber: {
+          type: String,
+          required: false,
+          trim: true
+      },
+      branch: [{
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "branches"
+      }],
+      organizations : {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "organizations"
+      }
 });
 
 
