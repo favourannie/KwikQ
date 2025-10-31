@@ -16,8 +16,6 @@ exports.createBranch = async (req, res) => {
       branchName,
       branchCode,
       address,
-      state,
-      city,
       serviceType,
       managerName,
       managerEmail,
