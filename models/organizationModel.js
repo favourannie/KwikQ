@@ -49,7 +49,6 @@ const organizationSchema = new mongoose.Schema({
   state: {
     type: String,
     trim: true,
-    
   },
   fullName: {
     type: String,
@@ -59,12 +58,15 @@ const organizationSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  
-  // References to branches
+  organizationForms: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "organizationforms"
+  },
   branches: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "branches"
   }]
 });
+
 
 module.exports = mongoose.model("organizations", organizationSchema);

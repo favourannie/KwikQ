@@ -22,6 +22,12 @@ exports.createOrganization = async (req, res) => {
       });
     }
 
+    // if (email.slice(-10) !== '@gmail.com') {
+    //   return res.status(400).json({
+    //     message: "Please input a valid email address"
+    //   })
+    // }
+
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
     const otp = Math.round(Math.random() * 1e6)
@@ -39,7 +45,7 @@ exports.createOrganization = async (req, res) => {
     const detail = {
       email: org.email,
       subject: "Email Verification",
-      html: registerOTP(org.otp, `${org.businessName}`),
+      html: registerOTP(org.otp, org.businessName),
     };
 
     await sendMail(detail);
@@ -161,7 +167,7 @@ exports.login = async (req, res) => {
       organizationId: org._id
     };
 
-    const token = await jwt.sign(payload,
+    const token = await jwt.sign(
       {
         id: org._id,
         email: org.email,
@@ -172,9 +178,12 @@ exports.login = async (req, res) => {
     );
     res.status(200).json({
       message: "Login successfull",
-      data: org.name,
+      data: {
+        name: org.name,
+         org: org._id
+        },
       token,
-      org: org._id
+      
     });
   } catch (error) {
     res.status(500).json({
@@ -314,53 +323,6 @@ exports.resetPasswordRequest = async(req,res)=>{
     }
     }
 
-exports.login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const org = await organizationModel.findOne({
-            email: email.toLowerCase().trim(),
-        });
-        if (!org) {
-            return res.status(404).json({
-                message: "Invalid credentials",
-            });
-        }
-        const inputPassword = await bcrypt.compare(password, org.password);
-
-        if (inputPassword === false) {
-            return res.status(400).json({
-                message: "Invalid password",
-            });
-        }
-        if (org.isVerified === false) {
-            return res.status(403).json({
-                message:
-                    "Account not verified. Please verify your email before logging in.",
-            });
-        }
-        const token = await jwt.sign(
-            {
-                id: org._id,
-                email: org.email,
-                isAdmin: org.isAdmin,
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
-        );
-        res.status(200).json({
-            message: "Login successfull",
-            data: org.name,
-            token,
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: "Error signing in",
-            error: error.message,
-        });
-    }
-};
-
-
 exports.getOrganizations = async (req, res) => {
     try {
         const orgs = await organizationModel.find().populate("branches");
@@ -421,14 +383,22 @@ exports.changePassword = async (req, res) => {
 exports.updateOrganizationDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const { industryServiceType, headOfficeAddress, city, state, fullName, phoneNumber } = req.body;
-    const organization = await organizationModel.findById(id)
-    if(!organization){
+    const { industryServiceType, email, headOfficeAddress, city, state, fullName, phoneNumber } = req.body;
+    const existingOrg = await organizationModel.findById(id);
+    if (!existingOrg) {
       return res.status(404).json({
-        message: "Organization not found"
-      })
+        message: "Organization not found",
+      });
     }
-    const org = await organizationModel.findByIdAndUpdate(id, industryServiceType, headOfficeAddress, city, state, fullName, phoneNumber, {
+    const org = await organizationModel.findByIdAndUpdate(id, {
+      industryServiceType,
+      headOfficeAddress,
+      city,
+      state,
+      fullName,
+      phoneNumber,
+      emailAddress: email
+    }, {
       new: true,
     });
     res.status(200).json({

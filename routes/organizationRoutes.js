@@ -1,6 +1,5 @@
 const { login, createOrganization, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganizationDetails, deleteOrganization, changePassword, forgotPassword, resetPassword, resetPasswordRequest} = require('../controllers/organizationController');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
-const { googleAuth, googleCallback } = require('../middleware/passport');
 const { registerValidator, verifyValidator, resendValidator } = require('../middleware/validation');
 
 const router = require('express').Router();
