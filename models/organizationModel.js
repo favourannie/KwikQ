@@ -49,7 +49,6 @@ const organizationSchema = new mongoose.Schema({
   state: {
     type: String,
     trim: true,
-    
   },
   fullName: {
     type: String,

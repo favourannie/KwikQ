@@ -380,24 +380,27 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-exports.updateOrganization = async (req, res) => {
+exports.updateOrganizationDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const { businessName } = req.body;
-    const existingName = await organizationModel.findOne({ name: businessName });
-    if (existingName) {
-      return res.status(400).json({
-        message: "Organization with this name already exists",
-      });
-    }
-    const org = await organizationModel.findByIdAndUpdate(id, name, {
-      new: true,
-    });
-    if (org === null) {
+    const { industryServiceType, email, headOfficeAddress, city, state, fullName, phoneNumber } = req.body;
+    const existingOrg = await organizationModel.findById(id);
+    if (!existingOrg) {
       return res.status(404).json({
         message: "Organization not found",
       });
     }
+    const org = await organizationModel.findByIdAndUpdate(id, {
+      industryServiceType,
+      headOfficeAddress,
+      city,
+      state,
+      fullName,
+      phoneNumber,
+      emailAddress: email
+    }, {
+      new: true,
+    });
     res.status(200).json({
       message: "Organization updated successfully",
       data: org,

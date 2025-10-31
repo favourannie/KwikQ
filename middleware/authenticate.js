@@ -5,18 +5,18 @@ const jwt = require('jsonwebtoken')
 exports.authenticate = async (req,res, next) =>{
     try {
         const token = req.headers.authorization?.split(" ")[1]
-        console.log('token',token)
+        // console.log('token',token)
         if(!token){
             return res.status(401).json({
                 message: "Invalid token provided"
             })
         }
-        console.log('SECERT', process.env.JWT_SECRET)
+        // console.log('SECERT', process.env.JWT_SECRET)
         const decoded = await jwt.verify(token, process.env.JWT_SECRET)
 
         // console.log(decoded)
 
-        console.log('Decoded', decoded)
+        // console.log('Decoded', decoded)
 
         const org = await organizationModel.findById(decoded.id)
         if(org == null){
@@ -24,7 +24,7 @@ exports.authenticate = async (req,res, next) =>{
                 message: "Authenticatioon failed: Organization not found"
             })
         }
-        console.log('decoded:',decoded)
+        // console.log('decoded:',decoded)
         req.user = decoded
         
         next()

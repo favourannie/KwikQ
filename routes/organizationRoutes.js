@@ -1,4 +1,4 @@
-const { login, createOrganization, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganization, deleteOrganization, changePassword, forgotPassword, resetPassword, resetPasswordRequest} = require('../controllers/organizationController');
+const { login, createOrganization, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganizationDetails, deleteOrganization, changePassword, forgotPassword, resetPassword, resetPasswordRequest} = require('../controllers/organizationController');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 const { registerValidator, verifyValidator, resendValidator } = require('../middleware/validation');
 
@@ -481,7 +481,7 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  *                 error:
  *                   type: string
  */
-router.patch('/organizations/:id', authenticate, updateOrganization);
+router.patch('/organizations/:id', authenticate, updateOrganizationDetails);
 
 /**
  * @swagger
