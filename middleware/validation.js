@@ -40,10 +40,9 @@ exports.registerValidator = (req, res, next) => {
       'string.empty': 'Email is required',
       'string.email': 'Please provide a valid email address',
     }),
-    headOfficeAddress: joi.string().min(3).trim().pattern(/^[A-Za-z\s]+$/).required().messages({
+    headOfficeAddress: joi.string().min(3).trim().required().messages({
       'string.empty': 'Head office address is required',
       'string.min': 'Head office address must be at least 3 characters long',
-      'string.pattern.base': 'Head office address must contain only letters and spaces'
     }),
     city: joi.string().min(3).trim().pattern(/^[A-Za-z\s]+$/).required().messages({
       'string.empty': 'City is required',
