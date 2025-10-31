@@ -99,7 +99,7 @@ exports.createBranch = async (req, res) => {
       { $inc: { 'overview.totalBranches': 1 } },
       { upsert: true }
     );
-
+  
     res.status(201).json({
       message: 'Branch created successfully',
       newBranch,

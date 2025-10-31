@@ -33,6 +33,8 @@ const organizationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "organizationforms"
   },
+  
+  // References to branches
   branches: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "branches"
