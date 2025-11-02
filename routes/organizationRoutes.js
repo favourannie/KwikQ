@@ -415,34 +415,54 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  * @swagger
  * /api/v1/organizations/{id}:
  *   patch:
+ *     summary: Update organization details
+ *     description: >
+ *       Allows an authenticated user to update an organization's profile details,  
+ *       including contact info and service type.  
+ *       Requires a valid JWT token for authentication.
  *     tags:
- *       - Organization Management
- *     summary: Update organization
- *     description: Update organization name. The new name must be unique.
+ *       - Organization
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
+ *         description: The unique ID of the organization to update
  *         schema:
  *           type: string
- *         description: Organization ID to update
+ *           example: "671f72d8c9b9d32f0a1a4e5b"
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - name
  *             properties:
- *               name:
+ *               industryServiceType:
  *                 type: string
- *                 example: New Organization Name
- *                 description: New unique name for the organization
+ *                 example: "Banking and Financial Services"
+ *               headOfficeAddress:
+ *                 type: string
+ *                 example: "123 Broad Street, Lagos"
+ *               city:
+ *                 type: string
+ *                 example: "Lagos"
+ *               state:
+ *                 type: string
+ *                 example: "Lagos"
+ *               fullName:
+ *                 type: string
+ *                 example: "Favour Johnson"
+ *               phoneNumber:
+ *                 type: string
+ *                 example: "08012345678"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "contact@kwikq.com"
  *     responses:
- *       '200':
+ *       200:
  *         description: Organization updated successfully
  *         content:
  *           application/json:
@@ -453,9 +473,34 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  *                   type: string
  *                   example: Organization updated successfully
  *                 data:
- *                   $ref: '#/components/schemas/Organization'
- *       '400':
- *         description: Bad Request
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: "671f72d8c9b9d32f0a1a4e5b"
+ *                     industryServiceType:
+ *                       type: string
+ *                       example: "Banking and Financial Services"
+ *                     headOfficeAddress:
+ *                       type: string
+ *                       example: "123 Broad Street, Lagos"
+ *                     city:
+ *                       type: string
+ *                       example: "Lagos"
+ *                     state:
+ *                       type: string
+ *                       example: "Lagos"
+ *                     fullName:
+ *                       type: string
+ *                       example: "Favour Johnson"
+ *                     phoneNumber:
+ *                       type: string
+ *                       example: "08012345678"
+ *                     emailAddress:
+ *                       type: string
+ *                       example: "contact@kwikq.com"
+ *       400:
+ *         description: Invalid input data
  *         content:
  *           application/json:
  *             schema:
@@ -463,13 +508,19 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization with this name already exists
- *       '401':
- *         description: Unauthorized
- *       '404':
+ *                   example: Invalid request payload
+ *       404:
  *         description: Organization not found
- *       '500':
- *         description: Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Organization not found
+ *       500:
+ *         description: Server error while updating organization
  *         content:
  *           application/json:
  *             schema:
@@ -480,7 +531,9 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  *                   example: Error updating organization
  *                 error:
  *                   type: string
+ *                   example: Cast to ObjectId failed for value "invalid-id"
  */
+
 router.patch('/organizations/:id', authenticate, updateOrganizationDetails);
 
 /**
