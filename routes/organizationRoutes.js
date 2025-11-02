@@ -417,23 +417,23 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  *   patch:
  *     summary: Update organization details
  *     description: >
- *       Allows an authenticated user to update an organization's profile details,  
- *       including contact info and service type.  
- *       Requires a valid JWT token for authentication.
+ *       Updates an existing organization's profile information, including service type, contact info, and office address.  
+ *       Authentication is required via a Bearer token.
  *     tags:
- *       - Organization
+ *       - Organization Management
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The unique ID of the organization to update
+ *         description: The unique MongoDB ObjectId of the organization to update.
  *         schema:
  *           type: string
  *           example: "671f72d8c9b9d32f0a1a4e5b"
  *     requestBody:
  *       required: true
+ *       description: Fields to update in the organization record.
  *       content:
  *         application/json:
  *           schema:
@@ -499,16 +499,6 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  *                     emailAddress:
  *                       type: string
  *                       example: "contact@kwikq.com"
- *       400:
- *         description: Invalid input data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Invalid request payload
  *       404:
  *         description: Organization not found
  *         content:
@@ -520,7 +510,7 @@ router.get("/organizations/:id", authenticate, getOrganizationsById);
  *                   type: string
  *                   example: Organization not found
  *       500:
- *         description: Server error while updating organization
+ *         description: Error updating organization
  *         content:
  *           application/json:
  *             schema:
