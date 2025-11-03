@@ -5,83 +5,6 @@ const { authenticate, adminAuth  } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
- *   schemas:
- *     Branch:
- *       type: object
- *       required:
- *         - organizationId
- *         - branchName
- *         - address
- *       properties:
- *         _id:
- *           type: string
- *           description: Auto-generated branch ID
- *           example: 671be8bfcfd2b12aa46783fa
- *         organizationId:
- *           type: string
- *           description: ID of the organization this branch belongs to
- *           example: 671be8a2cfb2a9ba935ab04d
- *         branchName:
- *           type: string
- *           description: Human-friendly branch name
- *           example: Annie's Delight - VI Branch
- *         branchCode:
- *           type: string
- *           description: Auto-generated short branch code
- *           example: AB12CD
- *         address:
- *           type: string
- *           description: Physical address of the branch
- *           example: 45 Adeola Odeku Street
- *         city:
- *           type: string
- *           description: City where branch is located
- *           example: Lagos
- *         state:
- *           type: string
- *           description: State where branch is located
- *           example: Lagos State
- *         serviceType:
- *           type: string
- *           description: Service or industry type the branch serves
- *           example: Banking
- *         managerName:
- *           type: string
- *           description: Branch manager's name
- *           example: John Doe
- *         managerEmail:
- *           type: string
- *           format: email
- *           description: Manager's contact email
- *           example: manager@branch.com
- *         managerPhone:
- *           type: string
- *           description: Manager's phone number
- *           example: "+2348123456789"
- *         isActive:
- *           type: boolean
- *           description: Whether the branch is active
- *           example: true
- *         createdAt:
- *           type: string
- *           format: date-time
- *           description: Branch creation timestamp
- *           example: "2025-10-30T12:00:00.000Z"
- *         updatedAt:
- *           type: string
- *           format: date-time
- *           description: Last update timestamp
- *           example: "2025-10-30T12:00:00.000Z"
- */
-
-/**
- * @swagger
  * /api/v1/create-branch:
  *   post:
  *     tags:
@@ -239,7 +162,7 @@ router.post('/create-branch', authenticate, createBranch);
  * /api/v1/branches:
  *   get:
  *     tags:
- *       - Branch Management
+ *       - Branches
  *     summary: Get all branches
  *     description: Retrieve all branches, optionally filtered by organization
  *     security:
@@ -278,7 +201,7 @@ router.get('/branches', getAllBranches);
  * /api/v1/branch/{id}:
  *   get:
  *     tags:
- *       - Branch Management
+ *       - Branches
  *     summary: Get branch by ID
  *     description: Retrieve detailed information about a specific branch
  *     security:
@@ -315,7 +238,7 @@ router.get('/branch/:id', getBranchById);
  * /api/v1/update-branch/{id}:
  *   patch:
  *     tags:
- *       - Branch Management
+ *       - Branches
  *     summary: Update branch details
  *     description: Update branch information. Requires authentication.
  *     security:
@@ -387,7 +310,7 @@ router.patch('/update-branch/:id', authenticate,updateBranch);
  * /api/v1/delete-branch/{id}:
  *   delete:
  *     tags:
- *       - Branch Management
+ *       - Branches
  *     summary: Delete a branch
  *     description: Delete a branch by ID. Requires authentication.
  *     security:

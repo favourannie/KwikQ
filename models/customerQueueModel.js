@@ -1,3 +1,4 @@
+const { required } = require('joi');
 const mongoose = require('mongoose');
 
 const customerSchema = new mongoose.Schema({
@@ -20,10 +21,10 @@ const customerSchema = new mongoose.Schema({
   // Form fields filled by customer
   formDetails: {
     fullName: { type: String, required: true },
-    email: { type: String },
-    phone: { type: String },
+    email: { type: String, required: true },
+    phone: { type: String, required: false },
     serviceNeeded: { type: String, required: true },
-    additionalInfo: { type: String },
+    additionalInfo: { type: String, required: false },
     priorityStatus: { type: Boolean, default: false},
     elderlyStatus: { type: Boolean, default: false},
     pregnantStatus: { type: Boolean, default: false },
