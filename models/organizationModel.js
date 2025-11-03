@@ -30,9 +30,15 @@ const organizationSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  role:{
+  isAdmin:{
     type: String,
     default: "admin"
+  },
+  role: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    enum: ["individual", "multi"]
   },
   industryServiceType:{
     type: String,
