@@ -4,49 +4,6 @@ const { registerValidator, verifyValidator, resendValidator } = require('../midd
 
 const router = require('express').Router();
 
-/**
- * @swagger
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
- *   schemas:
- *     Organization:
- *       type: object
- *       required:
- *         - businessName
- *         - email
- *       properties:
- *         _id:
- *           type: string
- *           example: 671be8bfcfd2b12aa46783fa
- *         businessName:
- *           type: string
- *           example: Kwikq Technologies
- *         email:
- *           type: string
- *           format: email
- *           example: info@kwikq.com
- *         isVerified:
- *           type: boolean
- *           example: false
- *         isActive:
- *           type: boolean
- *           example: true
- *         branches:
- *           type: array
- *           items:
- *             type: object
- *           description: List of branches for this organization
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- */
 
 /**
  * @swagger
@@ -66,6 +23,7 @@ const router = require('express').Router();
  *               - businessName
  *               - email
  *               - password
+ *               - role
  *             properties:
  *               businessName:
  *                 type: string
@@ -81,6 +39,10 @@ const router = require('express').Router();
  *                 format: password
  *                 example: "StrongPass123!"
  *                 description: Password for the organization account.
+ *               role:
+ *                 type: string
+ *                 example: "multi"
+ *                 description: Role of the organization (e.g., individual, multi).
  *     responses:
  *       201:
  *         description: Organization created successfully.

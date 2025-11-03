@@ -7,7 +7,7 @@ const { sendMail } = require("../middleware/brevo");
 
 exports.createOrganization = async (req, res) => {
   try {
-    const { businessName, email, password } = req.body;
+    const { businessName, email, password, role } = req.body;
     const name = businessName
   .split(' ')
   .filter(word => word.length > 0) // remove extra spaces
@@ -40,6 +40,7 @@ exports.createOrganization = async (req, res) => {
       password: hashPassword,
       otp: otp,
       otpExpiredAt: Date.now() + 1000 * 540,
+      role
     });
 
     const detail = {
