@@ -28,7 +28,7 @@ const customerSchema = new mongoose.Schema({
     priorityStatus: { type: Boolean, default: false},
     elderlyStatus: { type: Boolean, default: false},
     pregnantStatus: { type: Boolean, default: false },
-    emergencyLevel: { type: String, enum: ['low', 'medium', 'high'], default: 'low' }
+    emergencyLevel: { type: String,  default: false }
   },
 
   // Queue tracking
