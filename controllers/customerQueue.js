@@ -145,14 +145,9 @@ exports.getPregnantCustomers = async (req, res) => {
 
 exports.getByEmergencyLevel = async (req, res) => {
   try {
-    const { level } = req.params; // e.g., /emergency/high
-    if (!['low', 'medium', 'high'].includes(level)) {
-      return res.status(400).json({ message: 'Invalid emergency level' });
-    }
-
-    const customers = await CustomerInterface.find({ 'formDetails.emergencyLevel': level });
-    res.status(200).json({ count: customers.length, data: customers });
+    const emergencyCustomers = await CustomerInterface.find({ 'formDetails.emergencyStatus': true });
+    res.status(200).json({ count: emergencyCustomers.length, data: emergencyCustomers });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching customers by emergency level', error: error.message });
+    res.status(500).json({ message: 'Error fetching emergency customers', error: error.message });
   }
 };
