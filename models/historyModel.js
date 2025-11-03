@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 
 const historySchema = new mongoose.Schema({
-  customerRequest: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'customerRequests'
-  },
   organization: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'organizations'
@@ -13,17 +9,32 @@ const historySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'branches'
   },
-  customerName: String,
-  serviceType: String,
-  status: {
-    type: String,
-    enum: ['served', 'cancelled', 'missed'],
-    required: true
+  queueID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customers'
   },
-  ticketNumber: String,
-  createdAt: Date,
-  servedAt: Date,
-  duration: Number // minutes waited or served
+  customerName: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customers'
+  },
+  serviceType: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customers'
+  },
+  status: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customers'
+  },
+  dateAndTime: {
+    type: Date,
+    default: Date.now
+  },
+  serviceTime: {
+    type: Number
+  },
+  waitTime: {
+    type: Number,
+  }
 });
 
 module.exports = mongoose.model('history', historySchema);

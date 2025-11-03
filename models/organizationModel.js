@@ -30,10 +30,6 @@ const organizationSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  isAdmin:{
-    type: String,
-    default: "admin"
-  },
   role: {
     type: String,
     lowercase: true,
@@ -63,10 +59,6 @@ const organizationSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
     trim: true
-  },
-  organizationForms: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "organizationforms"
   },
   branches: [{
     type: mongoose.Schema.Types.ObjectId,

@@ -1,4 +1,4 @@
-const customerModel = require("../models/customerModel");
+const customerModel = require("../models/customerQueueModel");
 const branchModel = require("../models/branchModel")
 exports.getDashboardMetrics = async (req, res) => {
     try {

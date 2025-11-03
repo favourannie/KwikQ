@@ -1,5 +1,30 @@
 const queueModel = require("../models/queueModel");
 const activityModel = require("../models/recentActivityModel")
+const organizationModel = require("../models/organizationModel")
+const branchModel = require("../models/branchModel")
+
+
+exports.joinQueue = async(req,res) => {
+  try {
+    const id = req.query.id;
+    const {fullName, email, phone, serviceNeeded, additionalInfo, regularStandard, pregnantWoman, emergencyOrUrgent } = req.body
+    const  business = await organizationModel.findById(id) || await branchModel.findById(id);
+    
+    if(!business){
+      return res.status(404).json({
+        message: "Business not found"
+      })
+    }
+
+  } catch (error) {
+       res.status(500).json({
+      message: "Error joining queue",
+      error: error.message,
+    });
+  }
+}
+
+
 exports.getQueueStats = async (req, res) => {
   try {
     const { branchId } = req.params;

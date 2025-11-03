@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 
 const dashboardSchema = new mongoose.Schema({
-  organization: {
+  individualId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'organizations',
-    required: true
   },
-  branch: {
+  branchId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'branches'
   },

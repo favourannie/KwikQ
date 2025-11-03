@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {generateQRCode, getQRCodeInfo, getFormByQrCode, validateQRCodeScan} = require('../controllers/qrCodeController');
+const {generateQRCode, getQRCodeInfo, getFormByQrCode, validateQRCodeScan, getQueueLength} = require('../controllers/qrCodeController');
 
 /**
  * @swagger
@@ -343,4 +343,43 @@ router.get('/qrcode/form/:qrCode', getFormByQrCode);
  */
 router.post('/qrcode/validate', validateQRCodeScan);
 
+
+/**
+ * @swagger
+ * /api/v1/total-queues:
+ *   get:
+ *     summary: Get total number of queues
+ *     description: Retrieves the total number of queue records currently in the system.
+ *     tags:
+ *       - Queue
+ *     responses:
+ *       200:
+ *         description: Successfully fetched total number of queues
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Total number of queue:"
+ *                 data:
+ *                   type: integer
+ *                   example: 42
+ *       500:
+ *         description: Error getting queue length
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error getting queue length"
+ *                 error:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+
+router.get("/total-queues", getQueueLength)
 module.exports = router;

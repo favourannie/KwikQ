@@ -1,4 +1,3 @@
-const { required } = require('joi');
 const mongoose = require('mongoose');
 
 const customerSchema = new mongoose.Schema({
@@ -21,24 +20,23 @@ const customerSchema = new mongoose.Schema({
   // Form fields filled by customer
   formDetails: {
     fullName: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String, required: true, lowercase: true },
     phone: { type: String, required: false },
     serviceNeeded: { type: String, required: true },
     additionalInfo: { type: String, required: false },
-    priorityStatus: { type: Boolean, default: false},
-    elderlyStatus: { type: Boolean, default: false},
-    pregnantStatus: { type: Boolean, default: false },
-    emergencyLevel: { type: String,  default: false }
+    priorityStatus: { type: String, 
+      enum: ["regularStandard", "elderlyOrDisabled", "pregnantWoman", "emergencyOrUrgent"]
+    },
   },
 
   // Queue tracking
-  queueNumber: { type: String },
+  queueNumber: { type: Number, required: true },
   status: {
     type: String,
     enum: ['waiting', 'in_service', 'completed', 'canceled', 'no_show'],
     default: 'waiting',
   },
-  joinedAt: { type: Date, default: Date.now },
+  joinedAt: { type: String, default: '' },
   servedAt: { type: Date },
   completedAt: { type: Date },
 
@@ -46,4 +44,4 @@ const customerSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model('Customer', customerSchema);
+module.exports = mongoose.model('Customers', customerSchema);

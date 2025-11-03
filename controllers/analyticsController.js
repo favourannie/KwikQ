@@ -1,5 +1,5 @@
 const analyticsModel = require('../models/analyticsModel');
-const customerModel = require('../models/customerModel');
+const customerModel = require('../models/customerQueueModel');
 const organizationModel = require('../models/organizationModel');
 
 const calculateAverageWaitTime = (customers) => {
