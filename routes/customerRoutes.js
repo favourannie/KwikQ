@@ -96,8 +96,7 @@ const {createCustomer, getAllCustomers, getCustomerById, updateCustomer, deleteC
  *                   pregnantStatus:
  *                     type: boolean
  *                   emergencyLevel:
- *                     type: string
- *                     enum: [low, medium, high]
+ *                     type: boolean
  *     responses:
  *       201:
  *         description: Customer added to queue successfully
@@ -311,14 +310,6 @@ router.get('/filter/pregnant', getPregnantCustomers);
  *       - Queue Filters
  *     summary: Get customers by emergency level
  *     description: Retrieve all customers with a specific emergency level
- *     parameters:
- *       - in: path
- *         name: level
- *         required: true
- *         schema:
- *           type: string
- *           enum: [low, medium, high]
- *         description: Emergency level to filter by
  *     responses:
  *       200:
  *         description: List of customers with specified emergency level
