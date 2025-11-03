@@ -21,6 +21,8 @@ const generateQueueNumber = async (branchId) => {
 exports.createCustomer = async (req, res) => {
   try {
     const { organization, branch, formDetails } = req.body;
+    console.log(formDetails);
+    
 
     
     if (!organization || !branch || !formDetails?.fullName || !formDetails?.serviceNeeded) {

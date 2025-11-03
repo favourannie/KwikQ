@@ -83,8 +83,14 @@ const {createCustomer, getAllCustomers, getCustomerById, updateCustomer, deleteC
  *                 properties:
  *                   fullName:
  *                     type: string
+ *                   email:
+ *                     type: string
+ *                   phone:
+ *                     type: string 
  *                   serviceNeeded:
  *                     type: string
+ *                   additionalInfo:
+ *                     type: String
  *                   elderlyStatus:
  *                     type: boolean
  *                   pregnantStatus:

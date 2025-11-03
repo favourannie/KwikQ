@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 const Branch = require("../models/branchModel");
 const Organization = require("../models/organizationModel");
+const { branchMail } = require("../utils/branchTemplete");
+const { sendMail } = require("../middleware/brevo");
 
 exports.createBranch = async (req, res) => {
   try {
@@ -48,6 +50,34 @@ exports.createBranch = async (req, res) => {
 
     organization.branches.push(newBranch._id);
     await organization.save();
+
+   
+    
+    const email = organization.email || organization.email ||organization.userEmail || organization.contactEmail;
+     console.log("admin:", email);
+    const branchCode = newBranch.branchCode;
+   console.log(branchCode)
+    try{ 
+    await sendMail({
+        email: email,
+        // toName: organization.businessName || "Admin",
+        subject: `New Branch Created - ${branchName}`,
+        html: branchMail(branchName,
+          branchCode,
+        managerName,
+        managerEmail,
+        managerPhone,
+        address,
+        city,
+        state,
+        
+      
+      )});
+        }catch(mailError){
+          console.log("Error sending email:", mailError.message)
+        }
+    
+
     return res.status(201).json({
       message: "Branch created successfully",
       data: newBranch,

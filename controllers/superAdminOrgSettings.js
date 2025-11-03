@@ -1,6 +1,7 @@
 const SuperAdminDashboard = require('../models/superAdmin');
 const Organization = require('../models/organizationModel');
 const Branch = require('../models/branchModel');
+const SuperAdmin = require('../models/superAdmin');
 
 exports.getOrganizationSettings = async (req, res) => {
   try {
@@ -178,3 +179,107 @@ exports.getBranchById = async (req, res) => {
   }
 };
 
+
+exports.superAdminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // You can store Super Admin credentials in a dedicated collection or .env
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@queueless.com';
+    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'superadmin123';
+
+    if (email !== superAdminEmail) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Compare password (for real use, hash & store securely)
+    const isMatch = password === superAdminPassword;
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Create token
+    const token = jwt.sign(
+      { email, role: 'super-admin' },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      message: 'Super Admin logged in successfully',
+      token,
+      role: 'super-admin',
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error during Super Admin login', error: error.message });
+  }
+};
+
+
+exports.organizationLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const organization = await Organization.findOne({ email });
+    if (!organization)
+      return res.status(404).json({ message: 'Organization not found' });
+
+    const isPasswordValid = await bcrypt.compare(password, organization.password);
+    if (!isPasswordValid)
+      return res.status(401).json({ message: 'Invalid password' });
+
+    const token = jwt.sign(
+      { id: organization._id, role: 'organization-admin' },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      message: 'Organization login successful',
+      token,
+      organizationId: organization._id,
+      role: 'organization-admin',
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error during organization login', error: error.message });
+  }
+};
+
+
+exports.branchLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const branch = await Branch.findOne({ email }).populate('organization');
+    if (!branch)
+      return res.status(404).json({ message: 'Branch not found' });
+
+    const isPasswordValid = await bcrypt.compare(password, branch.password);
+    if (!isPasswordValid)
+      return res.status(401).json({ message: 'Invalid password' });
+
+    const token = jwt.sign(
+      {
+        id: branch._id,
+        organizationId: branch.organization?._id,
+        role: 'branch-admin'
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Update last login
+    branch.lastLogin = new Date();
+    await branch.save();
+
+    res.status(200).json({
+      message: 'Branch login successful',
+      token,
+      branchId: branch._id,
+      organizationId: branch.organization?._id,
+      role: 'branch-admin',
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error during branch login', error: error.message });
+  }
+};
