@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const branchSchema = new mongoose.Schema({
   organizationId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "organizations",
-    required: false
+    ref: "organizations"
   },
   city: {
     type: String,
@@ -38,10 +37,14 @@ const branchSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  role: {
+    type: String,
+    default: "branch"
+  },
   managerPhone: {
     type: String,
     required: true
   },
 });
 
-module.exports = mongoose.model("branch", branchSchema);
+module.exports = mongoose.model("branches", branchSchema);

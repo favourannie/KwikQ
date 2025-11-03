@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 
 const analyticsSchema = new mongoose.Schema({
-  organization: {
+  individualId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'organizations',
-    required: true
   },
-  branch: {
+  branchId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'branches'
   },
@@ -14,16 +13,24 @@ const analyticsSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  totalRequests: Number,
-  satisfiedRequests: Number,
-  avgWaitTimeTrend: Number,
+  totalRequests: {
+    type: Number
+  },
+  satisfiedRequests: {
+    type: Number
+  },
+  avgWaitTimeTrend: {
+    type: Number
+  },
   serviceTypesDistribution: [{
     serviceType: String,
     count: Number
   }],
-  avgServiceTime: Number,
+  avgServiceTime:  {
+    type: Number
+  },
   peakHours: [{
-    hour: Number, // 0–23
+    hour: Number, 
     count: Number
   }],
    weeklyCustomerVolume: [{

@@ -1,21 +1,12 @@
 const CustomerInterface = require('../models/customerQueueModel');
 
 
-const generateQueueNumber = async (branchId) => {
-  
-  const lastCustomer = await CustomerInterface.findOne({ branch: branchId })
-    .sort({ createdAt: -1 })
-    .select('queueNumber');
-
-  let newNumber = '001';
-
-  if (lastCustomer && lastCustomer.queueNumber) {
-    const lastNum = parseInt(lastCustomer.queueNumber.replace(/\D/g, '')) || 0; 
-    const nextNum = lastNum + 1;
-    newNumber = String(nextNum).padStart(3, '0');
+const generateQueueNumber = async (req,res) => {
+  try {
+    
+  } catch (error) {
+    
   }
-  const prefix = 'KQ-'; 
-  return `${prefix}${newNumber}`;
 };
 
 exports.createCustomer = async (req, res) => {

@@ -401,7 +401,7 @@ exports.updateOrganizationDetails = async (req, res) => {
       emailAddress: email
     }, {
       new: true,
-    });
+    }).select("industryServiceType headOfficeAddress city state fullName phoneNumber emailAddress")
     res.status(200).json({
       message: "Organization updated successfully",
       data: org,
