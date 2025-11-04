@@ -167,6 +167,8 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *                   type: integer
  *                 totalCustomers:
  *                   type: integer
+ *                 totalAvgWaitTime:
+ *                   type: integer
  *                 branchManagement:
  *                   type: array
  *                   items:

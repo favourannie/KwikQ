@@ -47,6 +47,8 @@ exports.getBranchManagement = async (req, res) => {
     const totalInactive = totalBranches - totalActive;
     const totalQueues = branchManagement.reduce((acc, b) => acc + (b.queuesToday || 0), 0);
     const totalCustomers = branchManagement.reduce((acc, b) => acc + (b.customersServed || 0), 0);
+    const totalAvgWaitTime = totalBranches > 0 ? branchManagement.reduce((acc , b) => acc +(b.avgWaitTime || 0), 0) /totalBranches : 0;
+
 
     // Update Super Admin Dashboard
     await SuperAdminDashboard.findOneAndUpdate(
@@ -56,6 +58,7 @@ exports.getBranchManagement = async (req, res) => {
           'overview.totalBranches': totalBranches,
           'overview.totalActiveQueues': totalQueues,
           'overview.totalCustomers': totalCustomers,
+          'overview.totalAvgWaitTime': totalAvgWaitTime,
           branchManagement,
         },
       },
@@ -63,12 +66,15 @@ exports.getBranchManagement = async (req, res) => {
     );
 
     res.status(200).json({
-      success: true,
+      message: 'Branch management data retrieved successfully',
+      overview: {
       totalBranches,
       totalActive,
       totalInactive,
       totalQueues,
       totalCustomers,
+      totalAvgWaitTime
+      },
       branchManagement,
     });
   } catch (error) {
