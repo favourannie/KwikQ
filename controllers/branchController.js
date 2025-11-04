@@ -14,8 +14,8 @@ exports.createBranch = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    if (organization.role !== "admin") {
-      return res.status(403).json({ message: "Only admins can create branches" });
+    if (organization.role !== "multi") {
+      return res.status(403).json({ message: "Only multi organizations can create branches" });
     }
 
     const {
