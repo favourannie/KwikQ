@@ -43,7 +43,7 @@ exports.getAllBranchManagers = async (req, res) => {
   try {
     const branches = await Branch.find()
       .populate('organization', 'organizationName')
-      .select('branchName manager email phoneNumber organization')
+      .select('branchName managerEmail managerPhone address')
       .lean();
 
     if (!branches.length) {
@@ -186,8 +186,8 @@ exports.updateCardMethod = async (req, res) => {
 
 exports.getBillingHistory = async (req, res) => {
   try {
-    const { organizationId } = req.params;
-    const billingHistory = await Billing.find({ organization: organizationId }).sort({ createdAt: -1 });
+    const { Id } = req.user.Id;
+    const billingHistory = await Billing.find({ organization:Id }).sort({ createdAt: -1 });
 
     if (!billingHistory.length) {
       return res.status(404).json({ message: 'No billing history found' });
@@ -262,11 +262,18 @@ exports.deleteOrganization = async (req, res) => {
 exports.getBranchesByOrganization = async (req, res) => {
   try {
     const branches = await Branch.find({ organization: req.params.id })
-      .populate('organization', 'organizationName')
+      .populate("organization", "organizationName", "city",
+      "state",
+      "branchName",
+      "address",
+      "serviceType",
+      "managerName",
+      "managerEmail",
+      "managerPhone")
       .lean();
 
     if (!branches || branches.length === 0)
-      return res.status(404).json({ success: false, message: 'No branches found for this organization' });
+      return res.status(404).json({  message: 'No branches found for this organization' });
 
     res.status(200).json({
      message: 'Branches fetched successfully',
@@ -287,7 +294,14 @@ exports.getAllBranches = async (req, res) => {
     }
 
     const branches = await Branch.find(filter)
-      .populate('organization', 'organizationName')
+      .populate("organization", "organizationName", "city",
+      "state",
+      "branchName",
+      "address",
+      "serviceType",
+      "managerName",
+      "managerEmail",
+      "managerPhone")
       .lean();
 
     res.status(200).json({
