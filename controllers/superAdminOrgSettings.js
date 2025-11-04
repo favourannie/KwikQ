@@ -9,7 +9,7 @@ const Billing = require('../models/billing');
 exports.getOrganizationSettings = async (req, res) => {
   try {
     const organizations = await Organization.find()
-      .populate('branches', 'branchName city state manager')
+      .populate('branches', 'branchName city state managerEmail')
       .lean();
 
     const organizationSettings = organizations.map(org => ({
@@ -341,6 +341,63 @@ exports.getBranchById = async (req, res) => {
     });
   }
 };
+
+
+
+exports.changeSubscriptionPlan = async (req, res) => {
+  try {
+    const { Id } = req.user.Id;
+    const { newPlan, paymentMethod, amount, duration } = req.body;
+
+    const organization = await Organization.findById(Id);
+    if (!organization) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    if (organization.subscriptionDetails?.plan === newPlan) {
+      return res.status(400).json({ message: `Already on ${newPlan} plan.` });
+    }
+
+    const oldPlan = organization.subscriptionDetails?.plan || 'None';
+
+    organization.subscriptionDetails = {
+      plan: newPlan,
+      paymentMethod: paymentMethod || organization.subscriptionDetails?.paymentMethod || 'card',
+      amount: amount || organization.subscriptionDetails?.amount || 0,
+      duration: duration || organization.subscriptionDetails?.duration || 'monthly',
+      startDate: new Date(),
+      expiryDate:
+        duration === 'yearly'
+          ? new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+          : new Date(new Date().setMonth(new Date().getMonth() + 1)),
+      status: 'active',
+      lastUpdated: new Date(),
+    };
+
+    await organization.save();
+
+    await Billing.create({
+      organization: organization._id,
+      amount: organization.subscriptionDetails.amount,
+      currency: 'NGN',
+      method: paymentMethod || 'card',
+      transactionId: `TX-${Date.now()}`,
+      description: `Subscription plan changed from ${oldPlan} to ${newPlan}`,
+      status: 'success',
+    });
+
+    res.status(200).json({
+      message: `Subscription plan changed successfully from ${oldPlan} to ${newPlan}`,
+      subscriptionDetails: organization.subscriptionDetails,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error changing subscription plan',
+      error: error.message,
+    });
+  }
+};
+
 
 
 // exports.superAdminLogin = async (req, res) => {
