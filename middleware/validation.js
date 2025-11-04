@@ -8,6 +8,10 @@ exports.registerValidator = (req, res, next) => {
       'string.min': 'Business name must be at least 3 characters long',
       'string.pattern.base': 'Business name must contain only letters and spaces'
     }),
+    role: joi.string().valid("individual", "multi").required().messages({
+      'string.empty': 'Role is required',
+      'any.only': 'Role must be either "individual" or "multi"'
+    }),
     email: joi.string().email().pattern(/^[a-zA-Z0-9._%+-]+@gmail\.com$/).trim().required().messages({
       'string.empty': 'Email is required',
       'string.email': 'Please provide a valid email address',

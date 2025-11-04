@@ -40,7 +40,7 @@ exports.createOrganization = async (req, res) => {
       password: hashPassword,
       otp: otp,
       otpExpiredAt: Date.now() + 1000 * 540,
-      role
+      role: role
     });
 
     const detail = {
