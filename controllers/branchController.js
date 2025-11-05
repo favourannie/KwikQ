@@ -164,16 +164,12 @@ exports.getAllBranches = async (req, res) => {
 
 exports.getBranchById = async (req, res) => {
   try {
-     const { id } = req.params; // Branch ID from route
-
-    const branch = await Branch.findById(id)
-      .populate('organizationId', 'organizationName email') // optional
-      .lean();
+   const {id} = req.params;
+    const branch = await Branch.findById(id).populate('organizationId', 'organizationName email');
 
     if (!branch) {
       return res.status(404).json({ message: "Branch not found" });
     }
-
     return res.status(200).json({
       message: "Branch fetched successfully",
       data: branch,

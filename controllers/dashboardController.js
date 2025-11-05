@@ -1,5 +1,6 @@
 const customerModel = require("../models/customerQueueModel");
-const branchModel = require("../models/branchModel")
+const branchModel = require("../models/branchModel");
+const queueManagement = require("../models/queueManagement");
 exports.getDashboardMetrics = async (req, res) => {
     try {
 
@@ -85,3 +86,17 @@ exports.getDashboardMetrics = async (req, res) => {
         });
     }
 };
+
+exports.getQueuePoints = async(req,res)=>{
+    try {
+        const id = req.user.id
+        
+        const queuePoints = await queueManagement.find({ id: id})
+
+    } catch (error) {
+        res.status(400).json({
+            message: "Error getting queue points",
+            error: error.message
+        });
+    }
+}
