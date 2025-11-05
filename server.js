@@ -21,6 +21,8 @@ const qrCodeRoutes = require('./routes/qrCodeRoutes');
 const superAdminOrgSettings = require('./routes/superAdminOrgSettings');
 const superAdminBranchMgt = require('./routes/superAdminBranchMgt');
 const superAdminAnalytics = require('./routes/superAdminAnalytics');
+const queueConfigRouter = require("./routes/queueConfigRoutes")
+const adminQueueMgtRoute = require("./routes/adminQueueMgtRoute")
 const jwt = require("jsonwebtoken");
 
 
@@ -108,8 +110,8 @@ app.use('/api/v1/', superAdminOverviewRoutes);
 app.use('/api/v1/', superAdminOrgSettings);
 app.use('/api/v1/', superAdminBranchMgt);
 app.use('/api/v1/', superAdminAnalytics);
-
-
+app.use("/api/v1/", queueConfigRouter)
+app.use("/api/v1/", adminQueueMgtRoute)
 
 // Error handling middleware
 app.use((error, req, res, next) => {

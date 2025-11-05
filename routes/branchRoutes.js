@@ -231,7 +231,7 @@ router.get('/branches', getAllBranches);
  *       500:
  *         description: Server error
  */
-router.get('/branch/:id', getBranchById);
+router.get('/branch/:id', authenticate, getBranchById);
 
 /**
  * @swagger

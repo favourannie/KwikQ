@@ -173,7 +173,6 @@ exports.getBranchById = async (req, res) => {
     if (!branch) {
       return res.status(404).json({ message: "Branch not found" });
     }
-
     return res.status(200).json({
       message: "Branch fetched successfully",
       data: branch,
