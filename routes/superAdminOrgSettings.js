@@ -484,9 +484,7 @@ router.post('/billing/:Id/cards', authenticate, addCardMethod);
  *             properties:
  *               cardHolderName:
  *                 type: string
- *               expiryMonth:
- *                 type: string
- *               expiryYear:
+ *               expiryDate:
  *                 type: string
  *     responses:
  *       200:

@@ -4,13 +4,12 @@ const customerSchema = new mongoose.Schema({
   organization: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'organizations',
-    required: true,
+
   },
   branch: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'branches',
-    required: true,
-    unique: true,
+    
   },
   lastNumber : {
     type: Number,
@@ -30,7 +29,7 @@ const customerSchema = new mongoose.Schema({
   },
 
   // Queue tracking
-  queueNumber: { type: Number, required: true },
+  queueNumber: { type: String, required: false },
   status: {
     type: String,
     enum: ['waiting', 'in_service', 'completed', 'canceled', 'no_show'],
