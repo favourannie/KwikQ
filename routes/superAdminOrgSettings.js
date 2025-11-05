@@ -423,14 +423,14 @@ router.put('/security/:Id', authenticate, updateSecuritySettings);
  *             properties:
  *               cardNumber:
  *                 type: string
- *               expiryMonth:
- *                 type: string
- *               expiryYear:
+ *               expiryDate:
  *                 type: string
  *               cardHolderName:
  *                 type: string
  *               cardType:
  *                 type: string
+ *               cvv:
+ *                 type: number
  *     responses:
  *       201:
  *         description: Card method added successfully
