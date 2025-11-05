@@ -167,7 +167,7 @@ exports.getBranchById = async (req, res) => {
      const { id } = req.params; // Branch ID from route
 
     const branch = await Branch.findById(id)
-      .populate('organizationId', 'organizationName email') // optional
+      .populate('organizationId', 'managerName managerEmail branchCode') // optional
       .lean();
 
     if (!branch) {

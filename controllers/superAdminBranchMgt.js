@@ -170,3 +170,40 @@ exports.viewBranchReports = async (req, res) => {
     });
   }
 };
+
+
+exports.getBranchById = async (req, res) => {
+  try {
+    const { Id } = req.user.Id; 
+    const adminId = req.user.id; 
+
+    const admin = await Organization.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found or unauthorized" });
+    }
+
+  
+    const branch = await Branch.findOne({
+      _id: Id,
+      organizationId: admin._id,
+    })
+      .populate('organizationId', 'organizationName managerName managerEmail branchCode')
+      .lean();
+
+    if (!branch) {
+      return res.status(404).json({ message: "Branch not found or not part of your organization" });
+    }
+
+    return res.status(200).json({
+      message: "Branch fetched successfully",
+      data: branch,
+    });
+
+  } catch (error) {
+    console.error("Error fetching branch:", error);
+    return res.status(500).json({
+      message: "Error fetching branch",
+      error: error.message,
+    });
+  }
+};

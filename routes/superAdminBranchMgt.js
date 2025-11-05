@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {getBranchManagement, createBranch, updateBranch, deleteBranch, viewBranchReports}  = require('../controllers/superAdminBranchMgt');
+const {getBranchManagement, getBranchById, viewBranchReports}  = require('../controllers/superAdminBranchMgt');
 
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 
@@ -233,5 +233,108 @@ router.get('/management', authenticate, getBranchManagement);
  *         description: Server error
  */
 router.get('/:branchId/:id/report', authenticate, viewBranchReports);
+
+/**
+ * paths:
+ * /api/branches/{id}:
+ *  get:
+ *    summary: Get a specific branch by ID
+ *    description: >
+ *      Retrieves details of a single branch by its ID.  
+ *      Accessible only to authenticated admin users of an organization.
+ *    tags:
+ *      - Branch Management
+ *    security:
+ *      - bearerAuth: []
+ *    parameters:
+ *      - name: id
+ *        in: path
+ *        required: true
+ *        description: The unique ID of the branch
+ *        schema:
+ *          type: string
+ *          example: "672fbe908e56a21b845fbc12"
+ *    responses:
+ *      '200':
+ *        description: Branch fetched successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                  example: Branch fetched successfully
+ *                data:
+ *                  type: object
+ *                  properties:
+ *                    _id:
+ *                      type: string
+ *                      example: "672fbe908e56a21b845fbc12"
+ *                    branchName:
+ *                      type: string
+ *                      example: "Ikeja Branch"
+ *                    city:
+ *                      type: string
+ *                      example: "Lagos"
+ *                    state:
+ *                      type: string
+ *                      example: "Lagos State"
+ *                    manager:
+ *                      type: string
+ *                      example: "John Doe"
+ *                    branchCode:
+ *                      type: string
+ *                      example: "BRCH-001"
+ *                    organizationId:
+ *                      type: object
+ *                      properties:
+ *                        _id:
+ *                          type: string
+ *                          example: "672fbd558e56a21b845fbc09"
+ *                        organizationName:
+ *                          type: string
+ *                          example: "Techwave Global Ltd."
+ *                        managerName:
+ *                          type: string
+ *                          example: "Jane Smith"
+ *                        managerEmail:
+ *                          type: string
+ *                          example: "jane@techwave.com"
+ *      '401':
+ *        description: Unauthorized - Missing or invalid token
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                  example: "Access denied. No token provided or invalid token."
+ *      '404':
+ *        description: Branch not found or not part of organization
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                  example: "Branch not found or not part of your organization"
+ *      '500':
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                   example: "Error fetching branch"
+ *                error:
+ *                  type: string
+ *                  example: "Database connection failed"
+ */
+router.get("/branches/:id", authenticate, getBranchById);
 
 module.exports = router;
