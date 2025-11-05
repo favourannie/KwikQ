@@ -120,13 +120,24 @@ exports.getSecuritySettings = async (req, res) => {
 };
 
 
-// 💳 Add New Card
 exports.addCardMethod = async (req, res) => {
   try {
-    const { Id } = req.user.Id;
-    const { cardNumber, expiryMonth, expiryYear, cardHolderName, cardType } = req.body;
+    const organizationId = req.user.Id; 
+    const { cardNumber, expiryDate, cardHolderName, cardType, cvv } = req.body;
 
-    const organization = await Organization.findById(Id);
+
+    if (!cardNumber || !expiryDate || !cardHolderName || !cardType) {
+      return res.status(400).json({ message: 'Missing required card details' });
+    }
+
+    const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
+    if (!dateRegex.test(expiryDate)) {
+      return res.status(400).json({
+        message: 'Invalid expiry date format. Use MM/DD/YYYY (e.g. 10/31/2027)',
+      });
+    }
+
+    const organization = await Organization.findById(organizationId);
     if (!organization) {
       return res.status(404).json({ message: 'Organization not found' });
     }
@@ -135,11 +146,12 @@ exports.addCardMethod = async (req, res) => {
       cardHolderName,
       cardType,
       last4: cardNumber.slice(-4),
-      expiryMonth,
-      expiryYear,
+      expiryDate,
+      cvv,
       addedAt: new Date(),
     };
 
+    // Initialize billing info if missing
     organization.billingInfo = organization.billingInfo || {};
     organization.billingInfo.cards = organization.billingInfo.cards || [];
     organization.billingInfo.cards.push(newCard);
@@ -151,9 +163,14 @@ exports.addCardMethod = async (req, res) => {
       cards: organization.billingInfo.cards,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error adding card method', error: error.message });
+    console.error('Error in addCardMethod:', error);
+    res.status(500).json({
+      message: 'Error adding card method',
+      error: error.message,
+    });
   }
 };
+
 
 
 exports.updateCardMethod = async (req, res) => {
@@ -202,7 +219,6 @@ exports.getBillingHistory = async (req, res) => {
     res.status(500).json({ message: 'Error fetching billing history', error: error.message });
   }
 };
-
 
 
 exports.updateOrganization = async (req, res) => {
@@ -341,7 +357,6 @@ exports.getBranchById = async (req, res) => {
     });
   }
 };
-
 
 
 exports.changeSubscriptionPlan = async (req, res) => {
