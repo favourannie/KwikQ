@@ -1,4 +1,6 @@
+const { string } = require('joi');
 const mongoose = require('mongoose');
+const { INTEGER } = require('sequelize');
 
 const billingSchema = new mongoose.Schema({
   individualId: { 
@@ -31,8 +33,30 @@ branchId: {
     enum: ['success', 'failed', 'pending'], 
     default: 'success' 
 },
-  description: String,
-  createdAt: { type: Date, default: Date.now },
+  description: {
+    type: String,
+  },
+    // ✅ Card Information (non-sensitive)
+
+cardHolderName: { 
+  type: String 
+},
+cardType: { 
+  type: String 
+},
+last4: { 
+  type: String 
+},
+expiryDate: { 
+  type: String, match: /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/ }, // MM/DD/YYYY
+cvv: {
+  type: Number
+},
+createdAt: { 
+    type: Date, 
+    default: Date.now 
+  },
 });
+
 
 module.exports = mongoose.model('Billing', billingSchema);
