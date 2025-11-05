@@ -1,6 +1,6 @@
 const { string } = require('joi');
 const mongoose = require('mongoose');
-const { INTEGER } = require('sequelize');
+
 
 const billingSchema = new mongoose.Schema({
   individualId: { 
