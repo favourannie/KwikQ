@@ -1,9 +1,13 @@
 const mongoose = require('mongoose');
 
 const billingSchema = new mongoose.Schema({
-  organization: { 
+  individualId: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'organizations', required: true 
+    ref: 'organizations',
+},
+branchId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'branches'
 },
   amount: { 
     type: Number, 
