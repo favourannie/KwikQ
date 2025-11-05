@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const {createCustomer, getAllCustomers, getCustomerById, updateCustomer, deleteCustomer, 
-    getElderlyCustomers, getPregnantCustomers, getByEmergencyLevel} = require('../controllers/customerQueue');
+    getElderlyCustomers, getPregnantCustomers, getByEmergencyLevel,
+    createCustomerQueue,
+    getQueuePoints} = require('../controllers/customerQueue');
 
 /**
  * @swagger
@@ -149,6 +151,211 @@ router.post('/customer', createCustomer);
  */
 router.get('/get-all-customers', getAllCustomers);
 
+/**
+ * @swagger
+ * /api/v1/queue-points/{id}:
+ *   get:
+ *     summary: Get all queue points for a business (organization or branch)
+ *     description: Retrieves all queue points associated with a given business ID (organization or branch). Also returns the total number of customers waiting across all queue points and the individual counts for each queue point.
+ *     tags:
+ *       - Queue Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the organization or branch whose queue points are being retrieved.
+ *     responses:
+ *       200:
+ *         description: Successfully fetched all queue points.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Queue points fetched successfully
+ *                 totalWaiting:
+ *                   type: integer
+ *                   example: 25
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: 671a3bf9f3b87e123456789a
+ *                       name:
+ *                         type: string
+ *                         example: Queue 1
+ *                       totalCustomers:
+ *                         type: integer
+ *                         example: 12
+ *                       waitingCount:
+ *                         type: integer
+ *                         example: 5
+ *       400:
+ *         description: Invalid business role or request.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid business role
+ *       404:
+ *         description: Business not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Business not found
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error fetching queue points
+ *                 error:
+ *                   type: string
+ *                   example: Cannot read properties of null (reading 'customers')
+ */
+router.get("/queue-points/:id", getQueuePoints)
+
+/**
+ * @swagger
+ * /api/v1/create-queue/{id}:
+ *   post:
+ *     summary: Add a customer to a queue
+ *     description: >
+ *       This endpoint adds a new customer to a business queue (organization or branch) and automatically assigns them
+ *       to one of three queue points (`Queue 1`, `Queue 2`, `Queue 3`) in a round-robin manner.  
+ *       If fewer than three queue points exist, the system automatically creates them.  
+ *       Each customer also receives a unique randomized queue number.
+ *     tags:
+ *       - Queue Management
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the business (organization or branch).
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               formDetails:
+ *                 type: object
+ *                 required:
+ *                   - fullName
+ *                   - phone
+ *                   - serviceNeeded
+ *                 properties:
+ *                   fullName:
+ *                     type: string
+ *                     example: John Doe
+ *                   email:
+ *                     type: string
+ *                     format: email
+ *                     example: johndoe@example.com
+ *                   phone:
+ *                     type: string
+ *                     example: "+2348123456789"
+ *                   serviceNeeded:
+ *                     type: string
+ *                     description: >
+ *                       Service required by the customer.  
+ *                       If it doesn't match any predefined service, it defaults to "other".
+ *                     enum:
+ *                       - accountOpening
+ *                       - loanCollection
+ *                       - cardCollection
+ *                       - fundTransfer
+ *                       - accountUpdate
+ *                       - generalInquiry
+ *                       - complaintResolution
+ *                       - other
+ *                     example: fundTransfer
+ *                   additionalInfo:
+ *                     type: string
+ *                     example: "Requesting quick assistance for large transaction"
+ *                   priorityStatus:
+ *                     type: boolean
+ *                     example: false
+ *     responses:
+ *       201:
+ *         description: Customer successfully added to a queue
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Customer added to Queue 2
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     queueNumber:
+ *                       type: string
+ *                       example: Q-842XYZ1
+ *                     queuePoint:
+ *                       type: string
+ *                       example: Queue 2
+ *                     serviceNeeded:
+ *                       type: string
+ *                       example: fundTransfer
+ *       400:
+ *         description: Invalid business role or missing data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid business role. Must be 'multi' or 'individual'.
+ *       404:
+ *         description: Business not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Business not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error assigning customer to queue
+ *                 error:
+ *                   type: string
+ *                   example: Cannot read properties of undefined (reading 'id')
+ */
+
+router.post("/create-queue/:id", createCustomerQueue )
 /**
  * @swagger
  * /api/v1/get-customer/{id}:
