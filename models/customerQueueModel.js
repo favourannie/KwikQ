@@ -4,7 +4,6 @@ const customerSchema = new mongoose.Schema({
   individualId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'organizations',
-
   },
   branchId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -21,7 +20,9 @@ const customerSchema = new mongoose.Schema({
     fullName: { type: String, required: true },
     email: { type: String, required: true, lowercase: true },
     phone: { type: String, required: false },
-    serviceNeeded: { type: String, required: true },
+    serviceNeeded: { type: String, required: true,
+       enum: ["accountOpening", "loanCollection","cardCollection", "fundTransfer", "accountUpdate", "generalInquiry", "complaintResolution", "other" ] 
+      },
     additionalInfo: { type: String, required: false },
     priorityStatus: { type: String, 
       enum: ["regularStandard", "elderlyOrDisabled", "pregnantWoman", "emergencyOrUrgent"]

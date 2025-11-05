@@ -1,9 +1,17 @@
 const mongoose = require("mongoose")
 
 const queueSchema = new mongoose.Schema({
-    branch: {
+    branchId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "branches"
+    },
+    individualId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "organizations"
+    },
+    name: {
+        type: String,
+        default: "Queue-Point"
     },
     queuePoint : {
         type: Number
@@ -12,6 +20,12 @@ const queueSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    customers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customers",
+    },
+  ],
     servedToday: {
         type: Number,
         default: 0
