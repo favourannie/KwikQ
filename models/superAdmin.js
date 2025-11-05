@@ -1,4 +1,3 @@
-// models/superAdminDashboard.model.js
 const mongoose = require('mongoose');
 
 const superAdminDashboardSchema = new mongoose.Schema({
@@ -9,7 +8,11 @@ const superAdminDashboardSchema = new mongoose.Schema({
     totalActiveQueues: { type: Number, default: 0 },
     totalCustomersServedToday: { type: Number, default: 0 },
     avgWaitTime: { type: Number, default: 0 },
-    lastUpdated: { type: Date, default: Date.now }
+    lastUpdated: { type: Date, default: Date.now },
+     branchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'branches'
+    },
   },
 
   // Analytics Section
@@ -77,6 +80,10 @@ const superAdminDashboardSchema = new mongoose.Schema({
         canViewReports: { type: Boolean, default: true }
       }
     }],
+     branchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'branches'
+    },
     securitySettings: {
         twoFactorAuth: { type: Boolean, default: false },
         passwordPolicy: { type: String, default: 'standard' }
