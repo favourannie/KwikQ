@@ -7,35 +7,23 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * /api/v1/branch-management:
+ * /api/v1/branch-management/{dashboardId}:
  *   get:
- *     summary: Retrieve branch management analytics for all branches under an organization
+ *     summary: Get Super Admin Dashboard Data by Dashboard ID
  *     description: >
- *       This endpoint fetches branch-level and overall analytics for the Super Admin dashboard.
- *       It calculates metrics such as active queues, served customers, and average wait times.
- *       Data can be filtered by organization and branch status.
- *
+ *       Returns the latest metrics overview for the Super Admin dashboard, including totals for organizations, branches, queues, customers served today, and average wait time.
  *     tags:
- *       - Branch Management
- *
+ *       - Branch-Management
  *     parameters:
- *       - in: query
- *         name: organizationId
+ *       - in: path
+ *         name: dashboardId
+ *         required: true
  *         schema:
  *           type: string
- *         required: false
- *         description: Optional organization ID to filter branches by organization.
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [active, inactive]
- *         required: false
- *         description: Optional filter to return branches by their current status.
- *
+ *         description: The unique ID of the Super Admin dashboard record.
  *     responses:
  *       200:
- *         description: Successfully retrieved branch management data and overview analytics.
+ *         description: Dashboard data fetched successfully
  *         content:
  *           application/json:
  *             schema:
@@ -43,104 +31,45 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Branch management data retrieved successfully
- *                 overview:
+ *                   example: Super admin dashboard data fetched successfully
+ *                 dashboardId:
+ *                   type: string
+ *                   example: 6737f83313e1a57a0f7d41cc
+ *                 data:
  *                   type: object
  *                   properties:
+ *                     totalOrganizations:
+ *                       type: integer
+ *                       example: 10
  *                     totalBranches:
  *                       type: integer
- *                       example: 5
- *                     totalActive:
+ *                       example: 45
+ *                     totalActiveQueues:
  *                       type: integer
- *                       example: 3
- *                     totalInactive:
+ *                       example: 12
+ *                     totalCustomersServedToday:
  *                       type: integer
- *                       example: 2
- *                     totalQueues:
- *                       type: integer
- *                       example: 56
- *                     totalServed:
- *                       type: integer
- *                       example: 42
- *                     totalAvgWaitTime:
+ *                       example: 220
+ *                     avgWaitTime:
  *                       type: number
  *                       format: float
- *                       example: 8.5
- *                 branchManagement:
- *                   type: array
- *                   description: List of branch analytics and status details.
- *                   items:
- *                     type: object
- *                     properties:
- *                       branchId:
- *                         type: string
- *                         example: 67377e8c5a8e2b1d4f3a1234
- *                       branchName:
- *                         type: string
- *                         example: Main Office
- *                       branchCode:
- *                         type: string
- *                         example: Q001
- *                       address:
- *                         type: string
- *                         example: 123 Broad Street
- *                       city:
- *                         type: string
- *                         example: Lagos
- *                       state:
- *                         type: string
- *                         example: Lagos State
- *                       organizationId:
- *                         type: string
- *                         example: 67377e8c5a8e2b1d4f3a5678
- *                       organizationName:
- *                         type: string
- *                         example: Queueless Global
- *                       managerName:
- *                         type: string
- *                         example: John Doe
- *                       managerEmail:
- *                         type: string
- *                         example: john.doe@queueless.com
- *                       phoneNumber:
- *                         type: string
- *                         example: "+2348012345678"
- *                       lastLogin:
- *                         type: string
- *                         format: date-time
- *                         example: "2025-11-06T08:25:14.000Z"
- *                       status:
- *                         type: string
- *                         enum: [active, inactive]
- *                         example: active
- *                       notification:
- *                         type: boolean
- *                         example: false
- *                       queuesToday:
- *                         type: integer
- *                         example: 15
- *                       servedToday:
- *                         type: integer
- *                         example: 12
- *                       avgWaitTime:
- *                         type: number
- *                         format: float
- *                         example: 6.75
- *                       percentageChange:
- *                         type: object
- *                         properties:
- *                           activeQueue:
- *                             type: number
- *                             example: 25
- *                           served:
- *                             type: number
- *                             example: 10
- *                           waitTime:
- *                             type: number
- *                             example: -5
- *
+ *                       example: 4.8
+ *                     lastUpdated:
+ *                       type: string
+ *                       format: date-time
+ *                       example: 2025-11-06T21:25:00.000Z
+ *       400:
+ *         description: Missing or invalid Dashboard ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Dashboard ID is required
  *       404:
- *         description: No branches found for the given filter criteria.
+ *         description: Dashboard not found
  *         content:
  *           application/json:
  *             schema:
@@ -148,10 +77,9 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: No branches found for this filter
- *
+ *                   example: Dashboard not found
  *       500:
- *         description: Internal server error while retrieving branch management data.
+ *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
@@ -159,11 +87,12 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error in getBranchManagement
+ *                   example: Error fetching super admin dashboard data
  *                 error:
  *                   type: string
- *                   example: "TypeError: Cannot read property 'organizationName' of undefined"
+ *                   example: Internal server error
  */
+
 router.get('/branch-management', authenticate, getBranchManagement);
 
 /**
