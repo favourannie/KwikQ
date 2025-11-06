@@ -7,48 +7,117 @@ exports.getBranchManagement = async (req, res) => {
   try {
     const { organizationId, status } = req.query;
 
-    // Build dynamic filter
     const filter = {};
     if (organizationId) filter.organization = organizationId;
     if (status) filter.status = status;
 
-    // Fetch branches and populate organization info
+    // Fetch branches with organization details
     const branches = await Branch.find(filter)
       .populate('organization', 'organizationName managerName managerEmail branchCode')
       .lean();
 
-    // Map and format data
-    const branchManagement = branches.map(branch => ({
-      branchId: branch._id,
-      branchName: branch.branchName,
-      branchCode: branch.branchCode,
-      address: branch.address,
-      city: branch.city,
-      state: branch.state,
-      organizationId: branch.organization?._id,
-      organizationName: branch.organization?.organizationName,
-      managerName: branch.managerName || branch.organization?.managerName,
-      phoneNumber: branch.phoneNumber,
-      lastLogin: branch.lastLogin,
-      status: branch.status,
-      notification: branch.notification || false,
-      queuesToday: branch.queuesToday || 0,
-      customersServed: branch.customersServed || 0,
-      avgWaitTime: branch.avgWaitTime || 0,
-    }));
+    if (!branches.length) {
+      return res.status(404).json({ message: 'No branches found for this filter' });
+    }
 
-    // Aggregate analytics
+    // Date range setup
+    const today = new Date();
+    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+    const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+    const yesterday = new Date(startOfToday);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const branchManagement = [];
+
+    // Loop through branches to get per-branch metrics
+    for (const branch of branches) {
+      const branchId = branch._id;
+
+      const [
+        activeInQueue,
+        activeYesterday,
+        servedToday,
+        servedYesterday,
+      ] = await Promise.all([
+        customerModel.countDocuments({
+          branch: branchId,
+          status: { $in: ['waiting', 'serving'] },
+        }),
+        customerModel.countDocuments({
+          branch: branchId,
+          createdAt: { $gte: yesterday, $lt: startOfToday },
+          status: { $in: ['waiting', 'serving'] },
+        }),
+        customerModel.find({
+          branch: branchId,
+          status: 'served',
+          servedAt: { $gte: startOfToday, $lte: endOfToday },
+        }),
+        customerModel.find({
+          branch: branchId,
+          status: 'served',
+          servedAt: { $gte: yesterday, $lt: startOfToday },
+        }),
+      ]);
+
+      // Calculate averages
+      const avgWaitTime =
+        servedToday.length > 0
+          ? servedToday.reduce((acc, c) => acc + c.waitTime, 0) / servedToday.length
+          : 0;
+      const avgWaitTimeYesterday =
+        servedYesterday.length > 0
+          ? servedYesterday.reduce((acc, c) => acc + c.waitTime, 0) / servedYesterday.length
+          : 0;
+
+      // Calculate percentage changes
+      const activeChange = activeYesterday
+        ? ((activeInQueue - activeYesterday) / activeYesterday) * 100
+        : 0;
+      const waitTimeChange = avgWaitTimeYesterday
+        ? ((avgWaitTime - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
+        : 0;
+      const servedChange = servedYesterday.length
+        ? ((servedToday.length - servedYesterday.length) / servedYesterday.length) * 100
+        : 0;
+
+      branchManagement.push({
+        branchId,
+        branchName: branch.branchName,
+        branchCode: branch.branchCode,
+        address: branch.address,
+        city: branch.city,
+        state: branch.state,
+        organizationId: branch.organization?._id,
+        organizationName: branch.organization?.organizationName,
+        managerName: branch.managerName || branch.organization?.managerName,
+        managerEmail: branch.organization?.managerEmail,
+        phoneNumber: branch.phoneNumber,
+        lastLogin: branch.lastLogin,
+        status: branch.status,
+        notification: branch.notification || false,
+        queuesToday: activeInQueue,
+        servedToday: servedToday.length,
+        avgWaitTime: Number(avgWaitTime.toFixed(2)),
+        percentageChange: {
+          activeQueue: Math.round(activeChange),
+          served: Math.round(servedChange),
+          waitTime: Math.round(waitTimeChange),
+        },
+      });
+    }
+
     const totalBranches = branchManagement.length;
     const totalActive = branchManagement.filter(b => b.status === 'active').length;
     const totalInactive = totalBranches - totalActive;
-    const totalQueues = branchManagement.reduce((sum, b) => sum + (b.queuesToday || 0), 0);
-    const totalCustomers = branchManagement.reduce((sum, b) => sum + (b.customersServed || 0), 0);
+    const totalQueues = branchManagement.reduce((sum, b) => sum + b.queuesToday, 0);
+    const totalServed = branchManagement.reduce((sum, b) => sum + b.servedToday, 0);
     const totalAvgWaitTime =
       totalBranches > 0
-        ? branchManagement.reduce((sum, b) => sum + (b.avgWaitTime || 0), 0) / totalBranches
+        ? branchManagement.reduce((sum, b) => sum + b.avgWaitTime, 0) / totalBranches
         : 0;
 
-    // Update Super Admin Dashboard
+    // Update SuperAdminDashboard overview (optional persistent update)
     await SuperAdminDashboard.findOneAndUpdate(
       {},
       {
@@ -57,7 +126,7 @@ exports.getBranchManagement = async (req, res) => {
           'overview.totalActive': totalActive,
           'overview.totalInactive': totalInactive,
           'overview.totalActiveQueues': totalQueues,
-          'overview.totalCustomers': totalCustomers,
+          'overview.totalServed': totalServed,
           'overview.totalAvgWaitTime': totalAvgWaitTime,
           branchManagement,
         },
@@ -65,6 +134,7 @@ exports.getBranchManagement = async (req, res) => {
       { upsert: true, new: true }
     );
 
+    // Send final response
     res.status(200).json({
       message: 'Branch management data retrieved successfully',
       overview: {
@@ -72,7 +142,7 @@ exports.getBranchManagement = async (req, res) => {
         totalActive,
         totalInactive,
         totalQueues,
-        totalCustomers,
+        totalServed,
         totalAvgWaitTime: Number(totalAvgWaitTime.toFixed(2)),
       },
       branchManagement,
@@ -85,7 +155,6 @@ exports.getBranchManagement = async (req, res) => {
     });
   }
 };
-
 
 exports.viewBranchReports = async (req, res) => {
   try {

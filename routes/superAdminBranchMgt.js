@@ -7,178 +7,164 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
- *   schemas:
- *     BranchManagement:
- *       type: object
- *       required:
- *         - branchId
- *         - branchName
- *         - organization
- *       properties:
- *         branchId:
- *           type: string
- *           description: MongoDB ObjectId of the branch
- *           example: "507f1f77bcf86cd799439011"
- *         branchName:
- *           type: string
- *           description: Display name of the branch
- *           example: "Downtown Branch"
- *         branchCode:
- *           type: string
- *           description: Short human-readable branch code
- *           example: "DT-001"
- *         address:
- *           type: string
- *           example: "123 Main Street"
- *         city:
- *           type: string
- *           example: "Lagos"
- *         state:
- *           type: string
- *           example: "Lagos State"
- *         organization:
- *           type: string
- *           description: Organization ObjectId this branch belongs to
- *           example: "507f1f77bcf86cd799439012"
- *         organizationName:
- *           type: string
- *           example: "Global Bank Ltd"
- *         managerName:
- *           type: string
- *           example: "Jane Doe"
- *         email:
- *           type: string
- *           format: email
- *           example: "branch@example.com"
- *         phoneNumber:
- *           type: string
- *           example: "+2348001234567"
- *         lastLogin:
- *           type: string
- *           format: date-time
- *         status:
- *           type: string
- *           enum: [active, inactive]
- *           example: active
- *         operation:
- *           type: object
- *           description: Operational metadata for the branch
- *         permission:
- *           type: object
- *           description: Permission configuration
- *         notification:
- *           type: object
- *           description: Notification settings for the branch
- *         queuesToday:
- *           type: integer
- *           minimum: 0
- *           example: 4
- *         customersServed:
- *           type: integer
- *           minimum: 0
- *           example: 120
- *         avgWaitTime:
- *           type: number
- *           minimum: 0
- *           example: 8.5
- *     BranchReport:
- *       type: object
- *       required:
- *         - branchName
- *         - organizationName
- *       properties:
- *         branchName:
- *           type: string
- *         organizationName:
- *           type: string
- *         totalCustomers:
- *           type: integer
- *           minimum: 0
- *         servedCustomers:
- *           type: integer
- *           minimum: 0
- *         pendingCustomers:
- *           type: integer
- *           minimum: 0
- *         avgWaitTime:
- *           type: number
- *         queuesToday:
- *           type: integer
- *         lastLogin:
- *           type: string
- *           format: date-time
- */
-
-/**
- * @swagger
- * /api/v1/management:
+ * /api/v1/branch-management:
  *   get:
+ *     summary: Retrieve branch management analytics for all branches under an organization
+ *     description: >
+ *       This endpoint fetches branch-level and overall analytics for the Super Admin dashboard.
+ *       It calculates metrics such as active queues, served customers, and average wait times.
+ *       Data can be filtered by organization and branch status.
+ *
  *     tags:
- *       - Branch Management
- *     summary: Get branch management overview
- *     description: |
- *       Retrieves all branches with optional filtering by organization and status. Returns summary analytics
- *       and per-branch details. The endpoint will update SuperAdminDashboard overview as a side-effect.
- *     security:
- *       - bearerAuth: []
+ *       - Super Admin Dashboard
+ *
  *     parameters:
  *       - in: query
  *         name: organizationId
  *         schema:
  *           type: string
- *         description: Optional organization ObjectId to filter branches
+ *         required: false
+ *         description: Optional organization ID to filter branches by organization.
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
  *           enum: [active, inactive]
- *         description: Optional branch status filter
+ *         required: false
+ *         description: Optional filter to return branches by their current status.
+ *
  *     responses:
  *       200:
- *         description: Branch management data retrieved successfully
+ *         description: Successfully retrieved branch management data and overview analytics.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               required:
- *                 - success
- *                 - totalBranches
- *                 - branchManagement
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 totalBranches:
- *                   type: integer
- *                   example: 10
- *                 totalActive:
- *                   type: integer
- *                   example: 8
- *                 totalInactive:
- *                   type: integer
- *                   example: 2
- *                 totalQueues:
- *                   type: integer
- *                 totalCustomers:
- *                   type: integer
- *                 totalAvgWaitTime:
- *                   type: integer
+ *                 message:
+ *                   type: string
+ *                   example: Branch management data retrieved successfully
+ *                 overview:
+ *                   type: object
+ *                   properties:
+ *                     totalBranches:
+ *                       type: integer
+ *                       example: 5
+ *                     totalActive:
+ *                       type: integer
+ *                       example: 3
+ *                     totalInactive:
+ *                       type: integer
+ *                       example: 2
+ *                     totalQueues:
+ *                       type: integer
+ *                       example: 56
+ *                     totalServed:
+ *                       type: integer
+ *                       example: 42
+ *                     totalAvgWaitTime:
+ *                       type: number
+ *                       format: float
+ *                       example: 8.5
  *                 branchManagement:
  *                   type: array
+ *                   description: List of branch analytics and status details.
  *                   items:
- *                     $ref: '#/components/schemas/BranchManagement'
- *       401:
- *         description: Authentication required
+ *                     type: object
+ *                     properties:
+ *                       branchId:
+ *                         type: string
+ *                         example: 67377e8c5a8e2b1d4f3a1234
+ *                       branchName:
+ *                         type: string
+ *                         example: Main Office
+ *                       branchCode:
+ *                         type: string
+ *                         example: Q001
+ *                       address:
+ *                         type: string
+ *                         example: 123 Broad Street
+ *                       city:
+ *                         type: string
+ *                         example: Lagos
+ *                       state:
+ *                         type: string
+ *                         example: Lagos State
+ *                       organizationId:
+ *                         type: string
+ *                         example: 67377e8c5a8e2b1d4f3a5678
+ *                       organizationName:
+ *                         type: string
+ *                         example: Queueless Global
+ *                       managerName:
+ *                         type: string
+ *                         example: John Doe
+ *                       managerEmail:
+ *                         type: string
+ *                         example: john.doe@queueless.com
+ *                       phoneNumber:
+ *                         type: string
+ *                         example: "+2348012345678"
+ *                       lastLogin:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-11-06T08:25:14.000Z"
+ *                       status:
+ *                         type: string
+ *                         enum: [active, inactive]
+ *                         example: active
+ *                       notification:
+ *                         type: boolean
+ *                         example: false
+ *                       queuesToday:
+ *                         type: integer
+ *                         example: 15
+ *                       servedToday:
+ *                         type: integer
+ *                         example: 12
+ *                       avgWaitTime:
+ *                         type: number
+ *                         format: float
+ *                         example: 6.75
+ *                       percentageChange:
+ *                         type: object
+ *                         properties:
+ *                           activeQueue:
+ *                             type: number
+ *                             example: 25
+ *                           served:
+ *                             type: number
+ *                             example: 10
+ *                           waitTime:
+ *                             type: number
+ *                             example: -5
+ *
+ *       404:
+ *         description: No branches found for the given filter criteria.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: No branches found for this filter
+ *
  *       500:
- *         description: Server error
+ *         description: Internal server error while retrieving branch management data.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error in getBranchManagement
+ *                 error:
+ *                   type: string
+ *                   example: "TypeError: Cannot read property 'organizationName' of undefined"
  */
-router.get('/management', authenticate, getBranchManagement);
+router.get('/branch-management', authenticate, getBranchManagement);
 
 /**
  * @swagger

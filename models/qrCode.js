@@ -4,12 +4,12 @@ const qrCodeSchema = new mongoose.Schema({
   individualId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'organizations',
-    required: true,
+    default: null,
   },
   branchId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'branches',
-    required: true,
+    default: null,
   },
 
   qrCode: {
