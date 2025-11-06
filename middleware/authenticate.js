@@ -1,5 +1,6 @@
 const organizationModel = require("../models/organizationModel")
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const Branch = require('../models/branchModel');
 
 
 exports.authenticate = async (req,res, next) =>{
