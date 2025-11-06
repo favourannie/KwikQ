@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {getBranchManagement, getBranchById, viewBranchReports}  = require('../controllers/superAdminBranchMgt');
+const {getBranchManagement, getBranchById, viewBranchReports, getAllBranchesWithStats}  = require('../controllers/superAdminBranchMgt');
 
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 
@@ -13,7 +13,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *     description: >
  *       Returns the latest metrics overview for the Super Admin dashboard, including totals for organizations, branches, queues, customers served today, and average wait time.
  *     tags:
- *       - Branch-Management
+ *       - Super Admin Branch-Management
  *     parameters:
  *       - in: path
  *         name: dashboardId
@@ -100,7 +100,7 @@ router.get('/branch-management', authenticate, getBranchManagement);
  * /api/v1/{branchId}/{id}/report:
  *   get:
  *     tags:
- *       - Branch Management
+ *       - Super Admin Branch Management
  *     summary: Get branch report
  *     description: |
  *       Retrieves a report for a specific branch including customer analytics. Note: the route currently accepts
@@ -158,7 +158,7 @@ router.get('/:branchId/:id/report', authenticate, viewBranchReports);
  *      Retrieves details of a single branch by its ID.  
  *      Accessible only to authenticated admin users of an organization.
  *    tags:
- *      - Branch Management
+ *      - Super Admin Branch Management
  *    security:
  *      - bearerAuth: []
  *    parameters:
@@ -251,5 +251,92 @@ router.get('/:branchId/:id/report', authenticate, viewBranchReports);
  *                  example: "Database connection failed"
  */
 router.get("/branches/:id", authenticate, getBranchById);
+
+/**
+ * @swagger
+ * /api/v1/branches:
+ *   get:
+ *     summary: Get all branches with analytics
+ *     description: >
+ *       Fetch all branches along with total active queues, average wait time, and customers served today.
+ *     tags:
+ *       - Super Admin Branch Management
+ *     parameters:
+ *       - in: query
+ *         name: organizationId
+ *         schema:
+ *           type: string
+ *         description: Filter branches by organization ID
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           example: active
+ *         description: Filter branches by status (e.g., active, inactive)
+ *     responses:
+ *       200:
+ *         description: Branch analytics data fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Branches with analytics fetched successfully
+ *                 totalBranches:
+ *                   type: integer
+ *                   example: 4
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: 6737fa91313e1a57a0f7d41cc
+ *                       branchName:
+ *                         type: string
+ *                         example: Victoria Island Branch
+ *                       city:
+ *                         type: string
+ *                         example: Lagos
+ *                       state:
+ *                         type: string
+ *                         example: Lagos
+ *                       status:
+ *                         type: string
+ *                         example: active
+ *                       organizationId:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                             example: 6728fe9d2af68f3f7e5a1a22
+ *                           organizationName:
+ *                             type: string
+ *                             example: FinTech Global Ltd
+ *                           contactEmail:
+ *                             type: string
+ *                             example: info@fintechglobal.com
+ *                       stats:
+ *                         type: object
+ *                         properties:
+ *                           totalActiveQueues:
+ *                             type: integer
+ *                             example: 3
+ *                           avgWaitTime:
+ *                             type: number
+ *                             format: float
+ *                             example: 5.4
+ *                           totalCustomersServedToday:
+ *                             type: integer
+ *                             example: 25
+ *       404:
+ *         description: No branches found
+ *       500:
+ *         description: Server error fetching branches
+ */
+router.get('/branches', getAllBranchesWithStats);
 
 module.exports = router;
