@@ -5,152 +5,62 @@ const CustomerInterface = require('../models/customerQueueModel');
 
 exports.getBranchManagement = async (req, res) => {
   try {
-    const { organizationId, status } = req.query;
+    const { dashboardId } = req.params;
 
-    const filter = {};
-    if (organizationId) filter.organization = organizationId;
-    if (status) filter.status = status;
-
-    // Fetch branches with organization details
-    const branches = await Branch.find(filter)
-      .populate('organization', 'organizationName managerName managerEmail branchCode')
-      .lean();
-
-    if (!branches.length) {
-      return res.status(404).json({ message: 'No branches found for this filter' });
+    // Validate dashboardId
+    if (!dashboardId) {
+      return res.status(400).json({ message: 'Dashboard ID is required' });
     }
 
-    // Date range setup
-    const today = new Date();
-    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-    const endOfToday = new Date(today.setHours(23, 59, 59, 999));
-    const yesterday = new Date(startOfToday);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const branchManagement = [];
-
-    // Loop through branches to get per-branch metrics
-    for (const branch of branches) {
-      const branchId = branch._id;
-
-      const [
-        activeInQueue,
-        activeYesterday,
-        servedToday,
-        servedYesterday,
-      ] = await Promise.all([
-        customerModel.countDocuments({
-          branch: branchId,
-          status: { $in: ['waiting', 'serving'] },
-        }),
-        customerModel.countDocuments({
-          branch: branchId,
-          createdAt: { $gte: yesterday, $lt: startOfToday },
-          status: { $in: ['waiting', 'serving'] },
-        }),
-        customerModel.find({
-          branch: branchId,
-          status: 'served',
-          servedAt: { $gte: startOfToday, $lte: endOfToday },
-        }),
-        customerModel.find({
-          branch: branchId,
-          status: 'served',
-          servedAt: { $gte: yesterday, $lt: startOfToday },
-        }),
-      ]);
-
-      // Calculate averages
-      const avgWaitTime =
-        servedToday.length > 0
-          ? servedToday.reduce((acc, c) => acc + c.waitTime, 0) / servedToday.length
-          : 0;
-      const avgWaitTimeYesterday =
-        servedYesterday.length > 0
-          ? servedYesterday.reduce((acc, c) => acc + c.waitTime, 0) / servedYesterday.length
-          : 0;
-
-      // Calculate percentage changes
-      const activeChange = activeYesterday
-        ? ((activeInQueue - activeYesterday) / activeYesterday) * 100
-        : 0;
-      const waitTimeChange = avgWaitTimeYesterday
-        ? ((avgWaitTime - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
-        : 0;
-      const servedChange = servedYesterday.length
-        ? ((servedToday.length - servedYesterday.length) / servedYesterday.length) * 100
-        : 0;
-
-      branchManagement.push({
-        branchId,
-        branchName: branch.branchName,
-        branchCode: branch.branchCode,
-        address: branch.address,
-        city: branch.city,
-        state: branch.state,
-        organizationId: branch.organization?._id,
-        organizationName: branch.organization?.organizationName,
-        managerName: branch.managerName || branch.organization?.managerName,
-        managerEmail: branch.organization?.managerEmail,
-        phoneNumber: branch.phoneNumber,
-        lastLogin: branch.lastLogin,
-        status: branch.status,
-        notification: branch.notification || false,
-        queuesToday: activeInQueue,
-        servedToday: servedToday.length,
-        avgWaitTime: Number(avgWaitTime.toFixed(2)),
-        percentageChange: {
-          activeQueue: Math.round(activeChange),
-          served: Math.round(servedChange),
-          waitTime: Math.round(waitTimeChange),
-        },
-      });
+    // Check if dashboard exists
+    let dashboard = await SuperAdminDashboard.findById(dashboardId);
+    if (!dashboard) {
+      return res.status(404).json({ message: 'Dashboard not found' });
     }
 
-    const totalBranches = branchManagement.length;
-    const totalActive = branchManagement.filter(b => b.status === 'active').length;
-    const totalInactive = totalBranches - totalActive;
-    const totalQueues = branchManagement.reduce((sum, b) => sum + b.queuesToday, 0);
-    const totalServed = branchManagement.reduce((sum, b) => sum + b.servedToday, 0);
-    const totalAvgWaitTime =
-      totalBranches > 0
-        ? branchManagement.reduce((sum, b) => sum + b.avgWaitTime, 0) / totalBranches
-        : 0;
+    // Fetch totals dynamically
+    const totalOrganizations = await Organization.countDocuments();
+    const totalBranches = await Branch.countDocuments();
+    const totalActiveQueues = await Queue.countDocuments({ status: 'active' });
 
-    // Update SuperAdminDashboard overview (optional persistent update)
-    await SuperAdminDashboard.findOneAndUpdate(
-      {},
-      {
-        $set: {
-          'overview.totalBranches': totalBranches,
-          'overview.totalActive': totalActive,
-          'overview.totalInactive': totalInactive,
-          'overview.totalActiveQueues': totalQueues,
-          'overview.totalServed': totalServed,
-          'overview.totalAvgWaitTime': totalAvgWaitTime,
-          branchManagement,
-        },
-      },
-      { upsert: true, new: true }
-    );
+    // Customers served today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
-    // Send final response
-    res.status(200).json({
-      message: 'Branch management data retrieved successfully',
-      overview: {
-        totalBranches,
-        totalActive,
-        totalInactive,
-        totalQueues,
-        totalServed,
-        totalAvgWaitTime: Number(totalAvgWaitTime.toFixed(2)),
-      },
-      branchManagement,
+    const totalCustomersServedToday = await Customer.countDocuments({
+      status: 'served',
+      updatedAt: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    // Average wait time
+    const queues = await Queue.find({ avgWaitTime: { $exists: true } });
+    let avgWaitTime = 0;
+    if (queues.length > 0) {
+      const totalWaitTime = queues.reduce((acc, q) => acc + (q.avgWaitTime || 0), 0);
+      avgWaitTime = totalWaitTime / queues.length;
+    }
+
+    // Update dashboard
+    dashboard.overview.totalOrganizations = totalOrganizations;
+    dashboard.overview.totalBranches = totalBranches;
+    dashboard.overview.totalActiveQueues = totalActiveQueues;
+    dashboard.overview.totalCustomersServedToday = totalCustomersServedToday;
+    dashboard.overview.avgWaitTime = avgWaitTime;
+    dashboard.overview.lastUpdated = new Date();
+
+    await dashboard.save();
+
+    return res.status(200).json({
+      message: 'Super admin dashboard data fetched successfully',
+      dashboardId: dashboard._id,
+      data: dashboard.overview,
     });
   } catch (error) {
-    console.error('Error in getBranchManagement:', error);
-    res.status(500).json({
-      message: 'Error in getBranchManagement',
+    console.error('Error fetching super admin dashboard:', error);
+    return res.status(500).json({
+      message: 'Error fetching super admin dashboard data',
       error: error.message,
     });
   }
