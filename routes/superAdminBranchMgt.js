@@ -16,7 +16,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *       Data can be filtered by organization and branch status.
  *
  *     tags:
- *       - Super Admin Dashboard
+ *       - Branch Management
  *
  *     parameters:
  *       - in: query
