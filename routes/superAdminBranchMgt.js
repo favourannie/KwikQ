@@ -13,7 +13,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *     description: >
  *       Returns the latest metrics overview for the Super Admin dashboard, including totals for organizations, branches, queues, customers served today, and average wait time.
  *     tags:
- *       - Super Admin Branch-Management
+ *       - Super Admin Branch Management
  *     parameters:
  *       - in: path
  *         name: dashboardId
@@ -316,7 +316,7 @@ router.get("/branches/:id", authenticate, getBranchById);
  *                           organizationName:
  *                             type: string
  *                             example: FinTech Global Ltd
- *                           contactEmail:
+ *                           managerEmail:
  *                             type: string
  *                             example: info@fintechglobal.com
  *                       stats:
