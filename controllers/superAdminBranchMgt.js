@@ -2,6 +2,8 @@ const SuperAdminDashboard = require('../models/superAdmin');
 const Branch = require('../models/branchModel');
 const Organization = require('../models/organizationModel');
 const CustomerInterface = require('../models/customerQueueModel'); 
+const Queue = require('../models/customerQueueModel');
+
 
 exports.getBranchManagement = async (req, res) => {
   try {
@@ -182,6 +184,81 @@ exports.getBranchById = async (req, res) => {
     console.error("Error fetching branch:", error);
     return res.status(500).json({
       message: "Error fetching branch",
+      error: error.message,
+    });
+  }
+};
+
+
+exports.getAllBranchesWithStats = async (req, res) => {
+  try {
+    const { organizationId, status } = req.query;
+
+    // Build dynamic filter
+    const filter = {};
+    if (organizationId) filter.organizationId = organizationId;
+    if (status) filter.status = status;
+
+    // Fetch all branches and populate organization info
+    const branches = await Branch.find(filter)
+      .populate('organizationId', 'managerName managerEmail brancCode phoneNumber')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!branches || branches.length === 0) {
+      return res.status(404).json({ message: 'No branches found' });
+    }
+
+    // Set up time range for "today"
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Process each branch
+    const enrichedBranches = await Promise.all(
+      branches.map(async (branch) => {
+        // Count active queues for this branch
+        const activeQueuesCount = await Queue.countDocuments({
+          branchId: branch._id,
+          status: 'active',
+        });
+
+        // Get queues with avg wait time
+        const queues = await Queue.find({ branchId: branch._id, avgWaitTime: { $exists: true } });
+        let avgWaitTime = 0;
+        if (queues.length > 0) {
+          const totalWaitTime = queues.reduce((acc, q) => acc + (q.avgWaitTime || 0), 0);
+          avgWaitTime = totalWaitTime / queues.length;
+        }
+
+        // Customers served today
+        const totalServedToday = await Customer.countDocuments({
+          branchId: branch._id,
+          status: 'served',
+          updatedAt: { $gte: startOfDay, $lte: endOfDay },
+        });
+
+        return {
+          ...branch,
+          stats: {
+            totalActiveQueues: activeQueuesCount,
+            avgWaitTime: avgWaitTime || 0,
+            totalCustomersServedToday: totalServedToday || 0,
+          },
+        };
+      })
+    );
+
+    return res.status(200).json({
+      message: 'Branches with analytics fetched successfully',
+      totalBranches: enrichedBranches.length,
+      data: enrichedBranches,
+    });
+  } catch (error) {
+    console.error('Error fetching branches with stats:', error);
+    return res.status(500).json({
+      message: 'Error fetching branches with stats',
       error: error.message,
     });
   }
