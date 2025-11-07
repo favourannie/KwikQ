@@ -1,4 +1,4 @@
-const { login, createOrganization, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganizationDetails, deleteOrganization, changePassword, forgotPassword, resetPassword, resetPasswordRequest} = require('../controllers/organizationController');
+const { login, createOrganization, resendOtp, getOrganizations, verifyOtp, getOrganizationsById, updateOrganizationDetails, deleteOrganization, changePassword, forgotPassword, resetPassword, resetPasswordRequest, getOnlyOrganizationsById} = require('../controllers/organizationController');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 const { registerValidator, verifyValidator, resendValidator } = require('../middleware/validation');
 
@@ -656,6 +656,89 @@ router.delete("/organizations/:id", authenticate, adminAuth, deleteOrganization)
  */
 router.put("/change-password/:id", authenticate, changePassword);
 
+/**
+ * @swagger
+ * /api/v1/organization-details/{id}:
+ *   get:
+ *     summary: Get organization details by ID
+ *     description: Fetch a single organization's details (business name, contact info, and location) by its unique ID.
+ *     tags:
+ *       - Organization Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The unique MongoDB ObjectId of the organization
+ *         schema:
+ *           type: string
+ *           example: 670a404385f84730e2ab5d54
+ *     responses:
+ *       200:
+ *         description: Organization fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Organization fetched successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: 670a404385f84730e2ab5d54
+ *                     businessName:
+ *                       type: string
+ *                       example: Annie and Sons
+ *                     email:
+ *                       type: string
+ *                       example: annieandsons@gmail.com
+ *                     phoneNumber:
+ *                       type: string
+ *                       example: "08078787878"
+ *                     headOfficeAddress:
+ *                       type: string
+ *                       example: Coconut, Ajegunle
+ *                     city:
+ *                       type: string
+ *                       example: Lagos
+ *                     state:
+ *                       type: string
+ *                       example: Lagos State
+ *                     fullName:
+ *                       type: string
+ *                       example: Annie Johnson
+ *                     industryServiceType:
+ *                       type: string
+ *                       example: Retail and Distribution
+ *       404:
+ *         description: Organization not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Organization not found
+ *       500:
+ *         description: Server error while fetching organization
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error fetching organization
+ *                 error:
+ *                   type: string
+ *                   example: Cast to ObjectId failed for value "invalid-id"
+ */
+
+router.get("/organization-details/:id", getOnlyOrganizationsById)
 /**
  * @swagger
  * /api/v1/forgot-password:
