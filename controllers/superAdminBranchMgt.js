@@ -7,7 +7,7 @@ const Queue = require('../models/customerQueueModel');
 
 exports.getBranchManagement = async (req, res) => {
   try {
-    const { dashboardId } = req.params;
+    const { dashboardId } = req.user._Id;
 
     // Validate dashboardId
     if (!dashboardId) {
