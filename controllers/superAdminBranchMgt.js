@@ -6,6 +6,7 @@ const Queue = require('../models/customerQueueModel');
 
 
 exports.getBranchManagement = async (req, res) => {
+  console.log('i am user:', req.user);
   try {
     const { dashboardId } = req.user._Id;
 
@@ -200,7 +201,7 @@ exports.getAllBranchesWithStats = async (req, res) => {
     // Fetch all branches and populate organization info
     const branches = await Branch.find(filter)
       .populate('organizationId', 'managerName managerEmail brancCode phoneNumber')
-      .sort({ createdAt: -1 })
+      .sort({ organizationId: 1, _id: 1 })
       .lean();
 
     if (!branches || branches.length === 0) {
