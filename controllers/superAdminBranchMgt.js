@@ -21,7 +21,6 @@ exports.getBranchManagement = async (req, res) => {
     }
 
     // Fetch totals dynamically
-    const totalOrganizations = await Organization.countDocuments();
     const totalBranches = await Branch.countDocuments();
     const totalActiveQueues = await Queue.countDocuments({ status: 'active' });
 
@@ -45,7 +44,6 @@ exports.getBranchManagement = async (req, res) => {
     }
 
     // Update dashboard
-    dashboard.overview.totalOrganizations = totalOrganizations;
     dashboard.overview.totalBranches = totalBranches;
     dashboard.overview.totalActiveQueues = totalActiveQueues;
     dashboard.overview.totalCustomersServedToday = totalCustomersServedToday;
@@ -77,7 +75,7 @@ exports.viewBranchReports = async (req, res) => {
     if (branchId) {
       // Validate and get single branch
       const branch = await Branch.findById(branchId)
-        .populate('organization', 'organizationName')
+        .populate('organization', 'branchName')
         .lean();
 
       if (!branch) {
@@ -88,7 +86,7 @@ exports.viewBranchReports = async (req, res) => {
     } else {
       // Get all branches
       branches = await Branch.find()
-        .populate('organization', 'organizationName')
+        .populate('organization', 'branchName')
         .lean();
     }
 
