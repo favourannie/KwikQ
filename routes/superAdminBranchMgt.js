@@ -38,9 +38,6 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *                 data:
  *                   type: object
  *                   properties:
- *                     totalOrganizations:
- *                       type: integer
- *                       example: 10
  *                     totalBranches:
  *                       type: integer
  *                       example: 45
