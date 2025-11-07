@@ -24,6 +24,7 @@ const superAdminAnalytics = require('./routes/superAdminAnalytics');
 const queueConfigRouter = require("./routes/queueConfigRoutes")
 const adminQueueMgtRoute = require("./routes/adminQueueMgtRoute")
 const adminNotificationRouter = require("./routes/adminNotificationRoute")
+const adminHistoryRouter = require("./routes/adminHistoryRoute")
 const jwt = require("jsonwebtoken");
 
 
@@ -114,6 +115,7 @@ app.use('/api/v1/', superAdminAnalytics);
 app.use("/api/v1/", queueConfigRouter)
 app.use("/api/v1/", adminQueueMgtRoute)
 app.use("/api/v1/", adminNotificationRouter)
+app.use("/api/v1/", adminHistoryRouter)
 
 // Error handling middleware
 app.use((error, req, res, next) => {

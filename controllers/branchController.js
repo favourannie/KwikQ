@@ -99,7 +99,7 @@ exports.createBranch = async (req, res) => {
 exports.branchLogin = async (req, res) => {
   try {
     const { managerEmail, branchCode } = req.body;
-
+    
     if (!managerEmail || !branchCode) {
       return res.status(400).json({
         message: "Manager email and branch code are required",
@@ -107,7 +107,8 @@ exports.branchLogin = async (req, res) => {
     }
 
     const branch = await Branch.findOne({ managerEmail, branchCode });
-
+    const organization = branch.organizationId
+    console.log(organization)
     if (!branch) {
       return res.status(404).json({
         message: "Invalid manager email or branch code",
@@ -122,8 +123,7 @@ exports.branchLogin = async (req, res) => {
         branchCode: branch.branchCode,
         managerName: branch.managerName,
         managerEmail: branch.managerEmail
-
-      },
+      }, organization
     });
   } catch (error) {
     console.error("Error logging in branch:", error);
@@ -138,7 +138,6 @@ exports.branchLogin = async (req, res) => {
 
 exports.getAllBranches = async (req, res) => {
   try {
-  
     const branches = await Branch.find()
       .populate('organizationId', 'organizationName email') 
       .sort({ createdAt: -1 }); 
