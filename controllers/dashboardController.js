@@ -1,23 +1,22 @@
 const customerModel = require("../models/customerQueueModel");
 const branchModel = require("../models/branchModel");
+const organizationModel = require("../models/organizationModel")
 const queueManagement = require("../models/queueManagement");
 exports.getDashboardMetrics = async (req, res) => {
     try {
 
-        const {branchId} = req.query;
-        if (branchId) {
-            const branch = await branchModel.findById(branchId);
-            if (!branch) {
-                return res.status(404).json({
-                    message: "Branch not found"
-                });
-            }
+        const {id} = req.params;
+        const business = await organizationModel.findById(id) || branchModel.findById(id) 
+        if(!business){
+            return res.status(404).json({
+                message: "Business not found"
+            })
         }
         const today = new Date();
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
 
-        const branchQuery = branchId ? { branch: branchId }  : {}
+        const org = branchId ? { branch: branchId }  : {}
 
         const [
             activeInQueue,

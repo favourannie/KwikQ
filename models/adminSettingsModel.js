@@ -6,6 +6,21 @@ const adminSettingsSchema =  new mongoose.Schema({
         ref: "organizations"
     },
     branchId: {
-        type: mongoose
-    }
-})
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "branches"
+    },
+    businessName: {
+        type: String,
+        trim: true
+    },
+    phoneNumber: {
+        type: String,
+        trim: true
+    },
+        businessAddress:{
+            type: String,
+            trim: true
+        }
+}, {timestamps: true})
+
+module.exports = mongoose.model("adminSettings", adminSettingsSchema)

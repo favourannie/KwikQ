@@ -25,6 +25,7 @@ const queueConfigRouter = require("./routes/queueConfigRoutes")
 const adminQueueMgtRoute = require("./routes/adminQueueMgtRoute")
 const adminNotificationRouter = require("./routes/adminNotificationRoute")
 const adminHistoryRouter = require("./routes/adminHistoryRoute")
+const adminSettingsRouter = require("./routes/adminSettingsRoute")
 const jwt = require("jsonwebtoken");
 
 
@@ -116,6 +117,7 @@ app.use("/api/v1/", queueConfigRouter)
 app.use("/api/v1/", adminQueueMgtRoute)
 app.use("/api/v1/", adminNotificationRouter)
 app.use("/api/v1/", adminHistoryRouter)
+app.use("/api/v1/", adminSettingsRouter)
 
 // Error handling middleware
 app.use((error, req, res, next) => {

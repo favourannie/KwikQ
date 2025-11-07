@@ -359,19 +359,99 @@ router.get("/organizations", authenticate, getOrganizations);
  * @swagger
  * /api/v1/organizations/{id}:
  *   get:
+ *     summary: Get organization details by ID
+ *     description: Retrieve detailed information about an organization, including its branches.
  *     tags:
  *       - Organization Management
- *     summary: Get organization by ID
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
+ *         description: The unique ID of the organization
  *         schema:
  *           type: string
+ *           example: 670fbb1328f4a47b8cd2a1e3
+ *     responses:
+ *       200:
+ *         description: Organization fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Organization fetched successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: 670fbb1328f4a47b8cd2a1e3
+ *                     businessName:
+ *                       type: string
+ *                       example: Annie and Sons
+ *                     email:
+ *                       type: string
+ *                       example: annieandsons@gmail.com
+ *                     phoneNumber:
+ *                       type: string
+ *                       example: 08078787878
+ *                     headOfficeAddress:
+ *                       type: string
+ *                       example: Coconut, Ajegunle
+ *                     city:
+ *                       type: string
+ *                       example: Lagos
+ *                     state:
+ *                       type: string
+ *                       example: Lagos State
+ *                     role:
+ *                       type: string
+ *                       enum: [individual, multi]
+ *                       example: individual
+ *                     branches:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                             example: 670fbb1328f4a47b8cd2a1e5
+ *                           branchName:
+ *                             type: string
+ *                             example: Annie & Sons - Ikeja Branch
+ *                           city:
+ *                             type: string
+ *                             example: Ikeja
+ *                           state:
+ *                             type: string
+ *                             example: Lagos
+ *       404:
+ *         description: Organization not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Organization not found
+ *       500:
+ *         description: Error fetching organization
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error fetching organization
+ *                 error:
+ *                   type: string
+ *                   example: Cast to ObjectId failed
  */
-router.get("/organizations/:id", authenticate, getOrganizationsById);
+router.get("/organizations/:id", getOrganizationsById);
 
 /**
  * @swagger
