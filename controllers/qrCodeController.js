@@ -50,13 +50,14 @@ exports.generateQRCode = async (req, res) => {
       `data:image/png;base64,${base64Data}`,
       {
         folder: "qrcodes",
-        public_id: `branch-${branchId}-${qrCode}`,
+        public_id: `branch-${business?.branchId}-${qrCode}`,
         overwrite: true,
       }
     );
 
     let newQRCode;
 
+    console.log(business)
     if (business.role === "individual") {
       newQRCode = new QRCodeModel({
         individualId: id,
@@ -67,8 +68,10 @@ exports.generateQRCode = async (req, res) => {
         createdAt: new Date(),
         isActive: true,
       });
-    } else if (business.role === "branch") {
+    } else if (business.role === "branch" || business.role === "multi" ) {
+      
       newQRCode = new QRCodeModel({
+      
         branchId: id,
         qrCode,
         formLink,
@@ -77,6 +80,12 @@ exports.generateQRCode = async (req, res) => {
         createdAt: new Date(),
         isActive: true,
       });
+      console.log(newQRCode)
+    }
+    if (!newQRCode){
+      return res.status(400).json({
+        message: 'Invalid Role'
+      })
     }
 
     await newQRCode.save();

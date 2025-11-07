@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {generateQRCode, getQRCodeInfo, getFormByQrCode, validateQRCodeScan, getQueueLength} = require('../controllers/qrCodeController');
+const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 /**
  * @swagger
@@ -139,7 +140,7 @@ const {generateQRCode, getQRCodeInfo, getFormByQrCode, validateQRCodeScan, getQu
  *                   type: string
  *                   example: Error generating QR code
  */
-router.post('/qrcode/generate', generateQRCode);
+router.post('/qrcode/generate',authenticate, generateQRCode);
 
 /**
  * @swagger

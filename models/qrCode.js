@@ -4,7 +4,7 @@ const qrCodeSchema = new mongoose.Schema({
   individualId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'organizations',
-    default: null,
+    
   },
   branchId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -15,21 +15,21 @@ const qrCodeSchema = new mongoose.Schema({
   qrCode: {
     type: String,
     unique: true,
-    required: true,
+   
   },
 
   qrImage: {
     type: String,
-    required: true,
+    
   },
 
   formLink: {
     type: String,
-    required: true,
+   
   },
   qrImageFile: {
-    url: { type: String, required: true },
-    publicId: { type: String, required: true },
+    url: { type: String, },
+    publicId: { type: String,  },
   },
 
   // Metadata
