@@ -28,6 +28,7 @@ exports.authenticate = async (req,res, next) =>{
         // console.log('decoded:',decoded)
         req.user = decoded
         
+        |console.log("i am authenticate user", req.user)
         next()
     } catch (error) {
         if(error instanceof jwt.TokenExpiredError){
