@@ -82,7 +82,7 @@ exports.getAllQueues = async (req, res) => {
       role === "branch" ? { branchId: id } : { individualId: id },
       {
         businessType: role === "branch" ? "branch" : "organization",
-        queuePoints: queuePoint.map((q) => q.branchId) || queuePoint.map((q) => q.individualId),
+        queuePoints: queuePoint.map((q) => q._id),
         totalCustomers,
         totalWaiting,
         totalServedToday,
