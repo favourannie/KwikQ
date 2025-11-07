@@ -342,7 +342,7 @@ exports.getOrganizations = async (req, res) => {
 exports.getOrganizationsById = async (req, res) => {
     try {
         const { id } = req.params;
-        const org = await organizationModel.findById(id).populate("branches");
+        const org = await organizationModel.findById(id).populate("branches").select("businessName email");
         if (org === null) {
             return res.status(404).json({
                 message: "Organization not found",

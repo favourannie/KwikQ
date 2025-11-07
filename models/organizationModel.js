@@ -37,7 +37,7 @@ const organizationSchema = new mongoose.Schema({
     enum: ["individual", "multi"]
   },
   industryServiceType:{
-    type: String,
+    type: String, 
     trim: true
   },
   headOfficeAddress: {

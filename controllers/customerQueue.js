@@ -16,7 +16,7 @@ return `kQ-${date}${random}`;
 exports.createCustomerQueue = async (req, res) => {
   try {
     const { formDetails } = req.body;
-    const id = req.params.id
+    const {id} = req.params
     const business = await organizationModel.findById(id) || await branchModel.findById(id)
 
     if(!business){
@@ -80,7 +80,7 @@ exports.createCustomerQueue = async (req, res) => {
     let newCustomer;
     if(business.role === "multi"){
       newCustomer = await CustomerInterface.create({
-      branchId: id,
+      // branchId: id,
       formDetails: {
         fullName,
         email,
@@ -94,7 +94,7 @@ exports.createCustomerQueue = async (req, res) => {
     });
     } else if(business.role === "individual"){
       newCustomer = await CustomerInterface.create({
-      individualId: id,
+      // individualId: id,
       formDetails: {
         fullName,
         email,
@@ -110,6 +110,7 @@ exports.createCustomerQueue = async (req, res) => {
     
 
     targetQueuePoint.customers.push(newCustomer.id);
+
     await targetQueuePoint.save();
 
     res.status(201).json({
