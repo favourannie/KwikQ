@@ -8,6 +8,11 @@ const Branch = require('../models/branchModel');
 const Organization = require('../models/organizationModel');
 
 
+const generateQueueNumber = () => {
+const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+const date = Date.now().toString().slice(-3);
+return `kQ-${date}${random}`;
+};
 exports.createCustomerQueue = async (req, res) => {
   try {
     const { formDetails } = req.body;
@@ -69,11 +74,6 @@ exports.createCustomerQueue = async (req, res) => {
     const nextIndex = allCustomers % 3; 
     const targetQueuePoint = queuePoints[nextIndex];
 
-    const generateQueueNumber = () => {
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const date = Date.now().toString().slice(-3);
-  return `kQ-${date}${random}`;
-};
 
     const nextQueueNumber = generateQueueNumber()
 
