@@ -168,7 +168,7 @@ exports.login = async (req, res) => {
       organizationId: org._id
     };
 
-    const token = await jwt.sign(
+    const token = jwt.sign(
       {
         id: org._id,
         email: org.email,
@@ -348,9 +348,12 @@ exports.getOrganizationsById = async (req, res) => {
                 message: "Organization not found",
             });
         }
+        const orgB = await Branch.find({organizationId: id})
         res.status(200).json({
             message: "Organization fetched successfully",
             data: org,
+            totalBranches: orgB.length,
+            oragnizationBranches: orgB
         });
     } catch (error) {
         res.status(500).json({
