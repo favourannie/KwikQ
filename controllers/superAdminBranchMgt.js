@@ -3,19 +3,35 @@ const Branch = require('../models/branchModel');
 const Organization = require('../models/organizationModel');
 const CustomerInterface = require('../models/customerQueueModel'); 
 const Queue = require('../models/customerQueueModel');
+const queueModel = require('../models/queueModel');
 
 
 exports.getBranchManagement = async (req, res) => {
  
    try {
-    const { organizationId } = req.query; 
+    const  organizationId = req.params.id; 
 
-    
     const branchFilter = organizationId ? { organizationId } : {};
 
-    const totalBranches = await Branch.countDocuments({organizationId:organizationId});
-
+    
     const branches = await Branch.find({organizationId:organizationId});
+    console.log(branches);
+    const totalBranches = branches.length
+    let stuff
+    let totalactiveQ
+    let avgWaitTime
+    let Waittime
+    let num
+    branches.forEach(async (x)=>{
+      stuff = await queueModel.findOne({branchId:x._id})
+      if(stuff){
+        totalactiveQ += 1
+        Waittime += stuff.waitTime
+      }
+    })
+    avgWaitTime= Waittime/totalactiveQ
+
+
 
     const branchIds = branches.map((b) => b._id);
 
@@ -28,7 +44,7 @@ exports.getBranchManagement = async (req, res) => {
       { $match: { branchId: { $in: branchIds }, waitTime: { $gt: 0 } } },
       { $group: { _id: null, avgWait: { $avg: "$waitTime" } } },
     ]);
-    const avgWaitTime = avgWaitResult.length > 0 ? Math.round(avgWaitResult[0].avgWait) : 0;
+    // const avgWaitTime = avgWaitResult.length > 0 ? Math.round(avgWaitResult[0].avgWait) : 0;
 
   
     const startOfDay = new Date();

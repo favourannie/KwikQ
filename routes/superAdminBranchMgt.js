@@ -7,23 +7,27 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * /api/v1/branchmanagement/{dashboardId}:
+ * /api/v1/branch/management/{id}:
  *   get:
- *     summary: Get Super Admin Dashboard Data by Dashboard ID
+ *     summary: Get branch management dashboard metrics for an organization
  *     description: >
- *       Returns the latest metrics overview for the Super Admin dashboard, including totals for organizations, branches, queues, customers served today, and average wait time.
+ *       This endpoint retrieves dashboard data for all branches under a specific organization,
+ *       including total branches, active queues, average wait time, and total customers served today.
  *     tags:
- *       - Super Admin Branch Management
+ *       - Branch Management
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: dashboardId
+ *         name: id
  *         required: true
+ *         description: The organization ID.
  *         schema:
  *           type: string
- *         description: The unique ID of the Super Admin dashboard record.
+ *           example: "672f0db85f9d9c3a5d3b7b2a"
  *     responses:
  *       200:
- *         description: Dashboard data fetched successfully
+ *         description: Dashboard data fetched successfully.
  *         content:
  *           application/json:
  *             schema:
@@ -31,32 +35,24 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Super admin dashboard data fetched successfully
- *                 dashboardId:
- *                   type: string
- *                   example: 6737f83313e1a57a0f7d41cc
+ *                   example: Dashboard data fetched successfully
  *                 data:
  *                   type: object
  *                   properties:
  *                     totalBranches:
  *                       type: integer
- *                       example: 45
+ *                       example: 8
  *                     totalActiveQueues:
  *                       type: integer
- *                       example: 12
- *                     totalCustomersServedToday:
- *                       type: integer
- *                       example: 220
+ *                       example: 3
  *                     avgWaitTime:
- *                       type: number
- *                       format: float
- *                       example: 4.8
- *                     lastUpdated:
  *                       type: string
- *                       format: date-time
- *                       example: 2025-11-06T21:25:00.000Z
+ *                       example: "12 min"
+ *                     totalServedToday:
+ *                       type: integer
+ *                       example: 45
  *       400:
- *         description: Missing or invalid Dashboard ID
+ *         description: Bad request — missing or invalid organization ID.
  *         content:
  *           application/json:
  *             schema:
@@ -64,9 +60,9 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Dashboard ID is required
- *       404:
- *         description: Dashboard not found
+ *                   example: Invalid organization ID
+ *       401:
+ *         description: Unauthorized — missing or invalid token.
  *         content:
  *           application/json:
  *             schema:
@@ -74,9 +70,9 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Dashboard not found
+ *                   example: Unauthorized
  *       500:
- *         description: Internal server error
+ *         description: Server error while fetching dashboard data.
  *         content:
  *           application/json:
  *             schema:
@@ -84,10 +80,10 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error fetching super admin dashboard data
+ *                   example: Error fetching dashboard metrics
  *                 error:
  *                   type: string
- *                   example: Internal server error
+ *                   example: Internal Server Error
  */
 
 router.get('/branch/management/:id/', authenticate, getBranchManagement);
@@ -251,28 +247,22 @@ router.get("/branches/:id", authenticate, getBranchById);
 
 /**
  * @swagger
- * /api/v1/branches:
+ * /api/v1/getallbranches:
  *   get:
- *     summary: Get all branches with analytics
- *     description: >
- *       Fetch all branches along with total active queues, average wait time, and customers served today.
+ *     summary: Get all branches with analytics and stats
+ *     description: Fetch all branches belonging to a specific organization, including analytics or performance statistics if available.
  *     tags:
  *       - Super Admin Branch Management
  *     parameters:
  *       - in: query
  *         name: organizationId
+ *         required: true
  *         schema:
  *           type: string
- *         description: Filter branches by organization ID
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           example: active
- *         description: Filter branches by status (e.g., active, inactive)
+ *         description: The ID of the organization whose branches you want to fetch.
  *     responses:
  *       200:
- *         description: Branch analytics data fetched successfully
+ *         description: Successfully fetched all branches with analytics data.
  *         content:
  *           application/json:
  *             schema:
@@ -281,58 +271,53 @@ router.get("/branches/:id", authenticate, getBranchById);
  *                 message:
  *                   type: string
  *                   example: Branches with analytics fetched successfully
- *                 totalBranches:
- *                   type: integer
- *                   example: 4
- *                 data:
+ *                 branch:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
  *                       _id:
  *                         type: string
- *                         example: 6737fa91313e1a57a0f7d41cc
- *                       branchName:
+ *                         example: "671a94bf2e87d36ac4dc219c"
+ *                       name:
  *                         type: string
- *                         example: Victoria Island Branch
+ *                         example: "Victoria Island Branch"
  *                       city:
  *                         type: string
- *                         example: Lagos
- *                       state:
+ *                         example: "Lagos"
+ *                       organizationId:
  *                         type: string
- *                         example: Lagos
+ *                         example: "671a94bf2e87d36ac4dc2177"
  *                       status:
  *                         type: string
- *                         example: active
- *                       organizationId:
- *                         type: object
- *                         properties:
- *                           _id:
- *                             type: string
- *                             example: 6728fe9d2af68f3f7e5a1a22
- *                           organizationName:
- *                             type: string
- *                             example: FinTech Global Ltd
- *                           managerEmail:
- *                             type: string
- *                             example: info@fintechglobal.com
- *                       stats:
- *                         type: object
- *                         properties:
- *                           totalActiveQueues:
- *                             type: integer
- *                             example: 3
- *                           avgWaitTime:
- *                             type: number
- *                             format: float
- *                             example: 5.4
- *                           totalCustomersServedToday:
- *                             type: integer
- *                             example: 25
- *       404:
- *         description: No branches found
+ *                         example: "active"
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-11-07T12:30:45.000Z"
+ *       400:
+ *         description: Missing or invalid query parameters.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: organizationId is required
  *       500:
- *         description: Server error fetching branches
+ *         description: Internal server error while fetching branches.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error fetching branches with stats
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
  */
 router.get('/getallbranches', getAllBranchesWithStats);
 
