@@ -57,14 +57,12 @@ exports.getAllQueues = async (req, res) => {
       totalServedWithTime++;
 
       return {
-        _id: queue._id,
         name: queue.name,
         totalCustomers: total,
         waiting,
         servedToday,
         averageWaitTime: avgWait,
         customers: queue.customers.map((c) => ({
-          id: c._id,
           fullName: c.formDetails?.fullName,
           serviceNeeded: c.formDetails?.serviceNeeded,
           queueNumber: c.queueNumber,
@@ -84,7 +82,7 @@ exports.getAllQueues = async (req, res) => {
       role === "branch" ? { branchId: id } : { individualId: id },
       {
         businessType: role === "branch" ? "branch" : "organization",
-        queuePoints: queuePoint.map((q) => q._id),
+        queuePoints: queuePoint.map((q) => q.branchId) || queuePoint.map((q) => q.individualId),
         totalCustomers,
         totalWaiting,
         totalServedToday,
