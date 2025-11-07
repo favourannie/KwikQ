@@ -9,20 +9,27 @@ const { sendMail } = require("../middleware/brevo");
 exports.getAllQueues = async (req, res) => {
   try {
     const { id } = req.params;
-    const business =
-      await organizationModel.findById(id) ||
-      await branchModel.findById(id)
+    let business ;
+     business = await organizationModel.findById(id) 
 
     if (!business) {
-      return res.status(404).json({ message: "Business not found" });
+      business = await branchModel.findById(id)
     }
-    const role = business.role === "multi" ? "branch" : "individual";
-    const queuePoints =
+    let queuePoint;
+    if (business.role === "multi"){
+      queuePoint = await branchModel.findById(id)
+    } else if(business.role === "individual"){
+      queuePoint = await organizationModel.findById(id)
+    } else if (business.role === "multi"){
+      queuePoint = await organizationModel.findById(id)
+    }
+    const role = business.role === "multi" || "individual"
+     queuePoint =
       role === "branch"
         ? await QueuePoint.find({ branchId: id }).populate("customers")
         : await QueuePoint.find({ individualId: id }).populate("customers");
 
-    if (!queuePoints.length) {
+    if (!queuePoint.length) {
       return res.status(200).json({
         message: "No queue points found for this business",
         data: [],
@@ -35,7 +42,7 @@ exports.getAllQueues = async (req, res) => {
     let totalWaitTime = 0;
     let totalServedWithTime = 0;
 
-    const queuesData = queuePoints.map((queue) => {
+    const queuesData = queuePoint.map((queue) => {
       const total = queue.customers.length;
       const waiting = queue.customers.filter((c) => c.status === "waiting").length;
       const servedToday = queue.customers.filter((c) => c.status === "done").length;
@@ -73,11 +80,11 @@ exports.getAllQueues = async (req, res) => {
         ? (totalWaitTime / totalServedWithTime).toFixed(2)
         : 0;
 
-    const queueMgmt = await adminQueueMgtModel.findOneAndUpdate(
-      { individualId: id } || {branchId: id},
+    await adminQueueMgtModel.findOneAndUpdate(
+      role === "branch" ? { branchId: id } : { individualId: id },
       {
-        businessType: role === "branch" ? "branches" : "organizations",
-        queuePoints: queuePoints.map((q) => q._id),
+        businessType: role === "branch" ? "branch" : "organization",
+        queuePoints: queuePoint.map((q) => q._id),
         totalCustomers,
         totalWaiting,
         totalServedToday,
