@@ -7,7 +7,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * /api/v1/branch-management/{dashboardId}:
+ * /api/v1/branchmanagement/{dashboardId}:
  *   get:
  *     summary: Get Super Admin Dashboard Data by Dashboard ID
  *     description: >
@@ -90,7 +90,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *                   example: Internal server error
  */
 
-router.get('/branch-management', authenticate, getBranchManagement);
+router.get('/branchmanagement/:id/', authenticate, getBranchManagement);
 
 /**
  * @swagger
