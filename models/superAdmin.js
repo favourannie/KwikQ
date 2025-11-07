@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const superAdminDashboardSchema = new mongoose.Schema({
   //Basic Overview
   overview: {
-    totalOrganizations: { type: Number, default: 0 },
     totalBranches: { type: Number, default: 0 },
     totalActiveQueues: { type: Number, default: 0 },
     totalCustomersServedToday: { type: Number, default: 0 },

@@ -90,7 +90,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *                   example: Internal server error
  */
 
-router.get('/branchmanagement/:id/', authenticate, getBranchManagement);
+router.get('/branch/management/:id/', authenticate, getBranchManagement);
 
 /**
  * @swagger
@@ -334,6 +334,6 @@ router.get("/branches/:id", authenticate, getBranchById);
  *       500:
  *         description: Server error fetching branches
  */
-router.get('/branches', getAllBranchesWithStats);
+router.get('/getallbranches', getAllBranchesWithStats);
 
 module.exports = router;

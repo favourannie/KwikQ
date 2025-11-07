@@ -6,62 +6,54 @@ const Queue = require('../models/customerQueueModel');
 
 
 exports.getBranchManagement = async (req, res) => {
-  console.log('i am user:', req.user);
-  try {
-    const { dashboardId } = req.user._Id;
+ 
+   try {
+    const { organizationId } = req.query; 
 
-    // Validate dashboardId
-    if (!dashboardId) {
-      return res.status(400).json({ message: 'Dashboard ID is required' });
-    }
+    
+    const branchFilter = organizationId ? { organizationId } : {};
 
-    // Check if dashboard exists
-    let dashboard = await SuperAdminDashboard.findById(dashboardId);
-    if (!dashboard) {
-      return res.status(404).json({ message: 'Dashboard not found' });
-    }
+    const totalBranches = await Branch.countDocuments({organizationId:organizationId});
 
-    // Fetch totals dynamically
-    const totalBranches = await Branch.countDocuments();
-    const totalActiveQueues = await Queue.countDocuments({ status: 'active' });
+    const branches = await Branch.find({organizationId:organizationId});
 
-    // Customers served today
+    const branchIds = branches.map((b) => b._id);
+
+    const totalActiveQueues = await Queue.countDocuments({
+      branchId: { $in: branchIds },
+      status: "active",
+    });
+
+    const avgWaitResult = await Queue.aggregate([
+      { $match: { branchId: { $in: branchIds }, waitTime: { $gt: 0 } } },
+      { $group: { _id: null, avgWait: { $avg: "$waitTime" } } },
+    ]);
+    const avgWaitTime = avgWaitResult.length > 0 ? Math.round(avgWaitResult[0].avgWait) : 0;
+
+  
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
 
-    const totalCustomersServedToday = await Customer.countDocuments({
-      status: 'served',
-      updatedAt: { $gte: startOfDay, $lte: endOfDay },
+    const totalServedToday = await Queue.countDocuments({
+      branchId: { $in: branchIds },
+      status: "served",
+      servedAt: { $gte: startOfDay },
     });
 
-    // Average wait time
-    const queues = await Queue.find({ avgWaitTime: { $exists: true } });
-    let avgWaitTime = 0;
-    if (queues.length > 0) {
-      const totalWaitTime = queues.reduce((acc, q) => acc + (q.avgWaitTime || 0), 0);
-      avgWaitTime = totalWaitTime / queues.length;
-    }
-
-    // Update dashboard
-    dashboard.overview.totalBranches = totalBranches;
-    dashboard.overview.totalActiveQueues = totalActiveQueues;
-    dashboard.overview.totalCustomersServedToday = totalCustomersServedToday;
-    dashboard.overview.avgWaitTime = avgWaitTime;
-    dashboard.overview.lastUpdated = new Date();
-
-    await dashboard.save();
 
     return res.status(200).json({
-      message: 'Super admin dashboard data fetched successfully',
-      dashboardId: dashboard._id,
-      data: dashboard.overview,
+      message: "Dashboard data fetched successfully",
+      data: {
+        totalBranches,
+        totalActiveQueues,
+        avgWaitTime: `${avgWaitTime} min`,
+        totalServedToday,
+      },
     });
   } catch (error) {
-    console.error('Error fetching super admin dashboard:', error);
+    console.error("Error fetching dashboard metrics:", error);
     return res.status(500).json({
-      message: 'Error fetching super admin dashboard data',
+      message: "Error fetching dashboard metrics",
       error: error.message,
     });
   }
@@ -191,68 +183,16 @@ exports.getBranchById = async (req, res) => {
 
 exports.getAllBranchesWithStats = async (req, res) => {
   try {
-    const { organizationId, status } = req.query;
+    const { organizationId } = req.query;
 
-    // Build dynamic filter
-    const filter = {};
-    if (organizationId) filter.organizationId = organizationId;
-    if (status) filter.status = status;
-
-    // Fetch all branches and populate organization info
-    const branches = await Branch.find(filter)
-      .populate('organizationId', 'managerName managerEmail brancCode phoneNumber')
-      .sort({ organizationId: 1, _id: 1 })
-      .lean();
-
-    if (!branches || branches.length === 0) {
-      return res.status(404).json({ message: 'No branches found' });
-    }
-
-    // Set up time range for "today"
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // Process each branch
-    const enrichedBranches = await Promise.all(
-      branches.map(async (branch) => {
-        // Count active queues for this branch
-        const activeQueuesCount = await Queue.countDocuments({
-          branchId: branch._id,
-          status: 'active',
-        });
-
-        // Get queues with avg wait time
-        const queues = await Queue.find({ branchId: branch._id, avgWaitTime: { $exists: true } });
-        let avgWaitTime = 0;
-        if (queues.length > 0) {
-          const totalWaitTime = queues.reduce((acc, q) => acc + (q.avgWaitTime || 0), 0);
-          avgWaitTime = totalWaitTime / queues.length;
-        }
-
-        // Customers served today
-        const totalServedToday = await Customer.countDocuments({
-          branchId: branch._id,
-          status: 'served',
-          updatedAt: { $gte: startOfDay, $lte: endOfDay },
-        });
-
-        return {
-          ...branch,
-          stats: {
-            totalActiveQueues: activeQueuesCount,
-            avgWaitTime: avgWaitTime || 0,
-            totalCustomersServedToday: totalServedToday || 0,
-          },
-        };
-      })
-    );
+    const branch = await Branch.find({organizationId:organizationId})
+    console.log('BRANCH:', branch)
 
     return res.status(200).json({
       message: 'Branches with analytics fetched successfully',
-      totalBranches: enrichedBranches.length,
-      data: enrichedBranches,
+      branch
+      // totalBranches: enrichedBranches.length,
+      // data: enrichedBranches,
     });
   } catch (error) {
     console.error('Error fetching branches with stats:', error);
