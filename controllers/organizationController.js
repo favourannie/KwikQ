@@ -360,6 +360,28 @@ exports.getOrganizationsById = async (req, res) => {
     }
   }
 
+  
+exports.getOnlyOrganizationsById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const org = await organizationModel.findById(id).select("businessName email city fullName headOfficeAddress industryServiceType phoneNumber state")
+        if (org === null) {
+            return res.status(404).json({
+                message: "Organization not found",
+            });
+        }
+        res.status(200).json({
+            message: "Organization fetched successfully",
+            data: org,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Error fetching organization",
+            error: error.message,
+        });
+    }
+  }
+
 exports.changePassword = async (req, res) => {
   try {
     const { confirmPassword, password } = req.body;
