@@ -13,7 +13,6 @@ exports.getDashboardMetrics = async (req, res) => {
     else if (business.role === "multi") query = { branchId: business._id };
     else return res.status(403).json({ message: "Unauthorized role" });
 
-    // Time setup
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const tomorrowStart = new Date(todayStart);
@@ -24,29 +23,25 @@ exports.getDashboardMetrics = async (req, res) => {
 
     const yesterdayEnd = new Date(todayStart);
 
-    // Run queries in parallel
     const [activeToday, activeYesterday, servedToday, servedYesterday] = await Promise.all([
-      // Active queue today
       customerModel.countDocuments({
         ...query,
         status: { $in: ["waiting", "in_service"] },
       }),
 
-      // Active queue yesterday (created yesterday and still waiting/in_service)
+
       customerModel.countDocuments({
         ...query,
         createdAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
         status: { $in: ["waiting", "in_service"] },
       }),
 
-      // Served today
       customerModel.find({
         ...query,
         status: "completed",
         completedAt: { $gte: todayStart, $lt: tomorrowStart },
       }),
 
-      // Served yesterday
       customerModel.find({
         ...query,
         status: "completed",
@@ -54,7 +49,6 @@ exports.getDashboardMetrics = async (req, res) => {
       }),
     ]);
 
-    // Average wait times
     const avgWaitTimeToday =
       servedToday.length > 0
         ? servedToday.reduce((acc, c) => acc + (c.waitTime || 0), 0) / servedToday.length
@@ -65,7 +59,6 @@ exports.getDashboardMetrics = async (req, res) => {
         ? servedYesterday.reduce((acc, c) => acc + (c.waitTime || 0), 0) / servedYesterday.length
         : 0;
 
-    // Percentage changes
     const activeChange =
       activeYesterday > 0 ? ((activeToday - activeYesterday) / activeYesterday) * 100 : 0;
 
@@ -79,7 +72,6 @@ exports.getDashboardMetrics = async (req, res) => {
         ? ((avgWaitTimeToday - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
         : 0;
 
-    // Return metrics
     res.status(200).json({
       message: "Dashboard metrics fetched successfully",
       data: {
