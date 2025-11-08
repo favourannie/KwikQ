@@ -13,6 +13,10 @@ const branchQueueManagementSchema = new mongoose.Schema({
     required: true,
   },
 
+  customers:{
+     type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customers',
+  },
   // Queue service points (e.g., desks, counters, or tellers)
   servicePoints: [
     {
