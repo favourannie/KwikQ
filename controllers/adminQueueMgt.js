@@ -9,27 +9,21 @@ const { sendMail } = require("../middleware/brevo");
 exports.getAllQueues = async (req, res) => {
   try {
     const { id } = req.params;
-    let business ;
-     business = await organizationModel.findById(id) 
 
+    let business = await organizationModel.findById(id);
+    if (!business) business = await branchModel.findById(id);
     if (!business) {
-      business = await branchModel.findById(id)
+      return res.status(404).json({ message: "Business not found" });
     }
-    let queuePoint;
-    if (business.role === "multi"){
-      queuePoint = await branchModel.findById(id)
-    } else if(business.role === "individual"){
-      queuePoint = await organizationModel.findById(id)
-    } else if (business.role === "multi"){
-      queuePoint = await organizationModel.findById(id)
-    }
-    const role = business.role === "multi" || "individual"
-     queuePoint =
-      role === "branch"
-        ? await QueuePoint.find({ branchId: id }).populate("customers")
-        : await QueuePoint.find({ individualId: id }).populate("customers");
 
-    if (!queuePoint.length) {
+    const role = business.role === "multi" ? "multi" :
+                 business.role === "individual" ? "individual" : "branch";
+
+    const queuePoints = await QueuePoint.find(
+      role === "multi" ? { branchId: id } : { individualId: id }
+    ).populate("customers");
+
+    if (!queuePoints.length) {
       return res.status(200).json({
         message: "No queue points found for this business",
         data: [],
@@ -40,21 +34,17 @@ exports.getAllQueues = async (req, res) => {
     let totalWaiting = 0;
     let totalServedToday = 0;
     let totalWaitTime = 0;
-    let totalServedWithTime = 0;
 
-    const queuesData = queuePoint.map((queue) => {
+    const queuesData = queuePoints.map((queue) => {
       const total = queue.customers.length;
       const waiting = queue.customers.filter((c) => c.status === "waiting").length;
       const servedToday = queue.customers.filter((c) => c.status === "done").length;
+      const avgWait = queue.averageWaitTime || (Math.floor(Math.random() * 10) + 3);
 
-      const avgWait =
-        queue.averageWaitTime ||
-        (Math.floor(Math.random() * 10) + 3);
       totalCustomers += total;
       totalWaiting += waiting;
       totalServedToday += servedToday;
       totalWaitTime += avgWait;
-      totalServedWithTime++;
 
       return {
         name: queue.name,
@@ -74,23 +64,7 @@ exports.getAllQueues = async (req, res) => {
     });
 
     const averageWaitTime =
-      totalServedWithTime > 0
-        ? (totalWaitTime / totalServedWithTime).toFixed(2)
-        : 0;
-
-    await adminQueueMgtModel.findOneAndUpdate(
-      role === "branch" ? { branchId: id } : { individualId: id },
-      {
-        businessType: role === "branch" ? "branch" : "organization",
-        queuePoints: queuePoint.map((q) => q._id),
-        totalCustomers,
-        totalWaiting,
-        totalServedToday,
-        averageWaitTime,
-        lastUpdated: new Date(),
-      },
-      { new: true, upsert: true }
-    );
+      queuePoints.length > 0 ? (totalWaitTime / queuePoints.length).toFixed(2) : 0;
 
     res.status(200).json({
       message: "Queue management data fetched successfully",
@@ -114,6 +88,7 @@ exports.getAllQueues = async (req, res) => {
     });
   }
 };
+
 
 
 exports.alertCustomer = async (req, res) => {

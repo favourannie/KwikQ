@@ -6,78 +6,109 @@ exports.getDashboardMetrics = async (req, res) => {
     try {
 
         const {id} = req.params;
-        const business = await organizationModel.findById(id) || branchModel.findById(id) 
-        if(!business){
-            return res.status(404).json({
-                message: "Business not found"
-            })
-        }
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
+        let business = await organizationModel.findById(id)
 
-        const org = branchId ? { branch: branchId }  : {}
+        if(business){
+            if(business.role === "multi"){
+                query = {organization: business._id}
+            }else {
+                query = {organization: business._id}
+            } 
+        }else {
+                business = await branchModel.findById(id)
+                 if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+      query = { branch: business._id };
+    }
+       const today = new Date();
+    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
-        const [
-            activeInQueue,
-            activeYesterday,
-            servedToday,
-            servedYesterday
-        ] = await Promise.all([
-            customerModel.countDocuments({
-                ...branchQuery,
-                status: { $in: ["waiting", "serving"] }
-            }),
-            customerModel.countDocuments({
-                ...branchQuery,
-                createdAt: { $gte: yesterday, $lt: today },
-                status: { $in: ["waiting", "serving"] }
-            }),
-            customerModel.find({
-                ...branchQuery,
-                status: "served",
-                servedAt: { $gte: today }
-            }),
-            customerModel.find({
-                ...branchQuery,
-                status: "served",
-                servedAt: { $gte: yesterday, $lt: today }
-            })
-        ]);
+    const [
+      activeInQueue,
+      activeYesterday,
+      servedToday,
+      servedYesterday,
+    ] = await Promise.all([
+      // Active customers today (waiting or being served)
+      customerModel.countDocuments({
+        ...query,
+        status: { $in: ["waiting", "in_service"] },
+      }),
 
-        const avgWaitTime = servedToday.length > 0
-            ? servedToday.reduce((acc, c) => acc + c.waitTime, 0) / servedToday.length
-            : 0;
-        const avgWaitTimeYesterday = servedYesterday.length > 0
-            ? servedYesterday.reduce((acc, c) => acc + c.waitTime, 0) / servedYesterday.length
-            : 0;
+      // Active customers yesterday
+      customerModel.countDocuments({
+        ...query,
+        createdAt: { $gte: startOfYesterday, $lt: startOfToday },
+        status: { $in: ["waiting", "in_service"] },
+      }),
 
-        const active = activeYesterday
-            ? ((activeInQueue - activeYesterday) / activeYesterday) * 100
-            : 0;
-        const waitTime = avgWaitTimeYesterday
-            ? ((avgWaitTime - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
-            : 0;
-        const served = servedYesterday.length
-            ? ((servedToday.length - servedYesterday.length) / servedYesterday.length) * 100
-            : 0;
+      // Served today
+      customerModel.find({
+        ...query,
+        status: "completed",
+        servedAt: { $gte: startOfToday },
+      }),
 
-        res.status(200).json({
-            data: {
-                activeInQueue: {
-                    current: activeInQueue,
-                    percentageChange: Math.round(active)
-                },
-                averageWaitTime: {
-                    current: Math.round(avgWaitTime),
-                    percentageChange: Math.round(waitTime)
-                },
-                servedToday: {
-                    current: servedToday.length,
-                    percentageChange: Math.round(served)
-                }
-            }
-        });
+      // Served yesterday
+      customerModel.find({
+        ...query,
+        status: "served",
+        servedAt: { $gte: startOfYesterday, $lt: startOfToday },
+      }),
+    ]);
+
+    // Compute averages
+    const avgWaitTime =
+      servedToday.length > 0
+        ? servedToday.reduce((acc, c) => acc + (c.waitTime || 0), 0) /
+          servedToday.length
+        : 0;
+
+    const avgWaitTimeYesterday =
+      servedYesterday.length > 0
+        ? servedYesterday.reduce((acc, c) => acc + (c.waitTime || 0), 0) /
+          servedYesterday.length
+        : 0;
+
+    // Compute percentage changes
+    const active =
+      activeYesterday > 0
+        ? ((activeInQueue - activeYesterday) / activeYesterday) * 100
+        : 0;
+
+    const waitTime =
+      avgWaitTimeYesterday > 0
+        ? ((avgWaitTime - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
+        : 0;
+
+    const served =
+      servedYesterday.length > 0
+        ? ((servedToday.length - servedYesterday.length) /
+            servedYesterday.length) *
+          100
+        : 0;
+
+    // Send response
+    res.status(200).json({
+      message: "Dashboard metrics fetched successfully",
+      data: {
+        activeInQueue: {
+          current: activeInQueue,
+          percentageChange: Math.round(active),
+        },
+        averageWaitTime: {
+          current: Math.round(avgWaitTime),
+          percentageChange: Math.round(waitTime),
+        },
+        servedToday: {
+          current: servedToday.length,
+          percentageChange: Math.round(served),
+        },
+      },
+    });
     } catch (error) {
         res.status(400).json({
             message: "Error getting dashboard metrics",

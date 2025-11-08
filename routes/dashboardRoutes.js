@@ -73,7 +73,7 @@ const { getDashboardMetrics,} = require("../controllers/dashboardController");
  *                   example: Invalid branch ID or database error
  */
 
-router.get("/dashboard", getDashboardMetrics);
+router.get("/dashboard/:id", getDashboardMetrics);
 // router.get("/queue-status", authenticate, getQueuePointsStatus);
 
 module.exports = router;
