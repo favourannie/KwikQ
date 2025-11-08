@@ -2,27 +2,33 @@ const express = require("express");
 const router = express.Router();
 const { authenticate } = require("../middleware/authenticate");
 const { getDashboardMetrics,} = require("../controllers/dashboardController");
-
 /**
  * @swagger
- * /api/v1/dashboard:
+ * /api/v1/dashboard/{id}:
  *   get:
- *     summary: Retrieve organization dashboard metrics
- *     description: >
- *       Returns key real-time metrics for the organization's dashboard such as 
- *       the number of active customers in queue, average waiting time, 
- *       and total customers served today.  
- *       It compares current metrics with the previous day's data to show performance changes.
+ *     summary: Get dashboard metrics for a business
  *     tags:
  *       - Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the business (organization or branch)
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: Dashboard metrics retrieved successfully
+ *         description: Dashboard metrics fetched successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Dashboard metrics fetched successfully"
  *                 data:
  *                   type: object
  *                   properties:
@@ -31,35 +37,30 @@ const { getDashboardMetrics,} = require("../controllers/dashboardController");
  *                       properties:
  *                         current:
  *                           type: integer
- *                           example: 25
- *                         percentageChange:
- *                           type: number
  *                           example: 12
- *                           description: Percentage change compared to yesterday
+ *                         percentageChange:
+ *                           type: integer
+ *                           example: 15
  *                     averageWaitTime:
  *                       type: object
  *                       properties:
  *                         current:
- *                           type: number
- *                           example: 7
- *                           description: Average waiting time in minutes
+ *                           type: integer
+ *                           example: 25
  *                         percentageChange:
- *                           type: number
- *                           example: -3
- *                           description: Percentage change compared to yesterday
+ *                           type: integer
+ *                           example: 10
  *                     servedToday:
  *                       type: object
  *                       properties:
  *                         current:
  *                           type: integer
- *                           example: 145
- *                           description: Number of customers served today
+ *                           example: 30
  *                         percentageChange:
- *                           type: number
- *                           example: 15
- *                           description: Percentage change compared to yesterday
- *       400:
- *         description: Error getting dashboard metrics
+ *                           type: integer
+ *                           example: 5
+ *       403:
+ *         description: Unauthorized role
  *         content:
  *           application/json:
  *             schema:
@@ -67,13 +68,31 @@ const { getDashboardMetrics,} = require("../controllers/dashboardController");
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error getting dashboard metrics
+ *                   example: "Unauthorized role"
+ *       404:
+ *         description: Business not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Business not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error getting dashboard metrics"
  *                 error:
  *                   type: string
- *                   example: Invalid branch ID or database error
+ *                   example: "Some server error message"
  */
-
-router.get("/dashboard/:id", getDashboardMetrics);
-// router.get("/queue-status", authenticate, getQueuePointsStatus);
+router.get("/dashboard/:id", authenticate, getDashboardMetrics);
 
 module.exports = router;

@@ -1,47 +1,41 @@
 const customerModel = require("../models/customerQueueModel");
 const branchModel = require("../models/branchModel");
-const organizationModel = require("../models/organizationModel")
-const queueManagement = require("../models/queueManagement");
+const organizationModel = require("../models/organizationModel");
+
 exports.getDashboardMetrics = async (req, res) => {
-    try {
+  try {
+    const userId = req.user.id;
+    let business = await organizationModel.findById(userId) || await branchModel.findById(userId);
+    if (!business) return res.status(404).json({ message: "Business not found" });
 
-        const {id} = req.params;
-        let business = await organizationModel.findById(id)
+    let query = {};
+    if (business.role === "individual") query = { individualId: business._id };
+    else if (business.role === "multi") query = { branchId: business._id };
+    else return res.status(403).json({ message: "Unauthorized role" });
 
-        if(business){
-            if(business.role === "multi"){
-                query = {organization: business._id}
-            }else {
-                query = {organization: business._id}
-            } 
-        }else {
-                business = await branchModel.findById(id)
-                 if (!business) {
-        return res.status(404).json({ message: "Business not found" });
-      }
-      query = { branch: business._id };
-    }
-       const today = new Date();
-    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-    const startOfYesterday = new Date(startOfToday);
-    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    // Time setup
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 
-    const [
-      activeInQueue,
-      activeYesterday,
-      servedToday,
-      servedYesterday,
-    ] = await Promise.all([
-      // Active customers today (waiting or being served)
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+    const yesterdayEnd = new Date(todayStart);
+
+    // Run queries in parallel
+    const [activeToday, activeYesterday, servedToday, servedYesterday] = await Promise.all([
+      // Active queue today
       customerModel.countDocuments({
         ...query,
         status: { $in: ["waiting", "in_service"] },
       }),
 
-      // Active customers yesterday
+      // Active queue yesterday (created yesterday and still waiting/in_service)
       customerModel.countDocuments({
         ...query,
-        createdAt: { $gte: startOfYesterday, $lt: startOfToday },
+        createdAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
         status: { $in: ["waiting", "in_service"] },
       }),
 
@@ -49,71 +43,65 @@ exports.getDashboardMetrics = async (req, res) => {
       customerModel.find({
         ...query,
         status: "completed",
-        servedAt: { $gte: startOfToday },
+        completedAt: { $gte: todayStart, $lt: tomorrowStart },
       }),
 
       // Served yesterday
       customerModel.find({
         ...query,
-        status: "served",
-        servedAt: { $gte: startOfYesterday, $lt: startOfToday },
+        status: "completed",
+        completedAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
       }),
     ]);
 
-    // Compute averages
-    const avgWaitTime =
+    // Average wait times
+    const avgWaitTimeToday =
       servedToday.length > 0
-        ? servedToday.reduce((acc, c) => acc + (c.waitTime || 0), 0) /
-          servedToday.length
+        ? servedToday.reduce((acc, c) => acc + (c.waitTime || 0), 0) / servedToday.length
         : 0;
 
     const avgWaitTimeYesterday =
       servedYesterday.length > 0
-        ? servedYesterday.reduce((acc, c) => acc + (c.waitTime || 0), 0) /
-          servedYesterday.length
+        ? servedYesterday.reduce((acc, c) => acc + (c.waitTime || 0), 0) / servedYesterday.length
         : 0;
 
-    // Compute percentage changes
-    const active =
-      activeYesterday > 0
-        ? ((activeInQueue - activeYesterday) / activeYesterday) * 100
-        : 0;
+    // Percentage changes
+    const activeChange =
+      activeYesterday > 0 ? ((activeToday - activeYesterday) / activeYesterday) * 100 : 0;
 
-    const waitTime =
-      avgWaitTimeYesterday > 0
-        ? ((avgWaitTime - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
-        : 0;
-
-    const served =
+    const servedChange =
       servedYesterday.length > 0
-        ? ((servedToday.length - servedYesterday.length) /
-            servedYesterday.length) *
-          100
+        ? ((servedToday.length - servedYesterday.length) / servedYesterday.length) * 100
         : 0;
 
-    // Send response
+    const waitTimeChange =
+      avgWaitTimeYesterday > 0
+        ? ((avgWaitTimeToday - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
+        : 0;
+
+    // Return metrics
     res.status(200).json({
       message: "Dashboard metrics fetched successfully",
       data: {
         activeInQueue: {
-          current: activeInQueue,
-          percentageChange: Math.round(active),
+          current: activeToday,
+          percentageChange: Math.round(activeChange),
         },
         averageWaitTime: {
-          current: Math.round(avgWaitTime),
-          percentageChange: Math.round(waitTime),
+          current: Math.round(avgWaitTimeToday),
+          percentageChange: Math.round(waitTimeChange),
         },
         servedToday: {
           current: servedToday.length,
-          percentageChange: Math.round(served),
+          percentageChange: Math.round(servedChange),
         },
       },
     });
-    } catch (error) {
-        res.status(400).json({
-            message: "Error getting dashboard metrics",
-            error: error.message
-        });
-    }
+  } catch (error) {
+    console.error("Error fetching dashboard metrics:", error);
+    res.status(500).json({
+      message: "Error getting dashboard metrics",
+      error: error.message,
+    });
+  }
 };
-
