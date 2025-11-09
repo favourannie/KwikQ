@@ -235,7 +235,8 @@ exports.getAllCustomers = async (req, res) => {
 
 exports.getCustomerById = async (req, res) => {
   try {
-    const customer = await CustomerInterface.findById(req.params.id)
+    const { id } = req.params;
+    const customer = await CustomerInterface.findById(id)
       .populate('organization', 'organizationName')
       .populate('branch', 'branchName city');
 
@@ -283,7 +284,8 @@ exports.updateCustomer = async (req, res) => {
 
 exports.deleteCustomer = async (req, res) => {
   try {
-    const deletedCustomer = await CustomerInterface.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    const deletedCustomer = await CustomerInterface.findByIdAndDelete(id);
 
     if (!deletedCustomer) {
       return res.status(404).json({ message: 'Customer not found' });
