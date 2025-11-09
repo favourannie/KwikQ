@@ -115,10 +115,10 @@ exports.branchLogin = async (req, res) => {
       });
     }
     await branch.save();
-    // const token = jwt.sign({id: branch._id}, process.env.JWT_SECRET,{expiresIn: '1d'})
+    const token = jwt.sign({id: branch._id}, process.env.JWT_SECRET,{expiresIn: '1d'})
     return res.status(200).json({
       message: "Branch login successful",
-      // token,
+      token,
       branch: {
         id: branch._id,
         branchName: branch.branchName,

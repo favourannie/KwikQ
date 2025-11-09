@@ -196,24 +196,63 @@ exports.getAllBranchesWithStats = async (req, res) => {
   try {
     const { organizationId } = req.query;
 
-    const branch = await Branch.find({organizationId:organizationId})
-    console.log('BRANCH:', branch)
+    const branches = await Branch.find({ organizationId : organizationId});
+   
+    const enrichedBranches = await Promise.all(
+      branches.map(async (branch) => {
+        
+        const activeQueue = await Queue.countDocuments({
+          branchId: branch._id,
+          status: 'waiting', // or whatever status means "in queue"
+        });
+
+        const servedToday = await Queue.countDocuments({
+          branchId: branch._id,
+          status: 'served',
+          servedAt: {
+            $gte: new Date(new Date().setHours(0, 0, 0, 0)), // start of today
+            $lt: new Date(new Date().setHours(23, 59, 59, 999)), // end of today
+          },
+        });
+
+        const avgWaitAgg = await Queue.aggregate([
+          {
+            $match: {
+              branchId: branch._id,
+              status: 'served',
+              servedAt: {
+                $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                $lt: new Date(new Date().setHours(23, 59, 59, 999)),
+              },
+            },
+          },
+          { $group: {_id: null, avgWait: { $avg: '$waitTime' }, // assuming you store wait time in minutes or seconds
+            },
+          },
+        ]);
+
+        const avgWait = avgWaitAgg.length > 0 ? avgWaitAgg[0].avgWait : 0;
+        return {
+          ...branch.toObject(),
+          activeQueue,
+          avgWait,
+          servedToday,
+        };
+      })
+    );
 
     return res.status(200).json({
       message: 'Branches with analytics fetched successfully',
-      branch
-      // totalBranches: enrichedBranches.length,
-      // data: enrichedBranches,
+      totalBranches: enrichedBranches.length,
+      branches: enrichedBranches,
     });
   } catch (error) {
     console.error('Error fetching branches with stats:', error);
     return res.status(500).json({
       message: 'Error fetching branches with stats',
-      error: error.message,
     });
   }
 };
-
 
 
 // exports.viewBranchReports = async (req, res) => {
