@@ -177,5 +177,6 @@ Queueless Management System Support Team
 );
 
 
-module.exports = mongoose.model('Developer', developerSchema);
+const developerModel = mongoose.model('Developer', developerSchema);
 
+module.exports = developerModel;

@@ -1,135 +1,198 @@
 const SuperAdminDashboard = require('../models/superAdmin');
 const Organization = require('../models/organizationModel');
 const Branch = require('../models/branchModel');
-const Queue = require('../models/queueManagement'); // optional if queue data included
+const Queue = require('../models/queueManagement'); 
 
 
-exports.getAnalytics = async (req, res) => {
+// const Queue = require('../models/queueModel');
+const Customer = require('../models/customerQueueModel');
+const moment = require('moment');
+
+exports.getDashboardMetrics = async (req, res) => {
   try {
-    
-    const organizations = await Organization.find().select('name createdAt');
+    const { organizationId } = req.params;
 
-    // Fetch all branches with organization reference
-    const branches = await Branch.find()
-      .populate('organization', 'name')
-      .select('branchName city organization');
+    const filter = organizationId ? { organizationId } : {};
 
-    // Optionally fetch queues for deeper analytics
-    const queues = await Queue.find().populate('branch organization', 'branchName name');
+    //Total Customers This Week
+    const startOfWeek = moment().startOf('isoWeek').toDate();
+    const endOfWeek = moment().endOf('isoWeek').toDate();
 
-    const analyticsSummary = {
-      totalOrganizations: organizations.length,
-      totalBranches: branches.length,
-      totalQueues: queues.length,
-      organizationAnalytics: await Promise.all(
-        organizations.map(async (org) => {
-          const orgBranches = branches.filter(
-            (b) => b.organization && b.organization._id.toString() === org._id.toString()
-          );
+    const totalCustomersThisWeek = await Customer.find({
+      ...filter,
+      createdAt: { $gte: startOfWeek, $lte: endOfWeek },
+    });
 
-          const branchIds = orgBranches.map((b) => b._id);
-          const orgQueues = queues.filter((q) =>
-            branchIds.includes(q.branch?._id?.toString())
-          );
+    const totalCustomersLastWeek = await Customer.find({
+      ...filter,
+      createdAt: {
+        $gte: moment(startOfWeek).subtract(7, 'days').toDate(),
+        $lte: moment(endOfWeek).subtract(7, 'days').toDate(),
+      },
+    });
 
-          return {
-            organizationId: org._id,
-            organizationName: org.name,
-            totalBranches: orgBranches.length,
-            totalQueues: orgQueues.length,
-            branches: orgBranches.map((b) => ({
-              branchId: b._id,
-              branchName: b.branchName,
-              city: b.city,
-              queueCount: orgQueues.filter(
-                (q) => q.branch?._id?.toString() === b._id.toString()
-              ).length,
-            })),
-          };
-        })
-      ),
-    };
+    const customerChangePercent =
+      totalCustomersLastWeek > 0
+        ? (((totalCustomersThisWeek - totalCustomersLastWeek) /
+            totalCustomersLastWeek) *
+            100).toFixed(1)
+        : 0;
 
-    // Optionally update dashboard model
-    const updatedDashboard = await SuperAdminDashboard.findOneAndUpdate(
-      {},
-      { analytics: analyticsSummary },
-      { upsert: true, new: true }
-    );
+    // Average Wait Time
+    const waitTimes = await Queue.aggregate([
+      { $match: { ...filter, status: 'served' } },
+      {
+        $group: {
+          _id: null,
+          avgWait: { $avg: '$waitTime' },
+        },
+      },
+    ]);
+
+    const avgWaitTime = waitTimes.length > 0 ? waitTimes[0].avgWait : 0;
+
+    // Customer Flow Trends (Mon–Sun)
+    const trends = await Customer.aggregate([
+      {
+        $match: {
+          ...filter,
+          createdAt: { $gte: startOfWeek, $lte: endOfWeek },
+        },
+      },
+      {
+        $group: {
+          _id: { $dayOfWeek: '$createdAt' },
+          totalCustomers: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id': 1 } },
+    ]);
+
+    // Format for frontend chart
+    const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const customerTrends = daysOfWeek.map((day, i) => {
+      const record = trends.find(t => t._id === i + 2 || (i === 6 && t._id === 1));
+      return {
+        day,
+        totalCustomers: record ? record.totalCustomers : 0,
+        avgWait: Math.floor(Math.random() * 10) + 5, // placeholder wait time per day
+      };
+    });
+
 
     res.status(200).json({
-      message: 'Fetched all analytics successfully.',
-      analytics: updatedDashboard.analytics,
+      message: 'Dashboard metrics fetched successfully',
+      totalCustomers: totalCustomersThisWeek,
+      customerChangePercent,
+      avgWaitTime: avgWaitTime.toFixed(0),
+      trends: customerTrends,
     });
   } catch (error) {
+    console.error('Error fetching dashboard metrics:', error);
     res.status(500).json({
-    message:"Error fetching Analytics",
-    error: error.message
-    });
-  }
-};
-
-
-exports.createAnalytics = async (req, res) => {
-  try {
-    const { analytics } = req.body;
-
-    const updatedDashboard = await SuperAdminDashboard.findOneAndUpdate(
-      {},
-      { analytics },
-      { upsert: true, new: true }
-    );
-
-    res.status(201).json({
-      message: 'Analytics created successfully.',
-      analytics: updatedDashboard.analytics,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error creating Analytics',
-    });
-  }
-};
-
-exports.updateAnalytics = async (req, res) => {
-  try {
-    const { analytics } = req.body;
-
-    const updatedDashboard = await SuperAdminDashboard.findOneAndUpdate(
-      {},
-      { $set: { analytics } },
-      { new: true }
-    );
-
-    res.status(200).json({
-      message: 'Analytics updated successfully.',
-      analytics: updatedDashboard.analytics,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error updating Analytics',
+      message: 'Error fetching dashboard metrics',
       error: error.message,
     });
   }
 };
 
-
-exports.deleteAnalytics = async (req, res) => {
+exports.getFilteredDashboardData = async (req, res) => {
   try {
-    const clearedDashboard = await SuperAdminDashboard.findOneAndUpdate(
-      {},
-      { $unset: { analytics: 1 } },
-      { new: true }
-    );
+    const { organizationId, timeRange } = req.query;
+
+  
+    const filter = {};
+    if (organizationId && organizationId !== 'all') {
+      filter.organizationId = organizationId;
+    }
+
+    // Determine the time range
+    let startDate, endDate;
+    const today = moment().endOf('day');
+
+    switch (timeRange) {
+      case 'today':
+        startDate = moment().startOf('day');
+        endDate = today;
+        break;
+      case 'thisWeek':
+        startDate = moment().startOf('isoWeek');
+        endDate = moment().endOf('isoWeek');
+        break;
+      case 'thisMonth':
+        startDate = moment().startOf('month');
+        endDate = moment().endOf('month');
+        break;
+      default:
+        startDate = moment().startOf('day');
+        endDate = today;
+        break;
+    }
+
+    const totalCustomers = await Customer.find({
+      ...filter,
+      createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() },
+    });
+
+    // Average Wait Time (in minutes) 
+    const waitTimeData = await Queue.aggregate([
+      {
+        $match: {
+          ...filter,
+          status: 'served',
+          createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          avgWaitTime: { $avg: '$waitTime' },
+        },
+      },
+    ]);
+
+    const avgWaitTime =
+      waitTimeData.length > 0 ? Math.round(waitTimeData[0].avgWaitTime) : 0;
+
+    const trends = await Customer.aggregate([
+      {
+        $match: {
+          ...filter,
+          createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() },
+        },
+      },
+      {
+        $group: {
+          _id: { $dayOfWeek: '$createdAt' },
+          totalCustomers: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id': 1 } },
+    ]);
+
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const customerTrends = daysOfWeek.map((day, i) => {
+      const match = trends.find(t => t._id === i + 1);
+      return {
+        day,
+        totalCustomers: match ? match.totalCustomers : 0,
+      };
+    });
+
 
     res.status(200).json({
-      message: 'Analytics section cleared successfully.',
-      cleared: clearedDashboard,
+      message: 'Dashboard data fetched successfully',
+      organizationId: organizationId || 'all',
+      timeRange: timeRange || 'today',
+      totalCustomers,
+      avgWaitTime,
+      trends: customerTrends,
     });
   } catch (error) {
+    console.error('Error fetching filtered dashboard data:', error);
     res.status(500).json({
-      message: 'Error deleting Analytics',
-      error:  error.message,
+      message: 'Error fetching filtered dashboard data',
+      error: error.message,
     });
   }
 };

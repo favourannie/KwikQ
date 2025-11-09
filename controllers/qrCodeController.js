@@ -108,10 +108,13 @@ exports.generateQRCode = async (req, res) => {
 
 exports.getQueueLength = async(req, res)=>{
   try {
-    const data = await queueModel.countDocuments()
+    const organizationId = req.params.id;
+
+    const data = await queueModel.find({organizationId:organizationId});
+    const totalQrCode = data.length
     res.status(200).json({
       message: "Successfully fetched total number of queues",
-      data: data
+      data: totalQrCode
     })
   } catch (error) {
     res.status(500).json({

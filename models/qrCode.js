@@ -39,4 +39,6 @@ const qrCodeSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model('QRCode', qrCodeSchema);
+const qrCodeModel = mongoose.model('QRCode', qrCodeSchema);
+
+module.exports = qrCodeModel;

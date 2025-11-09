@@ -12,6 +12,7 @@ const superAdminDashboardSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'branches'
     },
+  
   },
 
   // Analytics Section
@@ -21,7 +22,7 @@ const superAdminDashboardSchema = new mongoose.Schema({
     customerFlowTrend: [{ week: Date, count: Number }],  // e.g. [{ week: '2024-01-01', count: 150 }]
     peakHours: [{ hour: Number, count: Number }],  // e.g. [{ hour: 24, count: 50 }]
     servicePerformance: [{
-      branch: { type: mongoose.Schema.Types.ObjectId, ref: 'branches' },
+      branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'branches' },
       avgWaitTime: Number,
       avgServiceTime: Number,
       satisfaction: Number,
@@ -72,21 +73,29 @@ const superAdminDashboardSchema = new mongoose.Schema({
     headOfficeAddress: String,
     industryType: String,
     userAndRoles: [{
-      role: { type: String, enum: ['admin', 'manager', 'staff'], default: 'staff' },
-      permissions: {
-        canCreateBranches: { type: Boolean, default: true },
-        canManageUsers: { type: Boolean, default: true },
-        canViewReports: { type: Boolean, default: true }
-      }
+      role: { type: String, enum: ['admin', 'manager', 'staff'], default: 'staff',
+      scope: { type: String, enum: ['organization','branch'], default: 'branch' }, // where role applies
+      defaultAccess: { type: String }, // optional metadata
+    
+    },
+      permissions:  [{ type: String }], // e.g. ["branches:read","queues:manage","settings:update"]
     }],
      branchId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'branches'
     },
-    securitySettings: {
-        twoFactorAuth: { type: Boolean, default: false },
-        passwordPolicy: { type: String, default: 'standard' }
+      sessionTimeout: {
+     type: Number, // in minutes
+     default: 30,
     },
+      loginNotifications: {
+      type: Boolean,
+      default: false,
+    },
+       auditLogging: {
+       type: Boolean,
+      default: false,
+     },
     subscriptionDetails: {
         planType: { type: String, enum: ['free', 'standard', 'premium'], default: 'free' },
         renewalDate: Date,
@@ -98,4 +107,6 @@ const superAdminDashboardSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
-module.exports = mongoose.model('SuperAdminDashboard', superAdminDashboardSchema);
+const superModel= mongoose.model('SuperAdminDashboard', superAdminDashboardSchema);
+
+module.exports = superModel;

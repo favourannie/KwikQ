@@ -54,3 +54,27 @@ exports.adminAuth = async(req,res,next)=>{
        next() 
     }
 }
+
+exports.branchLogin = async(req, res, next) =>{
+    try {
+        const token = req.headers.authorization?.split(" ")[1]
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        const branch = await Branch.findById(decoded.id)
+
+        if (!branch){
+            return res.status(404).json({
+                message: 'Branch not found'
+            })
+        }else{
+            next()
+        }
+        
+    } catch (error) {
+        res.status(500).json({
+            message: "Internal Server Error",
+            error: error.message
+        })
+        
+    }
+
+}

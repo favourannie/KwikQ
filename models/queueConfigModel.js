@@ -30,4 +30,6 @@ const queueConfigSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("queueConfigs", queueConfigSchema);
+const queueConfigsModel = mongoose.model("queueConfigs", queueConfigSchema);
+
+module.exports = queueConfigsModel
