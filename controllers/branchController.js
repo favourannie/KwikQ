@@ -114,8 +114,14 @@ exports.branchLogin = async (req, res) => {
         message: "Invalid manager email or branch code",
       });
     }
-    await branch.save();
-    const token = jwt.sign({id: branch._id}, process.env.JWT_SECRET,{expiresIn: '1d'})
+    const token = jwt.sign({
+      id: branch._id, 
+      email: branch.managerEmail
+    }, 
+    process.env.JWT_SECRET, {
+      expiresIn: "1 day"
+    }
+  )
     return res.status(200).json({
       message: "Branch login successful",
       token,
@@ -125,9 +131,9 @@ exports.branchLogin = async (req, res) => {
         branchCode: branch.branchCode,
         managerName: branch.managerName,
         managerEmail: branch.managerEmail
-      }, organization
+      }, organization,
+      token
     });
-
   } catch (error) {
     console.error("Error logging in branch:", error);
     return res.status(500).json({
