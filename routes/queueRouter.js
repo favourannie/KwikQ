@@ -4,4 +4,6 @@ const { getQueueStats } = require("../controllers/queueController");
 
 router.get("/queue/:branchId", getQueueStats);
 
+// router.post('/joinqueue', joinQueue)
+
 module.exports = router;

@@ -45,6 +45,13 @@ const branchSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+ status: { type: String, enum: ['Active', 'Warning', 'Offline'], default: 'Active' },
+  avgWaitTime: { type: Number, default: 0 },
+  servedToday: { type: Number, default: 0 },
+  activeQueue: { type: Number, default: 0 },
+  lastUpdated: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model("branches", branchSchema);
+const branchModel = mongoose.model("branches", branchSchema);
+
+module.exports = branchModel;

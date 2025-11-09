@@ -71,4 +71,6 @@ const branchQueueManagementSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model('branchQueueManagement', branchQueueManagementSchema);
+const branchQueueModel = mongoose.model('branchQueueManagement', branchQueueManagementSchema);
+
+module.exports = branchQueueModel;

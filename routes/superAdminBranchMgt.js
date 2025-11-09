@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {getBranchManagement, getBranchById, viewBranchReports, getAllBranchesWithStats}  = require('../controllers/superAdminBranchMgt');
+const {getBranchManagement, getBranchById, getAllBranchesWithStats,getAllBranches, getBranches}  = require('../controllers/superAdminBranchMgt');
 
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 
@@ -87,60 +87,6 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  */
 
 router.get('/branch/management/:id/', authenticate, getBranchManagement);
-
-/**
- * @swagger
- * /api/v1/{branchId}/{id}/report:
- *   get:
- *     tags:
- *       - Super Admin Branch Management
- *     summary: Get branch report
- *     description: |
- *       Retrieves a report for a specific branch including customer analytics. Note: the route currently accepts
- *       two path segments; the controller uses `branchId` (first segment) to fetch the branch. The second `id`
- *       segment is accepted by the route but ignored by the implementation — keep it for backward compatibility.
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: branchId
- *         required: true
- *         schema:
- *           type: string
- *         description: Branch ObjectId used to locate the branch
- *         example: "507f1f77bcf86cd799439011"
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Legacy/unused id path segment retained for compatibility
- *     responses:
- *       200:
- *         description: Branch report fetched successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               required:
- *                 - message
- *                 - report
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Branch report fetched successfully
- *                 report:
- *                   $ref: '#/components/schemas/BranchReport'
- *       401:
- *         description: Authentication required
- *       403:
- *         description: Admin privileges required
- *       404:
- *         description: Branch not found
- *       500:
- *         description: Server error
- */
-router.get('/:branchId/:id/report', authenticate, viewBranchReports);
 
 /**
  * paths:
@@ -320,5 +266,9 @@ router.get("/branches/:id", authenticate, getBranchById);
  *                   example: Internal Server Error
  */
 router.get('/getallbranches', getAllBranchesWithStats);
+
+router.get('/getbrachstat/:id/', getBranches)
+
+router.get('/getall', getAllBranches)
 
 module.exports = router;

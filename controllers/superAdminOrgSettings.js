@@ -29,6 +29,7 @@ exports.getOrganizationSettings = async (req, res) => {
       { organizationSettings },
       { upsert: true, new: true }
     );
+    await organizationSettings.save();
 
     res.status(200).json({
       message: 'Organization settings fetched successfully',
@@ -73,49 +74,42 @@ exports.getAllBranchManagers = async (req, res) => {
 };
 
 
-exports.updateSecuritySettings = async (req, res) => {
+exports.updateSettings = async (req, res) => {
   try {
-    const { Id } = req.params;
-    const { twoFactorAuth, loginNotifications } = req.body;
+    const { organizationId } = req.body;
+    const updateData = req.body;
 
-    const organization = await Organization.findById(Id);
-    if (!organization) {
-      return res.status(404).json({ message: 'Organization not found' });
-    }
-
-    organization.securitySettings = {
-      ...organization.securitySettings,
-      twoFactorAuth: twoFactorAuth ?? organization.securitySettings?.twoFactorAuth,
-      loginNotifications: loginNotifications ?? organization.securitySettings?.loginNotifications,
-      updatedAt: new Date(),
-    };
-
-    await organization.save();
-
+    const updatedSettings = await SuperAdminDashboard.findOneAndUpdate(
+      { organizationId },
+      updateData,
+      { new: true, upsert: true }
+    );
+      await 
     res.status(200).json({
-      message: 'Security settings updated successfully',
-      securitySettings: organization.securitySettings,
+      message: 'Settings updated successfully',
+      data: updatedSettings,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating security settings', error: error.message });
+    res.status(500).json({ message: 'Error updating settings', error: error.message });
   }
 };
 
-// Get Security Settings for an Organization
-exports.getSecuritySettings = async (req, res) => {
+exports.getSettings = async (req, res) => {
   try {
-    const { Id } = req.user.id;
-    const organization = await Organization.findById(Id).select('securitySettings name');
-    if (!organization) {
-      return res.status(404).json({ message: 'Organization not found' });
+    const { organizationId } = req.query;
+
+    const settings = await SuperAdminDashboard.findOne({ organizationId });
+
+    if (!settings) {
+      return res.status(404).json({ message: 'Settings not found' });
     }
 
     res.status(200).json({
-      message: `Security settings for ${organization.name}`,
-      securitySettings: organization.securitySettings,
+      message: 'Settings fetched successfully',
+      data: settings,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching security settings', error: error.message });
+    res.status(500).json({ message: 'Error fetching settings', error: error.message });
   }
 };
 
@@ -172,7 +166,6 @@ exports.addCardMethod = async (req, res) => {
 };
 
 
-
 exports.updateCardMethod = async (req, res) => {
   try {
     const { organizationId, cardId } = req.body;
@@ -200,6 +193,33 @@ exports.updateCardMethod = async (req, res) => {
   }
 };
 
+exports.removeCard = async (req, res) => {
+  try {
+    const { cardId } = req.params;
+    const { organizationId } = req.query;
+    if (!organizationId) return res.status(400).json({ message: 'organizationId required' });
+
+    const pm = await PaymentMethod.findOneAndDelete({ _id: cardId, organizationId });
+    if (!pm) return res.status(404).json({ message: 'Card not found' });
+
+    // If it was default, try set another card to default
+    if (pm.isDefault) {
+      const another = await PaymentMethod.findOne({ organizationId }).sort({ createdAt: -1 });
+      if (another) {
+        another.isDefault = true;
+        await another.save();
+      }
+    }
+
+    // TODO: if using provider, detach or delete payment method in provider using pm.stripePaymentMethodId
+
+    return res.json({ message: 'Card removed' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Error removing card', error: err.message });
+  }
+};
+
 
 exports.getBillingHistory = async (req, res) => {
   try {
@@ -220,6 +240,39 @@ exports.getBillingHistory = async (req, res) => {
   }
 };
 
+exports.getInvoices = async (req, res) => {
+  try {
+    const { organizationId } = req.query;
+    if (!organizationId) return res.status(400).json({ message: 'organizationId required' });
+
+    const invoices = await Billing.find({ organizationId }).sort({ issuedAt: -1 }).lean();
+
+    await invoices.save();
+    return res.json({ message: 'Invoices fetched', invoices });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Error fetching invoices', error: err.message });
+  }
+};
+
+exports.downloadInvoice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const invoice = await Billingilling.findById(id).lean();
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+
+   
+    if (invoice.downloadUrl) {
+      return res.json({ downloadUrl: invoice.downloadUrl });
+     
+    } else {
+      return res.status(404).json({ message: 'Download not available' });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Error downloading invoice', error: err.message });
+  }
+};
 
 exports.updateOrganization = async (req, res) => {
   try {
@@ -249,31 +302,6 @@ exports.updateOrganization = async (req, res) => {
   }
 };
 
-exports.deleteOrganization = async (req, res) => {
-  try {
-    const organization = await Organization.findById(req.params.id);
-    if (!organization)
-      return res.status(404).json({ message: 'Organization not found' });
-
-    // Optionally delete all branches under this organization
-    await Branch.deleteMany({ organization: req.params.id });
-    await Organization.findByIdAndDelete(req.params.id);
-
-    // Update dashboard
-    const organizations = await Organization.find();
-    await SuperAdminDashboard.findOneAndUpdate(
-      {},
-      { organizationSettings: organizations },
-      { upsert: true }
-    );
-
-    res.status(200).json({
-      message: 'Organization and its branches deleted successfully',
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting organization', error: error.message });
-  }
-};
 
 exports.getBranchesByOrganization = async (req, res) => {
   try {
@@ -415,106 +443,19 @@ exports.changeSubscriptionPlan = async (req, res) => {
 
 
 
-// exports.superAdminLogin = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     // You can store Super Admin credentials in a dedicated collection or .env
-//     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@queueless.com';
-//     const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'superadmin123';
-
-//     if (email !== superAdminEmail) {
-//       return res.status(401).json({ message: 'Invalid credentials' });
-//     }
-
-//     // Compare password (for real use, hash & store securely)
-//     const isMatch = password === superAdminPassword;
-//     if (!isMatch) {
-//       return res.status(401).json({ message: 'Invalid credentials' });
-//     }
-
-//     // Create token
-//     const token = jwt.sign(
-//       { email, role: 'super-admin' },
-//       JWT_SECRET,
-//       { expiresIn: '7d' }
-//     );
-
-//     res.status(200).json({
-//       message: 'Super Admin logged in successfully',
-//       token,
-//       role: 'super-admin',
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error during Super Admin login', error: error.message });
-//   }
-// };
 
 
-// exports.organizationLogin = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const organization = await Organization.findOne({ email });
-//     if (!organization)
-//       return res.status(404).json({ message: 'Organization not found' });
-
-//     const isPasswordValid = await bcrypt.compare(password, organization.password);
-//     if (!isPasswordValid)
-//       return res.status(401).json({ message: 'Invalid password' });
-
-//     const token = jwt.sign(
-//       { id: organization._id, role: 'organization-admin' },
-//       JWT_SECRET,
-//       { expiresIn: '7d' }
-//     );
-
-//     res.status(200).json({
-//       message: 'Organization login successful',
-//       token,
-//       organizationId: organization._id,
-//       role: 'organization-admin',
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error during organization login', error: error.message });
-//   }
-// };
 
 
-// exports.branchLogin = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
+exports.deleteOrganization = async (req, res) => {
+  try {
+    const { organizationId } = req.body;
 
-//     const branch = await Branch.findOne({ email }).populate('organization');
-//     if (!branch)
-//       return res.status(404).json({ message: 'Branch not found' });
+    await Organization.findByIdAndDelete(organizationId);
+    await SuperAdminDashboard.findOneAndDelete({ organizationId });
 
-//     const isPasswordValid = await bcrypt.compare(password, branch.password);
-//     if (!isPasswordValid)
-//       return res.status(401).json({ message: 'Invalid password' });
-
-//     const token = jwt.sign(
-//       {
-//         id: branch._id,
-//         organizationId: branch.organization?._id,
-//         role: 'branch-admin'
-//       },
-//       JWT_SECRET,
-//       { expiresIn: '7d' }
-//     );
-
-//     // Update last login
-//     branch.lastLogin = new Date();
-//     await branch.save();
-
-//     res.status(200).json({
-//       message: 'Branch login successful',
-//       token,
-//       branchId: branch._id,
-//       organizationId: branch.organization?._id,
-//       role: 'branch-admin',
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error during branch login', error: error.message });
-//   }
-// };
+    res.status(200).json({ message: 'Organization deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting organization', error: error.message });
+  }
+};

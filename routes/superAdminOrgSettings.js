@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const {getOrganizationSettings, updateOrganization, deleteOrganization,
         getBranchesByOrganization, getAllBranches, getBranchById,
-        getAllBranchManagers,getSecuritySettings, updateSecuritySettings,addCardMethod, updateCardMethod,
-        getBillingHistory } = require('../controllers/superAdminOrgSettings');
+        getAllBranchManagers, addCardMethod, updateCardMethod,
+        getBillingHistory, removeCard,
+        getSettings,downloadInvoice,getInvoices,
+        updateSettings} = require('../controllers/superAdminOrgSettings');
 
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 
@@ -115,12 +117,12 @@ router.put('/updateorganization/:id', authenticate, updateOrganization);
 
 /**
  * @swagger
- * /api/v1/deleteorganization/{id}:
+ * /api/settings/delete:
  *   delete:
- *     tags:
+ *     summary: Delete organization
+ *     tags: 
  *       - Super Admin Organization Management
- *     summary: Delete an organization
- *     description: Delete an organization and all its associated branches
+ *     description: Permanently delete the organization and all related data
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -129,7 +131,17 @@ router.put('/updateorganization/:id', authenticate, updateOrganization);
  *         required: true
  *         schema:
  *           type: string
- *         description: Organization ID to delete
+ *         description: Organization ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               organizationId:
+ *                 type: string
+ *                 example: 6730a3e7f9d2b224a9fabb45
  *     responses:
  *       200:
  *         description: Organization deleted successfully
@@ -140,9 +152,7 @@ router.put('/updateorganization/:id', authenticate, updateOrganization);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization and its branches deleted successfully
- *       404:
- *         description: Organization not found
+ *                   example: Organization deleted successfully
  *       500:
  *         description: Error deleting organization
  */
@@ -316,71 +326,20 @@ router.get('/roles/managers', authenticate, getAllBranchManagers);
 
 /**
  * @swagger
- * /api/v1/security/{Id}:
- *   get:
- *     tags:
- *       - Super Admin Security Management
- *     summary: Get organization security settings
- *     description: Retrieve security settings for a specific organization
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: Id
- *         required: true
- *         schema:
- *           type: string
- *         description: Organization ID
- *     responses:
- *       200:
- *         description: Security settings fetched successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 securitySettings:
- *                   type: object
- *       404:
- *         description: Organization not found
- *       500:
- *         description: Error fetching security settings
- */
-router.get('/security/:Id', authenticate, getSecuritySettings);
-
-/**
- * @swagger
- * /api/v1/security/{Id}:
+ * /api/v1/updatesetting:
  *   put:
- *     tags:
- *       - Super Admin Security Management
- *     summary: Update organization security settings
- *     description: Update security settings for a specific organization
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: organizationId
- *         required: true
- *         schema:
- *           type: string
- *         description: Organization ID
+ *     summary: Update organization settings
+ *     tags: Super Admin Security Management
+ *     description: Update session timeout, login notifications, and audit logging for an organization
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               twoFactorAuth:
- *                 type: boolean
- *               loginNotifications:
- *                 type: boolean
+ *             $ref: '#/components/schemas/OrganizationSettingsUpdateRequest'
  *     responses:
  *       200:
- *         description: Security settings updated successfully
+ *         description: Settings updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -388,14 +347,63 @@ router.get('/security/:Id', authenticate, getSecuritySettings);
  *               properties:
  *                 message:
  *                   type: string
- *                 securitySettings:
- *                   type: object
- *       404:
- *         description: Organization not found
+ *                   example: Settings updated successfully
+ *                 data:
+ *                   $ref: '#/components/schemas/OrganizationSettings'
  *       500:
- *         description: Error updating security settings
+ *         description: Error updating settings
  */
-router.put('/security/:Id', authenticate, updateSecuritySettings);
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     OrganizationSettings:
+ *       type: object
+ *       properties:
+ *         organizationId:
+ *           type: string
+ *           example: 6730a3e7f9d2b224a9fabb45
+ *         sessionTimeout:
+ *           type: integer
+ *           example: 30
+ *           description: Session timeout in minutes
+ *         loginNotifications:
+ *           type: boolean
+ *           example: true
+ *           description: Whether login notifications are enabled
+ *         auditLogging:
+ *           type: boolean
+ *           example: false
+ *           description: Whether audit logging is enabled
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: 2025-11-09T10:15:42.000Z
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           example: 2025-11-09T10:20:00.000Z
+ *
+ *     OrganizationSettingsUpdateRequest:
+ *       type: object
+ *       required:
+ *         - organizationId
+ *       properties:
+ *         organizationId:
+ *           type: string
+ *           example: 6730a3e7f9d2b224a9fabb45
+ *         sessionTimeout:
+ *           type: integer
+ *           example: 60
+ *         loginNotifications:
+ *           type: boolean
+ *           example: true
+ *         auditLogging:
+ *           type: boolean
+ *           example: true
+ */
+router.patch('/updatesettings', updateSettings);
 
 /**
  * @swagger
@@ -507,6 +515,37 @@ router.put('/billing/:Id/cards/:cardId', authenticate, updateCardMethod);
 
 /**
  * @swagger
+ * /api/v1/card/{cardId}:
+ *   delete:
+ *     summary: Remove a payment card by ID
+ *     tags:
+ *       - Super Admin Billing Management
+ *     parameters:
+ *       - in: path
+ *         name: cardId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the card to remove
+ *       - in: query
+ *         name: organizationId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Organization ID
+ *     responses:
+ *       200:
+ *         description: Card removed successfully
+ *       404:
+ *         description: Card not found
+ *       500:
+ *         description: Server error
+ */
+router.delete('/card/:cardId', removeCard);
+
+
+/**
+ * @swagger
  * /api/v1/billing/{Id}/history:
  *   get:
  *     tags:
@@ -544,5 +583,88 @@ router.put('/billing/:Id/cards/:cardId', authenticate, updateCardMethod);
  *         description: Error fetching billing history
  */
 router.get('/billing/:Id/history', authenticate, getBillingHistory);
+
+/**
+ * @swagger
+ * /api/v1/settings:
+ *   get:
+ *     summary: Get organization settings
+ *     tags:
+ *       - Super Admin Security Management
+ *     description: Retrieve an organization's security and configuration settings
+ *     parameters:
+ *       - in: query
+ *         name: organizationId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Organization ID
+ *     responses:
+ *       200:
+ *         description: Settings fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Settings fetched successfully
+ *                 data:
+ *                   $ref: '#/components/schemas/OrganizationSettings'
+ *       404:
+ *         description: Settings not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/settings',getSettings);
+
+/**
+ * @swagger
+ * /api/v1/invoices:
+ *   get:
+ *     summary: Get all invoices for an organization
+ *     tags:
+ *       - Super Admin Billing Management
+ *     parameters:
+ *       - in: query
+ *         name: organizationId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the organization
+ *     responses:
+ *       200:
+ *         description: List of invoices returned
+ *       400:
+ *         description: Missing organizationId
+ *       500:
+ *         description: Server error
+ */
+router.get('/invoices', getInvoices);
+
+/**
+ * @swagger
+ * /api/v1/invoices/{id}/download:
+ *   get:
+ *     summary: Download an invoice file
+ *     tags:
+ *       - Super Admin Billing Management
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Invoice ID
+ *     responses:
+ *       200:
+ *         description: Download link provided
+ *       404:
+ *         description: Invoice not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/invoices/:id/download', downloadInvoice);  
 
 module.exports = router;

@@ -14,19 +14,18 @@ const customerSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-
-  // Form fields filled by customer
-  formDetails: {
-    fullName: { type: String, required: true },
-    email: { type: String, required: true, lowercase: true },
-    phone: { type: String, required: false },
-    serviceNeeded: { type: String, required: true,
-       enum: ["accountOpening", "loanCollection","cardCollection", "fundTransfer", "accountUpdate", "generalInquiry", "complaintResolution", "other" ] 
-      },
-    additionalInfo: { type: String, required: false },
-    priorityStatus: { type: String, 
-      enum: ["regularStandard", "elderlyOrDisabled", "pregnantWoman", "emergencyOrUrgent"]
-    },
+  
+formDetails:{
+  fullName: { type: String, required: true },
+  email: { type: String, required: true, lowercase: true },
+  phone: { type: String, required: false },
+  serviceNeeded: { type: String, required: true,
+    enum: ["accountOpening", "loanCollection","cardCollection", "fundTransfer", "accountUpdate", "generalInquiry", "complaintResolution", "other" ] 
+  },
+  additionalInfo: { type: String, required: false },
+  priorityStatus: { type: String, 
+    enum: ["regularStandard", "elderlyOrDisabled", "pregnantWoman", "emergencyOrUrgent"]
+  },
   },
 
   // Queue tracking
@@ -44,4 +43,6 @@ const customerSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model('Customers', customerSchema);
+const queueModel = mongoose.model('Customers', customerSchema);
+
+module.exports = queueModel;

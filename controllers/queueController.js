@@ -7,48 +7,52 @@ const branchModel = require("../models/branchModel")
 
 exports.joinQueue = async(req,res) => {
   try {
-    const id = req.query.id;
-    const {fullName, email, phone, serviceNeeded, additionalInfo, regularStandard, pregnantWoman, emergencyOrUrgent } = req.body
-    const business = await organizationModel.findById(id) || await branchModel.findById(id);
+    const {organizationId } = req.query;
+    const {branchId, fullName, email, phone, serviceNeeded, additionalInfo, priorityStatus } = req.body
+    const business = await organizationModel.findById(organizationId) 
+    // await branchModel.findById(id);
     
     if(!business){
       return res.status(404).json({
         message: "Business not found"
       })
     }
-    
-        let queue;
-    
-        if (business.role === "individual") {
-          queue = new customerQueueModel({
-            individualId: id,
+  
+        const formDetails ={
             fullName,
             email,
             phone,
             serviceNeeded,
             additionalInfo,
-            regularStandard,
-            pregnantWoman,
-            emergencyOrUrgent
-          });
-        } else if (business.role === "branch") {
+            priorityStatus
+          }
+  let queue
+        if (business.role === "individual") { 
           queue = new customerQueueModel({
-            branchId: id,
-            fullName,
-            email,
-            phone,
-            serviceNeeded,
-            additionalInfo,
-            regularStandard,
-            pregnantWoman,
-            emergencyOrUrgent
+            individualId: organizationId,
+            formDetails
+            
+          
           });
+             await queue.save();
+           return res.status(201).json({
+            message: "Successfully joined the queue",
+            data: queue
+          })
+
+        } else if (business.role === "multi") {
+         queue = new customerQueueModel({
+            branchId: branchId,
+            formDetails
+          });
+
+          await queue.save();
+          return res.status(201).json({
+            message: "Successfully joined the queue",
+            data: queue})
         }
-    await queue.save();
-    res.status(201).json({
-      message: "Successfully joined the queue",
-      data: queue
-    })
+        console.log(queue)
+    
 
   } catch (error) {
        res.status(500).json({
