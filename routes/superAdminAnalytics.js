@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {getDashboardMetrics, getFilteredDashboardData } = require('../controllers/superAdminAnalytics');
+const {getDashboardMetrics, getFilteredDashboardData,  getServiceDistribution } = require('../controllers/superAdminAnalytics');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 
@@ -204,6 +204,8 @@ router.get('/getanalytics',authenticate, getDashboardMetrics);
  *                   example: Cannot read property 'organizationId' of undefined
  */
 router.get('/getfiltered',authenticate, getFilteredDashboardData)
+
+router.get('/getservicedistribution', getServiceDistribution );
 
 
 

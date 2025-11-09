@@ -62,6 +62,19 @@ const superAdminDashboardSchema = new mongoose.Schema({
     },
   }],
 
+  service: [{
+  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization' },
+  branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Branches' },
+  serviceType: {
+    type: String,
+    enum: ['Deposits', 'Withdrawals', 'Inquiries', 'Account Opening', 'Other'],
+    required: true
+  },
+  count: { type: Number, default: 0 }, // number of times this service occurred
+  createdAt: { type: Date, default: Date.now }
+}],
+
+
   // Organization Settings
   organizationSettings: [{
     organization: { type: mongoose.Schema.Types.ObjectId, ref: 'organizations' },

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {getBranchManagement, getBranchById, getAllBranchesWithStats,getAllBranches, getBranches}  = require('../controllers/superAdminBranchMgt');
+const {getBranchManagement, getBranchById, getAllBranchesWithStats,getAllBranches, }  = require('../controllers/superAdminBranchMgt');
 
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 
@@ -267,7 +267,6 @@ router.get("/branches/:id", authenticate, getBranchById);
  */
 router.get('/getallbranches', getAllBranchesWithStats);
 
-router.get('/getbrachstat/:id/', getBranches)
 
 router.get('/getall', getAllBranches)
 

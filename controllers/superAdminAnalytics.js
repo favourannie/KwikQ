@@ -2,6 +2,8 @@ const SuperAdminDashboard = require('../models/superAdmin');
 const Organization = require('../models/organizationModel');
 const Branch = require('../models/branchModel');
 const Queue = require('../models/queueManagement'); 
+const Service = require('../models/superAdmin');
+const mongoose = require("mongoose");
 
 
 // const Queue = require('../models/queueModel');
@@ -192,6 +194,76 @@ exports.getFilteredDashboardData = async (req, res) => {
     console.error('Error fetching filtered dashboard data:', error);
     res.status(500).json({
       message: 'Error fetching filtered dashboard data',
+      error: error.message,
+    });
+  }
+};
+
+
+exports.getServiceDistribution = async (req, res) => {
+  try {
+    const filter = {};
+
+    // Validate and add organizationId filter
+    const { orgId, branchId } = req.query;
+
+    if (orgId) {
+      if (mongoose.Types.ObjectId.isValid(orgId)) {
+        filter.organizationId = new mongoose.Types.ObjectId(orgId);
+      } else {
+        return res.status(400).json({
+          message: "Invalid organizationId format",
+          error: "Expected a valid MongoDB ObjectId",
+        });
+      }
+    }
+
+    // Validate and add branchId filter
+    if (branchId) {
+      if (mongoose.Types.ObjectId.isValid(branchId)) {
+        filter.branchId = new mongoose.Types.ObjectId(branchId);
+      } else {
+        return res.status(400).json({
+          message: "Invalid branchId format",
+          error: "Expected a valid MongoDB ObjectId",
+        });
+      }
+    }
+
+    // Aggregation pipeline
+    const results = await Service.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$serviceType",
+          totalCount: { $sum: "$count" },
+        },
+      },
+    ]);
+
+    if (!results || results.length === 0) {
+      return res.status(200).json({
+        summary: { totalServices: 0 },
+        distribution: [],
+      });
+    }
+
+    // Compute totals and percentages
+    const total = results.reduce((sum, s) => sum + s.totalCount, 0);
+    const distribution = results.map((s) => ({
+      serviceType: s._id,
+      count: s.totalCount,
+      percentage: Number(((s.totalCount / total) * 100).toFixed(2)),
+    }));
+
+    res.status(200).json({
+      summary: { totalServices: total },
+      distribution,
+    });
+  } catch (error) {
+    console.error("Error fetching service distribution:", error);
+    res.status(500).json({
+      message: "Failed to fetch service distribution",
       error: error.message,
     });
   }
