@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {createBranch, getAllBranches, getBranchById, updateBranch, deleteBranch, branchLogin } = require('../controllers/branchController');
-const { authenticate, adminAuth  } = require('../middleware/authenticate');
+const { authenticate, adminAuth, Login  } = require('../middleware/authenticate');
 
 /**
  * @swagger
@@ -436,6 +436,6 @@ router.delete('/delete-branch/:id', authenticate, deleteBranch);
  *                 error:
  *                   type: string
  */
-router.post('/branchlogin', branchLogin);
+router.post('/branchlogin',Login, branchLogin);
 
 module.exports = router;
