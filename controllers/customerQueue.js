@@ -7,7 +7,6 @@ const queuePointModel = require("../models/queueModel");
 const Branch = require('../models/branchModel');
 const Organization = require('../models/organizationModel');
 
-
 const generateQueueNumber = () => {
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   const date = Date.now().toString().slice(-3);
@@ -49,6 +48,7 @@ exports.createCustomerQueue = async (req, res) => {
       queuePoints = await queuePointModel.find({ individualId: id }).sort({ createdAt: 1 });
     }
 
+    // Ensure at least 3 queue points exist
     if (queuePoints.length < 3) {
       const missing = 3 - queuePoints.length;
       for (let i = 1; i <= missing; i++) {
@@ -60,14 +60,19 @@ exports.createCustomerQueue = async (req, res) => {
       }
     }
 
-    const allCustomersCount = await CustomerInterface.countDocuments(
-      business.role === "multi" ? { branchId: id } : { individualId: id }
-    );
+    // Get the current total number of customers for that business
+    const filter = business.role === "multi" ? { branchId: id } : { individualId: id };
+    const totalCustomers = await CustomerInterface.countDocuments(filter);
 
-    const nextIndex = allCustomersCount % 3;
+    // Generate serial number with zero padding
+    const serialNumber = String(totalCustomers + 1).padStart(3, "0"); // 001, 002, etc.
+
+    // Assign customer to queue point in round-robin fashion
+    const nextIndex = totalCustomers % 3;
     const targetQueuePoint = queuePoints[nextIndex];
     const nextQueueNumber = generateQueueNumber();
 
+    // Create new customer
     const newCustomer = await CustomerInterface.create({
       ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
       formDetails: {
@@ -79,9 +84,11 @@ exports.createCustomerQueue = async (req, res) => {
         priorityStatus,
       },
       queueNumber: nextQueueNumber,
+      serialNumber, // ✅ new field added
       joinedAt: new Date(),
     });
 
+    // Save to queue point
     targetQueuePoint.customers.push(newCustomer._id);
     await targetQueuePoint.save();
 
@@ -89,6 +96,7 @@ exports.createCustomerQueue = async (req, res) => {
       message: `Customer added to ${targetQueuePoint.name}`,
       data: {
         queueNumber: newCustomer.queueNumber,
+        serialNumber: newCustomer.serialNumber, // ✅ returned to client
         queuePoint: targetQueuePoint.name,
         serviceNeeded: finalService,
       },
@@ -100,6 +108,7 @@ exports.createCustomerQueue = async (req, res) => {
     });
   }
 };
+
 
 
 exports.getQueuePoints = async (req, res) => {
