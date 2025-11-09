@@ -1,88 +1,99 @@
 const customerModel = require("../models/customerQueueModel");
 const branchModel = require("../models/branchModel");
-const organizationModel = require("../models/organizationModel")
-const queueManagement = require("../models/queueManagement");
+const organizationModel = require("../models/organizationModel");
+
 exports.getDashboardMetrics = async (req, res) => {
-    try {
+  try {
+    const userId = req.user.id;
+    let business = await organizationModel.findById(userId) || await branchModel.findById(userId);
+    if (!business) return res.status(404).json({ message: "Business not found" });
 
-        const {id} = req.params;
-        const business = await organizationModel.findById(id) || branchModel.findById(id) 
-        if(!business){
-            return res.status(404).json({
-                message: "Business not found"
-            })
-        }
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
+    let query = {};
+    if (business.role === "individual") query = { individualId: business._id };
+    else if (business.role === "multi") query = { branchId: business._id };
+    else return res.status(403).json({ message: "Unauthorized role" });
 
-        const org = branchId ? { branch: branchId }  : {}
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 
-        const [
-            activeInQueue,
-            activeYesterday,
-            servedToday,
-            servedYesterday
-        ] = await Promise.all([
-            customerModel.countDocuments({
-                ...branchQuery,
-                status: { $in: ["waiting", "serving"] }
-            }),
-            customerModel.countDocuments({
-                ...branchQuery,
-                createdAt: { $gte: yesterday, $lt: today },
-                status: { $in: ["waiting", "serving"] }
-            }),
-            customerModel.find({
-                ...branchQuery,
-                status: "served",
-                servedAt: { $gte: today }
-            }),
-            customerModel.find({
-                ...branchQuery,
-                status: "served",
-                servedAt: { $gte: yesterday, $lt: today }
-            })
-        ]);
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 
-        const avgWaitTime = servedToday.length > 0
-            ? servedToday.reduce((acc, c) => acc + c.waitTime, 0) / servedToday.length
-            : 0;
-        const avgWaitTimeYesterday = servedYesterday.length > 0
-            ? servedYesterday.reduce((acc, c) => acc + c.waitTime, 0) / servedYesterday.length
-            : 0;
+    const yesterdayEnd = new Date(todayStart);
 
-        const active = activeYesterday
-            ? ((activeInQueue - activeYesterday) / activeYesterday) * 100
-            : 0;
-        const waitTime = avgWaitTimeYesterday
-            ? ((avgWaitTime - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
-            : 0;
-        const served = servedYesterday.length
-            ? ((servedToday.length - servedYesterday.length) / servedYesterday.length) * 100
-            : 0;
+    const [activeToday, activeYesterday, servedToday, servedYesterday] = await Promise.all([
+      customerModel.countDocuments({
+        ...query,
+        status: { $in: ["waiting", "in_service"] },
+      }),
 
-        res.status(200).json({
-            data: {
-                activeInQueue: {
-                    current: activeInQueue,
-                    percentageChange: Math.round(active)
-                },
-                averageWaitTime: {
-                    current: Math.round(avgWaitTime),
-                    percentageChange: Math.round(waitTime)
-                },
-                servedToday: {
-                    current: servedToday.length,
-                    percentageChange: Math.round(served)
-                }
-            }
-        });
-    } catch (error) {
-        res.status(400).json({
-            message: "Error getting dashboard metrics",
-            error: error.message
-        });
-    }
+
+      customerModel.countDocuments({
+        ...query,
+        createdAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
+        status: { $in: ["waiting", "in_service"] },
+      }),
+
+      customerModel.find({
+        ...query,
+        status: "completed",
+        completedAt: { $gte: todayStart, $lt: tomorrowStart },
+      }),
+
+      customerModel.find({
+        ...query,
+        status: "completed",
+        completedAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
+      }),
+    ]);
+
+    const avgWaitTimeToday =
+      servedToday.length > 0
+        ? servedToday.reduce((acc, c) => acc + (c.waitTime || 0), 0) / servedToday.length
+        : 0;
+
+    const avgWaitTimeYesterday =
+      servedYesterday.length > 0
+        ? servedYesterday.reduce((acc, c) => acc + (c.waitTime || 0), 0) / servedYesterday.length
+        : 0;
+
+    const activeChange =
+      activeYesterday > 0 ? ((activeToday - activeYesterday) / activeYesterday) * 100 : 0;
+
+    const servedChange =
+      servedYesterday.length > 0
+        ? ((servedToday.length - servedYesterday.length) / servedYesterday.length) * 100
+        : 0;
+
+    const waitTimeChange =
+      avgWaitTimeYesterday > 0
+        ? ((avgWaitTimeToday - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
+        : 0;
+
+    res.status(200).json({
+      message: "Dashboard metrics fetched successfully",
+      data: {
+        activeInQueue: {
+          current: activeToday,
+          percentageChange: Math.round(activeChange),
+        },
+        averageWaitTime: {
+          current: Math.round(avgWaitTimeToday),
+          percentageChange: Math.round(waitTimeChange),
+        },
+        servedToday: {
+          current: servedToday.length,
+          percentageChange: Math.round(servedChange),
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching dashboard metrics:", error);
+    res.status(500).json({
+      message: "Error getting dashboard metrics",
+      error: error.message,
+    });
+  }
 };
-

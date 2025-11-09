@@ -13,7 +13,6 @@ const session = require('express-session');
 const passport = require('passport');
 const superAdminOverviewRoutes = require('./routes/superAdminOverviewRoutes');
 const branchRouter = require('./routes/branchRoutes');
-const queueRouter = require("./routes/queueRouter");
 const analyticsRouter = require('./routes/analyticsRoutes');
 const dashboardRouter = require('./routes/dashboardRoutes');
 const customerRouter = require('./routes/customerRoutes');
@@ -103,7 +102,6 @@ app.get('/', (req, res) => {
 app.use('/api/v1/', branchRouter);
 app.use('/api/v1', organizationRoutes);
 
-app.use("/api/v1", queueRouter);
 app.use('/api/v1/', analyticsRouter);
 app.use('/api/v1/', dashboardRouter);
 

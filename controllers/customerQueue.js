@@ -9,21 +9,23 @@ const Organization = require('../models/organizationModel');
 
 
 const generateQueueNumber = () => {
-const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-const date = Date.now().toString().slice(-3);
-return `kQ-${date}${random}`;
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const date = Date.now().toString().slice(-3);
+  return `kQ-${date}${random}`;
 };
+
 exports.createCustomerQueue = async (req, res) => {
   try {
     const { formDetails } = req.body;
-    const {id} = req.params
-    const business = await organizationModel.findById(id) || await branchModel.findById(id)
+    const { id } = req.params;
 
-    if(!business){
-      return res.status(404).json({
-        message: "Business not found"
-      })
+    let business = await organizationModel.findById(id);
+    if (!business) business = await branchModel.findById(id);
+
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
     }
+
     const { fullName, email, phone, serviceNeeded, additionalInfo, priorityStatus } = formDetails;
 
     const allowedServices = [
@@ -36,51 +38,38 @@ exports.createCustomerQueue = async (req, res) => {
       "complaintResolution",
     ];
 
-    const finalService =
-      allowedServices.includes(serviceNeeded) ? serviceNeeded : "other";
+    const finalService = allowedServices.includes(serviceNeeded)
+      ? serviceNeeded
+      : "other";
 
     let queuePoints;
-    if(business.role === "multi"){
-     queuePoints = await queuePointModel.find({ branchId: id }).sort({ createdAt: 1 });
-    } else if(business.role === "individual"){
-      queuePoints = await queuePointModel.find({ individualId: id }).sort({ createdAt: 1 });
+    if (business.role === "multi") {
+      queuePoints = await queuePointModel.find({ branchId: id }).sort({ createdAt: 1 });
     } else {
-      return res.status(400).json({
-        message: "Invalid business role. Must be 'multi' or 'individual'.",
-      });
+      queuePoints = await queuePointModel.find({ individualId: id }).sort({ createdAt: 1 });
     }
 
     if (queuePoints.length < 3) {
       const missing = 3 - queuePoints.length;
-      const newPoints = [];
-
       for (let i = 1; i <= missing; i++) {
         const newQueue = await queuePointModel.create({
           name: `Queue ${queuePoints.length + i}`,
-        })
-         if (business.role === "multi"){
-          newQueue.branchId = id;
-         } else {
-          newQueue.individualId = id;
-         }
-         const q = await queuePointModel.create(newQueue)
-        newPoints.push(q);
+          ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
+        });
+        queuePoints.push(newQueue);
       }
-
-      queuePoints = [...queuePoints, ...newPoints];
     }
 
-    const allCustomers = await CustomerInterface.find({ branchId: id }).countDocuments() || await CustomerInterface.find({individualId: id}).countDocuments()
-    const nextIndex = allCustomers % 3; 
+    const allCustomersCount = await CustomerInterface.countDocuments(
+      business.role === "multi" ? { branchId: id } : { individualId: id }
+    );
+
+    const nextIndex = allCustomersCount % 3;
     const targetQueuePoint = queuePoints[nextIndex];
+    const nextQueueNumber = generateQueueNumber();
 
-
-    const nextQueueNumber = generateQueueNumber()
-
-    let newCustomer;
-    if(business.role === "multi"){
-      newCustomer = await CustomerInterface.create({
-      // branchId: id,
+    const newCustomer = await CustomerInterface.create({
+      ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
       formDetails: {
         fullName,
         email,
@@ -90,27 +79,10 @@ exports.createCustomerQueue = async (req, res) => {
         priorityStatus,
       },
       queueNumber: nextQueueNumber,
-      joinedAt: new Date().toISOString(),
+      joinedAt: new Date(),
     });
-    } else if(business.role === "individual"){
-      newCustomer = await CustomerInterface.create({
-      // individualId: id,
-      formDetails: {
-        fullName,
-        email,
-        phone,
-        serviceNeeded: finalService,
-        additionalInfo,
-        priorityStatus,
-      },
-      queueNumber: nextQueueNumber,
-      joinedAt: new Date().toISOString(),
-    });
-    }
-    
 
-    targetQueuePoint.customers.push(newCustomer.id);
-
+    targetQueuePoint.customers.push(newCustomer._id);
     await targetQueuePoint.save();
 
     res.status(201).json({
@@ -127,7 +99,8 @@ exports.createCustomerQueue = async (req, res) => {
       error: error.message,
     });
   }
-}
+};
+
 
 exports.getQueuePoints = async (req, res) => {
   try {
