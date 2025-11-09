@@ -44,6 +44,7 @@ exports.getAllQueues = async (req, res) => {
 
           customersInQueue.push({
             id: c._id,
+            queueNumber: c.queueNumber || "N/A",
             fullName: c.formDetails?.fullName || "Unknown",
             service: c.formDetails?.serviceNeeded || "N/A",
             phone: c.formDetails?.phone || "N/A",
