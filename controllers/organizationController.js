@@ -1,4 +1,4 @@
-const Branch = require("../models/branchModel");
+const branchModel = require("../models/branchModel");
 const organizationModel = require("../models/organizationModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -442,17 +442,18 @@ exports.updateOrganizationDetails = async (req, res) => {
 exports.deleteOrganization = async (req, res) => {
   try {
     const { id } = req.params;
-    const org = await organizationModel.findByIdAndDelete(id);
-    if (org === null) {
-      return res.status(404).json({
-        message: "Organization not found",
-      });
+
+    let org = await organizationModel.findByIdAndDelete(id) || await branchModel.findByIdAndDelete(id);
+    if (!org) {
+      return res.status(404).json({ message: "Organization or branch not found" });
     }
     res.status(200).json({
       message: "Organization deleted successfully",
       data: org,
     });
+
   } catch (error) {
+    console.error("Error deleting organization:", error);
     res.status(500).json({
       message: "Error deleting organization",
       error: error.message,
