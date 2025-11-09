@@ -12,82 +12,66 @@ exports.getAllQueues = async (req, res) => {
 
     let business = await organizationModel.findById(id);
     if (!business) business = await branchModel.findById(id);
+
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
 
-    const role = business.role === "multi" ? "multi" :
-                 business.role === "individual" ? "individual" : "branch";
+    const query =
+      business.role === "multi"
+        ? { branchId: id }
+        : { individualId: id };
 
-    const queuePoints = await QueuePoint.find(
-      role === "multi" ? { branchId: id } : { individualId: id }
-    ).populate("customers");
+    const queuePoints = await QueuePoint.find(query).populate("customers");
 
     if (!queuePoints.length) {
       return res.status(200).json({
-        message: "No queue points found for this business",
+        message: "No customers currently in queue",
         data: [],
       });
     }
 
-    let totalCustomers = 0;
-    let totalWaiting = 0;
-    let totalServedToday = 0;
-    let totalWaitTime = 0;
+    const customersInQueue = [];
 
-    const queuesData = queuePoints.map((queue) => {
-      const total = queue.customers.length;
-      const waiting = queue.customers.filter((c) => c.status === "waiting").length;
-      const servedToday = queue.customers.filter((c) => c.status === "done").length;
-      const avgWait = queue.averageWaitTime || (Math.floor(Math.random() * 10) + 3);
+    queuePoints.forEach((queue) => {
+      queue.customers.forEach((c) => {
+        if (["waiting", "in_service"].includes(c.status)) {
+          const joinedAt = c.joinedAt ? new Date(c.joinedAt) : null;
+          const waitTime =
+            joinedAt
+              ? Math.round((Date.now() - joinedAt.getTime()) / 60000) // in minutes
+              : 0;
 
-      totalCustomers += total;
-      totalWaiting += waiting;
-      totalServedToday += servedToday;
-      totalWaitTime += avgWait;
-
-      return {
-        name: queue.name,
-        totalCustomers: total,
-        waiting,
-        servedToday,
-        averageWaitTime: avgWait,
-        customers: queue.customers.map((c) => ({
-          fullName: c.formDetails?.fullName,
-          serviceNeeded: c.formDetails?.serviceNeeded,
-          queueNumber: c.queueNumber,
-          joinedAt: c.joinedAt,
-          phone: c.formDetails?.phone,
-          status: c.status,
-        })),
-      };
+          customersInQueue.push({
+            id: c._id,
+            serialNumber: c.serialNumber,
+            queueNumber: c.queueNumber || "N/A",
+            fullName: c.formDetails?.fullName || "Unknown",
+            service: c.formDetails?.serviceNeeded || "N/A",
+            phone: c.formDetails?.phone || "N/A",
+            joinedAt: c.joinedAt || "N/A",
+            waitTime: `${waitTime} min`,
+          });
+        }
+      });
     });
 
-    const averageWaitTime =
-      queuePoints.length > 0 ? (totalWaitTime / queuePoints.length).toFixed(2) : 0;
+    customersInQueue.sort((a, b) => new Date(a.joinedAt) - new Date(b.joinedAt));
 
     res.status(200).json({
-      message: "Queue management data fetched successfully",
-      business: {
-        name: business.businessName,
-        type: role,
-      },
-      stats: {
-        totalCustomers,
-        totalWaiting,
-        totalServedToday,
-        averageWaitTime,
-      },
-      data: queuesData,
+      message: "Customers currently in queue fetched successfully",
+      count: customersInQueue.length,
+      data: customersInQueue,
     });
   } catch (error) {
-    console.error("Error fetching queue management data:", error);
+    console.error("Error fetching queue data:", error);
     res.status(500).json({
-      message: "Error fetching queue management data",
+      message: "Error fetching queue data",
       error: error.message,
     });
   }
 };
+
 
 
 
@@ -124,6 +108,66 @@ exports.alertCustomer = async (req, res) => {
     res.status(500).json({ message: "Error alerting customer", error: error.message });
   }
 };
+
+// exports.alertCustomer = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const queue = await CustomerInterface.findById(id);
+//     if (!queue)
+//       return res.status(404).json({ message: "Customer not found in queue" });
+
+//     const query = queue.branchId
+//       ? { branchId: queue.branchId }
+//       : { individualId: queue.individualId };
+
+//     const currentServed = await CustomerInterface.findOne({
+//       ...query,
+//       status: "in_service",
+//     });
+
+//     if (currentServed) {
+//       currentServed.status = "completed";
+//       currentServed.completedAt = new Date();
+
+//       if (currentServed.joinedAt) {
+//         const joined = new Date(currentServed.joinedAt);
+//         const completed = currentServed.completedAt;
+//         const diff = completed - joined;
+//         currentServed.waitTime = diff > 0 ? diff : 0;
+//       }
+
+//       await currentServed.save();
+//       console.log(
+//         `Customer ${currentServed.formDetails.fullName} marked as completed.`
+//       );
+//     }
+
+//     queue.status = "in_service";
+//     await queue.save();
+
+//     const detail = {
+//       email: queue.formDetails.email,
+//       subject: "Queue Alert!!! Your Turn!",
+//       html: `Hello ${queue.formDetails.fullName}, please proceed to your service point to be attended to.`,
+//     };
+
+//     await sendMail(detail
+
+//     res.status(200).json({
+//       message: "Next customer alerted successfully",
+//       data: {
+//         name: queue.formDetails.fullName,
+//         email: queue.formDetails.email,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error alerting customer:", error);
+//     res
+//       .status(500)
+//       .json({ message: "Error alerting customer", error: error.message });
+//   }
+// };
 
 exports.skipCustomer = async (req, res) => {
   try {
