@@ -9,10 +9,10 @@ const path = require("path");
 
 exports.generateQRCode = async (req, res) => {
   try {
-    const { id } = req.user;
+    const { organizationId,branchId } = req.body;
     const business =
-      (await organizationModel.findById(id)) ||
-      (await branchModel.findById(id));
+      (await organizationModel.findById(organizationId)) ||
+      (await branchModel.findById(branchId));
 
     if (!business) {
       return res.status(400).json({ message: "Business not found" });
@@ -60,7 +60,7 @@ exports.generateQRCode = async (req, res) => {
     console.log(business)
     if (business.role === "individual") {
       newQRCode = new QRCodeModel({
-        individualId: id,
+        individualId: organizationId,
         qrCode,
         formLink,
         qrImage: qrImageBase64,
@@ -72,7 +72,7 @@ exports.generateQRCode = async (req, res) => {
       
       newQRCode = new QRCodeModel({
       
-        branchId: id,
+        branchId: branchId,
         qrCode,
         formLink,
         qrImage: qrImageBase64,

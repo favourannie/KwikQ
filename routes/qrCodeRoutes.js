@@ -140,7 +140,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *                   type: string
  *                   example: Error generating QR code
  */
-router.post('/qrcode/generate',authenticate, generateQRCode);
+router.post('/qrcode/generate', generateQRCode);
 
 /**
  * @swagger
