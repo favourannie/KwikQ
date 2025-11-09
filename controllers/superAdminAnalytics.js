@@ -10,7 +10,7 @@ const moment = require('moment');
 
 exports.getDashboardMetrics = async (req, res) => {
   try {
-    const { organizationId } = req.params;
+    const { organizationId } = req.query;
 
     const filter = organizationId ? { organizationId } : {};
 
