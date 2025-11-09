@@ -436,6 +436,6 @@ router.delete('/delete-branch/:id', authenticate, deleteBranch);
  *                 error:
  *                   type: string
  */
-router.post('/branchlogin',Login, branchLogin);
+router.post('/branchlogin', branchLogin);
 
 module.exports = router;

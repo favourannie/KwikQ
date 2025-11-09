@@ -30,6 +30,7 @@ formDetails:{
 
   // Queue tracking
   queueNumber: { type: String, required: false },
+  serialNumber: {type: String},
   status: {
     type: String,
     enum: ['waiting', 'in_service', 'completed', 'canceled', 'no_show'],

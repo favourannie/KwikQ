@@ -572,19 +572,68 @@ router.patch('/organizations/:id', authenticate, updateOrganizationDetails);
  * @swagger
  * /api/v1/organizations/{id}:
  *   delete:
+ *     summary: Delete an organization or branch by ID
+ *     description: Deletes an organization or branch document based on the provided ID. If the ID matches an organization or branch, it is permanently removed from the database.
  *     tags:
  *       - Organization Management
- *     summary: Delete organization
- *     security:
- *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: id
+ *       - name: id
+ *         in: path
  *         required: true
+ *         description: The ID of the organization or branch to delete
  *         schema:
  *           type: string
+ *           example: 672f2d58bf21b2ac1f1e3c45
+ *     responses:
+ *       200:
+ *         description: Organization deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Organization deleted successfully"
+ *                 data:
+ *                   type: object
+ *                   description: The deleted organization or branch document
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: "672f2d58bf21b2ac1f1e3c45"
+ *                     name:
+ *                       type: string
+ *                       example: "Lagos Branch"
+ *                     role:
+ *                       type: string
+ *                       example: "multi"
+ *       404:
+ *         description: Organization or branch not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Organization or branch not found"
+ *       500:
+ *         description: Internal server error while deleting
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error deleting organization"
+ *                 error:
+ *                   type: string
+ *                   example: "Cast to ObjectId failed for value 'xyz' at path '_id'"
  */
-router.delete("/organizations/:id", authenticate, adminAuth, deleteOrganization);
+
+router.delete("/organizations/:id", deleteOrganization);
 
 
 /**

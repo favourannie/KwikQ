@@ -115,7 +115,7 @@ exports.branchLogin = async (req, res) => {
       });
     }
     const token = jwt.sign({
-      id: branch._id, 
+      id: branch._id,
       email: branch.managerEmail
     }, 
     process.env.JWT_SECRET, {
@@ -124,7 +124,6 @@ exports.branchLogin = async (req, res) => {
   )
     return res.status(200).json({
       message: "Branch login successful",
-      token,
       branch: {
         id: branch._id,
         branchName: branch.branchName,

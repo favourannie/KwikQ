@@ -7,7 +7,6 @@ const queuePointModel = require("../models/queueModel");
 const Branch = require('../models/branchModel');
 const Organization = require('../models/organizationModel');
 
-
 const generateQueueNumber = () => {
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   const date = Date.now().toString().slice(-3);
@@ -60,11 +59,12 @@ exports.createCustomerQueue = async (req, res) => {
       }
     }
 
-    const allCustomersCount = await CustomerInterface.countDocuments(
-      business.role === "multi" ? { branchId: id } : { individualId: id }
-    );
+    const filter = business.role === "multi" ? { branchId: id } : { individualId: id };
+    const totalCustomers = await CustomerInterface.countDocuments(filter);
 
-    const nextIndex = allCustomersCount % 3;
+    const serialNumber = String(totalCustomers + 1).padStart(3, "0"); 
+
+    const nextIndex = totalCustomers % 3;
     const targetQueuePoint = queuePoints[nextIndex];
     const nextQueueNumber = generateQueueNumber();
 
@@ -79,6 +79,7 @@ exports.createCustomerQueue = async (req, res) => {
         priorityStatus,
       },
       queueNumber: nextQueueNumber,
+      serialNumber,
       joinedAt: new Date(),
     });
 
@@ -89,6 +90,7 @@ exports.createCustomerQueue = async (req, res) => {
       message: `Customer added to ${targetQueuePoint.name}`,
       data: {
         queueNumber: newCustomer.queueNumber,
+        serialNumber: `T-${newCustomer.serialNumber}`, 
         queuePoint: targetQueuePoint.name,
         serviceNeeded: finalService,
       },
@@ -100,6 +102,7 @@ exports.createCustomerQueue = async (req, res) => {
     });
   }
 };
+
 
 
 exports.getQueuePoints = async (req, res) => {

@@ -11,7 +11,9 @@ exports.getDashboardMetrics = async (req, res) => {
     let query = {};
     if (business.role === "individual") query = { individualId: business._id };
     else if (business.role === "multi") query = { branchId: business._id };
-    else return res.status(403).json({ message: "Unauthorized role" });
+    else if(business.role === "branch") query = {
+        branchId: business._id
+    };
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
