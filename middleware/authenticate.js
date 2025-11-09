@@ -21,7 +21,7 @@ exports.authenticate = async (req,res, next) =>{
 
         // // console.log('Decoded', decoded)
 
-        const org = await organizationModel.findById(decoded.id)
+        const org = await organizationModel.findById(decoded.id) || await Branch.findById(decoded.id)
         if(org == null){
             return res.status(404).json({
                 message: "Authenticatioon failed: Organization not found"
