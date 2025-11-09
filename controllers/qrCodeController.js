@@ -39,8 +39,10 @@ exports.generateQRCode = async (req, res) => {
     if(!total || total === 0){
       total = 0
     }
-    const formLink = `${
-      process.env.CLIENT_URL || `https://kwik-q.vercel.app/#/queue_form?queue=${total}&id=${id}`
+     const formLink = `${
+      process.env.CLIENT_URL 
+        ? `${process.env.CLIENT_URL}/#/queue_form?queue=${total}&id=${business._id}`
+        : `https://kwik-q.vercel.app/#/queue_form?queue=${total}&id=${business._id}`
     }`;
 
     const qrImageBase64 = await QRCode.toDataURL(formLink);
