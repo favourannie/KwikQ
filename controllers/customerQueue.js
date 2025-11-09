@@ -283,27 +283,59 @@ exports.updateCustomer = async (req, res) => {
 
 
 exports.deleteCustomer = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deletedCustomer = await CustomerInterface.findByIdAndDelete(id);
+ try {
+    const { id } = req.params; // Customer ID
+    const { branchId } = req.query; // Branch making the request
 
-    if (!deletedCustomer) {
-      return res.status(404).json({ message: 'Customer not found' });
+    // ✅ Validate inputs
+    if (!branchId) {
+      return res.status(400).json({
+        message: 'branchId query parameter is required',
+      });
     }
 
-    res.status(200).json({ message: 'Customer deleted successfully' });
+    // ✅ Find and delete customer only if they belong to this branch
+    const deletedCustomer = await CustomerInterface.findOneAndDelete({
+      _id: id,
+      branchId: branchId,
+    });
+
+    if (!deletedCustomer) {
+      return res.status(404).json({
+        message: 'Customer not found in this branch queue',
+      });
+    }
+
+    res.status(200).json({
+      message: 'Customer deleted from branch queue successfully',
+      data: deletedCustomer,
+    });
   } catch (error) {
     res.status(500).json({
-      message: 'Error deleting customer',
+      message: 'Error deleting customer from branch queue',
       error: error.message,
     });
   }
-};
+};;
 
 
 exports.getElderlyCustomers = async (req, res) => {
   try {
-    const elderlyCustomers = await CustomerInterface.find({ 'formDetails.elderlyStatus': true });
+    const { branchId } = req.query; // ✅ fixed variable name
+
+    // Validate that branchId is provided
+    if (!branchId) {
+      return res.status(400).json({
+        message: 'branchId query parameter is required',
+      });
+    }
+
+    // ✅ Query elderly customers belonging to the specified branch
+    const elderlyCustomers = await CustomerInterface.find({
+      'formDetails.elderlyStatus': true,
+      branchId: branchId, // Assuming your customer model has a branchId field
+    });
+
     res.status(200).json({
       message: 'Elderly customers fetched successfully',
       count: elderlyCustomers.length,
