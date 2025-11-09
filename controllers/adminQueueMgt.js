@@ -10,7 +10,6 @@ exports.getAllQueues = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find business (organization or branch)
     let business = await organizationModel.findById(id);
     if (!business) business = await branchModel.findById(id);
 
@@ -18,13 +17,11 @@ exports.getAllQueues = async (req, res) => {
       return res.status(404).json({ message: "Business not found" });
     }
 
-    // Determine query scope
     const query =
       business.role === "multi"
         ? { branchId: id }
         : { individualId: id };
 
-    // Get queue points + customers
     const queuePoints = await QueuePoint.find(query).populate("customers");
 
     if (!queuePoints.length) {
@@ -34,7 +31,6 @@ exports.getAllQueues = async (req, res) => {
       });
     }
 
-    // Gather customers currently waiting or being served
     const customersInQueue = [];
 
     queuePoints.forEach((queue) => {
@@ -47,6 +43,7 @@ exports.getAllQueues = async (req, res) => {
               : 0;
 
           customersInQueue.push({
+            id: c._id,
             fullName: c.formDetails?.fullName || "Unknown",
             service: c.formDetails?.serviceNeeded || "N/A",
             phone: c.formDetails?.phone || "N/A",
@@ -57,7 +54,6 @@ exports.getAllQueues = async (req, res) => {
       });
     });
 
-    // Sort customers by join time (oldest first)
     customersInQueue.sort((a, b) => new Date(a.joinedAt) - new Date(b.joinedAt));
 
     res.status(200).json({
