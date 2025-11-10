@@ -41,7 +41,7 @@ exports.initializePayment = async (req, res) => {
 
     // Create payment request with Kora Pay API
     const koraResponse = await axios.post(
-      `${KORA_BASE_URL}/charges`,
+      'https://api.korapay.com/merchant/api/v1/charges/initialize',
       {
         amount,
         currency: "NGN",
@@ -80,10 +80,10 @@ exports.initializePayment = async (req, res) => {
       payment,
     });
   } catch (error) {
-    console.error("Error initializing payment:", error.response?.data || error.message);
+    console.error("Error initializing payment:"+ error.response?.data || error.message);
     res.status(500).json({
       message: "Error initializing payment",
-      error: error.response?.data || error.message,
+      error: error.response?.data,
     });
   }
 };
@@ -92,8 +92,7 @@ exports.verifyPayment = async (req, res) => {
   try {
     const { reference } = req.params;
 
-    const verifyResponse = await axios.get(
-      `${KORA_BASE_URL}/charges/${reference}`,
+    const verifyResponse = await axios.get(`https://api.korapay.com/merchant/api/v1/charges/${reference}`,
       {
         headers: {
           Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}`,

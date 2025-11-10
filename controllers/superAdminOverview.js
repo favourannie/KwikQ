@@ -5,7 +5,7 @@ const Queue = require('../models/queueManagement');
 
 exports.getOverview = async (req, res) => {
   try {
-    // Count totals
+    
     const totalOrganizations = await Organization.countDocuments();
     const totalBranches = await Branch.countDocuments();
     const totalActiveQueues = await Queue.countDocuments({ status: 'active' });

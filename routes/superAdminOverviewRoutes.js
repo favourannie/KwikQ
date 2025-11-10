@@ -110,7 +110,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *                   type: string
  *                   description: Detailed error message from the server
  */
-router.get('/getoverview', authenticate, adminAuth, getOverview);
+router.get('/getoverview', authenticate, getOverview);
 
 /**
  * @swagger
@@ -208,6 +208,6 @@ router.get('/getoverview', authenticate, adminAuth, getOverview);
  *                   type: string
  *                   description: Detailed error message from the server
  */
-router.put('/updateoverview', authenticate, adminAuth,updateOverview);
+router.put('/updateoverview', authenticate, updateOverview);
 
 module.exports = router;
