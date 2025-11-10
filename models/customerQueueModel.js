@@ -36,7 +36,7 @@ formDetails:{
     enum: ['waiting', 'in_service', 'completed', 'canceled', 'no_show'],
     default: 'waiting',
   },
-  joinedAt: { type: String, default: '' },
+  joinedAt: { type: Date, default: new Date() },
   servedAt: { type: Date },
   completedAt: { type: Date },
 

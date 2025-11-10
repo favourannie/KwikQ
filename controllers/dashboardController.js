@@ -99,3 +99,69 @@ exports.getDashboardMetrics = async (req, res) => {
     });
   }
 };
+
+
+
+exports.getRecentActivity = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    let business =
+      (await organizationModel.findById(userId)) ||
+      (await branchModel.findById(userId));
+
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
+    }
+
+    const query =
+      business.role === "multi"
+        ? { branchId: business._id }
+        : { individualId: business._id };
+
+    const recentCustomers = await customerModel
+      .find(query)
+      .sort({ updatedAt: -1 })
+      .limit(10);
+
+    const activities = recentCustomers.map((c) => {
+      let action = "";
+
+      if (c.status === "completed") {
+        action = `Served`;
+
+      } else if (c.status === "waiting") {
+        action = `Joined queue`;
+
+      } else if (c.status === "in_service") {
+        action = `Being served`;
+
+      } else if (c.status === "alerted") {
+        action = `Alert sent`;
+
+      }
+
+      const minutesAgo = Math.max(
+        Math.round((Date.now() - new Date(c.updatedAt)) / 60000),
+        1
+      );
+
+      return {
+        queueNumber: c.queueNumber || "N/A",
+        action,
+        timeAgo: `${minutesAgo} min ago`,
+      };
+    });
+
+    res.status(200).json({
+      message: "Recent activity fetched successfully",
+      count: activities.length,
+      data: activities,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching recent activity",
+      error: error.message,
+    });
+  }
+};

@@ -281,20 +281,49 @@ exports.updateCustomer = async (req, res) => {
   }
 };
 
-
 exports.deleteCustomer = async (req, res) => {
   try {
-    const { id } = req.params;
-    const deletedCustomer = await CustomerInterface.findByIdAndDelete(id);
+    const { id } = req.params; 
+    const userId = req.user.id; 
 
-    if (!deletedCustomer) {
-      return res.status(404).json({ message: 'Customer not found' });
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized access" });
     }
 
-    res.status(200).json({ message: 'Customer deleted successfully' });
+    let business =
+      (await organizationModel.findById(userId)) ||
+      (await branchModel.findById(userId));
+
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
+    }
+
+    const query =
+      business.role === "multi"
+        ? { _id: id, branchId: business._id }
+        : { _id: id, individualId: business._id };
+
+    const deletedCustomer = await CustomerInterface.findByIdAndDelete(query);
+
+    if (!deletedCustomer) {
+      return res.status(404).json({
+        message: "Customer not found in this business queue",
+      });
+    }
+
+    res.status(200).json({
+      message: "Customer deleted successfully from queue",
+      data: {
+        queueNumber: deletedCustomer.queueNumber,
+        customerName: deletedCustomer.formDetails?.fullName,
+        service: deletedCustomer.formDetails?.serviceNeeded,
+        status: deletedCustomer.status,
+      },
+    });
   } catch (error) {
+    console.error("Error deleting customer:", error);
     res.status(500).json({
-      message: 'Error deleting customer',
+      message: "Error deleting customer from queue",
       error: error.message,
     });
   }
