@@ -4,7 +4,7 @@ const {createCustomer, getAllCustomers, getCustomerById, updateCustomer, deleteC
     getElderlyCustomers, getPregnantCustomers, getByEmergencyLevel,
     createCustomerQueue,
     getQueuePoints} = require('../controllers/customerQueue');
-
+const {authenticate} = require("../middleware/authenticate")
 /**
  * @swagger
  * components:
@@ -431,26 +431,82 @@ router.put('/update-customer/:id', updateCustomer);
  * @swagger
  * /api/v1/delete-customer/{id}:
  *   delete:
+ *     summary: Delete a customer from a business queue
+ *     description: Deletes a specific customer from an organization or branch queue. Requires authentication.
  *     tags:
  *       - Queue Management
- *     summary: Remove customer from queue
- *     description: Delete a customer from the queue system
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
+ *         description: The ID of the customer to delete
  *         schema:
  *           type: string
- *         description: Customer ID
+ *           example: 6733b9f148d1a22c86b5f22b
  *     responses:
  *       200:
  *         description: Customer deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Customer deleted successfully from queue
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     queueNumber:
+ *                       type: string
+ *                       example: kQ-555DOU0
+ *                     customerName:
+ *                       type: string
+ *                       example: John Doe
+ *                     service:
+ *                       type: string
+ *                       example: loanCollection
+ *                     status:
+ *                       type: string
+ *                       example: waiting
+ *       401:
+ *         description: Unauthorized access
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized access
  *       404:
- *         description: Customer not found
+ *         description: Customer or business not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Customer not found in this business queue
  *       500:
- *         description: Server error
+ *         description: Server error while deleting customer
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error deleting customer from queue
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
  */
-router.delete('/delete-customer/:id', deleteCustomer);
+
+router.delete('/delete-customer/:id', authenticate,  deleteCustomer);
 
 /**
  * @swagger
