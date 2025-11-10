@@ -1,19 +1,29 @@
 const customerModel = require("../models/customerQueueModel");
 const branchModel = require("../models/branchModel");
 const organizationModel = require("../models/organizationModel");
+const dashboardModel = require("../models/dashboardModel");
 
 exports.getDashboardMetrics = async (req, res) => {
   try {
-    const userId = req.user.id;
-    let business = await organizationModel.findById(userId) || await branchModel.findById(userId);
+    const business =
+      (await organizationModel.findById(req.user.id)) ||
+      (await branchModel.findById(req.user.id));
+
     if (!business) return res.status(404).json({ message: "Business not found" });
+
+    const dashboard = await dashboardModel.findOne({
+      $or: [{ individualId: business._id }, { branchId: business._id }],
+    });
+
+    if (!dashboard) return res.status(404).json({ message: "Dashboard not created" });
 
     let query = {};
     if (business.role === "individual") query = { individualId: business._id };
     else if (business.role === "multi") query = { branchId: business._id };
-    else if(business.role === "branch") query = {
-        branchId: business._id
-    };
+    else if (business.role === "branch")
+      query = {
+        branchId: business._id,
+      };
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -25,55 +35,61 @@ exports.getDashboardMetrics = async (req, res) => {
 
     const yesterdayEnd = new Date(todayStart);
 
-    const [activeToday, activeYesterday, servedToday, servedYesterday] = await Promise.all([
-      customerModel.countDocuments({
-        ...query,
-        status: { $in: ["waiting", "in_service"] },
-      }),
+    const [activeToday, activeYesterday, servedToday, servedYesterday] =
+      await Promise.all([
+        customerModel.countDocuments({
+          ...query,
+          status: { $in: ["waiting", "in_service"] },
+        }),
 
+        customerModel.countDocuments({
+          ...query,
+          createdAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
+          status: { $in: ["waiting", "in_service"] },
+        }),
 
-      customerModel.countDocuments({
-        ...query,
-        createdAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
-        status: { $in: ["waiting", "in_service"] },
-      }),
+        customerModel.find({
+          ...query,
+          status: "completed",
+          completedAt: { $gte: todayStart, $lt: tomorrowStart },
+        }),
 
-      customerModel.find({
-        ...query,
-        status: "completed",
-        completedAt: { $gte: todayStart, $lt: tomorrowStart },
-      }),
-
-      customerModel.find({
-        ...query,
-        status: "completed",
-        completedAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
-      }),
-    ]);
+        customerModel.find({
+          ...query,
+          status: "completed",
+          completedAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
+        }),
+      ]);
 
     const avgWaitTimeToday =
       servedToday.length > 0
-        ? servedToday.reduce((acc, c) => acc + (c.waitTime || 0), 0) / servedToday.length
+        ? servedToday.reduce((acc, c) => acc + (c.waitTime || 0), 0) /
+          servedToday.length
         : 0;
 
     const avgWaitTimeYesterday =
       servedYesterday.length > 0
-        ? servedYesterday.reduce((acc, c) => acc + (c.waitTime || 0), 0) / servedYesterday.length
+        ? servedYesterday.reduce((acc, c) => acc + (c.waitTime || 0), 0) /
+          servedYesterday.length
         : 0;
 
     const activeChange =
-      activeYesterday > 0 ? ((activeToday - activeYesterday) / activeYesterday) * 100 : 0;
+      activeYesterday > 0
+        ? ((activeToday - activeYesterday) / activeYesterday) * 100
+        : 0;
 
     const servedChange =
       servedYesterday.length > 0
-        ? ((servedToday.length - servedYesterday.length) / servedYesterday.length) * 100
+        ? ((servedToday.length - servedYesterday.length) /
+            servedYesterday.length) *
+          100
         : 0;
 
     const waitTimeChange =
       avgWaitTimeYesterday > 0
-        ? ((avgWaitTimeToday - avgWaitTimeYesterday) / avgWaitTimeYesterday) * 100
+        ? ((avgWaitTimeToday - avgWaitTimeYesterday) / avgWaitTimeYesterday) *
+          100
         : 0;
-
     res.status(200).json({
       message: "Dashboard metrics fetched successfully",
       data: {
@@ -99,8 +115,6 @@ exports.getDashboardMetrics = async (req, res) => {
     });
   }
 };
-
-
 
 exports.getRecentActivity = async (req, res) => {
   try {
@@ -129,16 +143,12 @@ exports.getRecentActivity = async (req, res) => {
 
       if (c.status === "completed") {
         action = `Served`;
-
       } else if (c.status === "waiting") {
         action = `Joined queue`;
-
       } else if (c.status === "in_service") {
         action = `Being served`;
-
       } else if (c.status === "alerted") {
         action = `Alert sent`;
-
       }
 
       const minutesAgo = Math.max(
