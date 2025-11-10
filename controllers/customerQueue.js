@@ -303,7 +303,7 @@ exports.deleteCustomer = async (req, res) => {
         ? { _id: id, branchId: business._id }
         : { _id: id, individualId: business._id };
 
-    const deletedCustomer = await CustomerInterface.findOneAndDelete(query);
+    const deletedCustomer = await CustomerInterface.findByIdAndDelete(query);
 
     if (!deletedCustomer) {
       return res.status(404).json({
