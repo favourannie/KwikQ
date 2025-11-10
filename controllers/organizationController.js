@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const { registerOTP } = require("../utils/email");
 const { sendMail } = require("../middleware/brevo");
 const dashboardModel = require("../models/dashboardModel");
-
+const queuePointModel = require("../models/queueModel")
 exports.createOrganization = async (req, res) => {
   try {
     const { businessName, email, password, role } = req.body;
@@ -54,6 +54,9 @@ exports.createOrganization = async (req, res) => {
     await sendMail(detail);
     await org.save()
     const dashboard = await dashboardModel.create({
+      individualId: org._id
+    })
+    const queuePoint = await queuePointModel.create({
       individualId: org._id
     })
     const response = {
