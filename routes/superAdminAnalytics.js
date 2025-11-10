@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {getDashboardMetrics, getFilteredDashboardData,  getServiceDistribution } = require('../controllers/superAdminAnalytics');
+const {getDashboardMetrics, getFilteredDashboardData,getBranchPerformance,  getServiceDistribution } = require('../controllers/superAdminAnalytics');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 
@@ -97,7 +97,6 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *                   example: Cannot read property 'organizationId' of undefined
  */
 router.get('/getanalytics',authenticate, getDashboardMetrics);
-
 
 /**
  * @swagger
@@ -205,8 +204,183 @@ router.get('/getanalytics',authenticate, getDashboardMetrics);
  */
 router.get('/getfiltered',authenticate, getFilteredDashboardData)
 
+/**
+ * @swagger
+ * /api/v1/getservicedistribution:
+ *   get:
+ *     summary: Get service distribution
+ *     description: Returns distribution of services across an organization or branch, including total counts and percentages.
+ *     tags:
+ *       - Services
+ *     parameters:
+ *       - in: query
+ *         name: orgId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: MongoDB ObjectId of the organization
+ *       - in: query
+ *         name: branchId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: MongoDB ObjectId of the branch
+ *     responses:
+ *       200:
+ *         description: Service distribution fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 summary:
+ *                   type: object
+ *                   properties:
+ *                     totalServices:
+ *                       type: integer
+ *                       example: 150
+ *                 distribution:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       serviceType:
+ *                         type: string
+ *                         example: "Customer Support"
+ *                       count:
+ *                         type: integer
+ *                         example: 50
+ *                       percentage:
+ *                         type: number
+ *                         format: float
+ *                         example: 33.33
+ *       400:
+ *         description: Invalid query parameter format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid organizationId format
+ *                 error:
+ *                   type: string
+ *                   example: Expected a valid MongoDB ObjectId
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Failed to fetch service distribution
+ *                 error:
+ *                   type: string
+ *                   example: Some internal server error message
+ */
 router.get('/getservicedistribution', getServiceDistribution );
 
+/**
+ * @swagger
+ * /api/v1/branchperformance:
+ *   get:
+ *     summary: Get branch performance for an organization
+ *     description: Returns performance metrics for all branches under a specific organization, including customer counts, rankings, and chart data.
+ *     tags:
+ *       - Branch Performance
+ *     parameters:
+ *       - in: query
+ *         name: organizationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MongoDB ObjectId of the organization
+ *     responses:
+ *       200:
+ *         description: Branch performance data fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Branch performance data fetched successfully
+ *                 organizationId:
+ *                   type: string
+ *                   example: 650c8f2b1234567890abcdef
+ *                 totalBranches:
+ *                   type: integer
+ *                   example: 3
+ *                 totalCustomers:
+ *                   type: integer
+ *                   example: 120
+ *                 chartData:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       branchName:
+ *                         type: string
+ *                         example: Main Branch
+ *                       customerCount:
+ *                         type: integer
+ *                         example: 50
+ *                 branchRankings:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       rank:
+ *                         type: integer
+ *                         example: 1
+ *                       branchName:
+ *                         type: string
+ *                         example: Main Branch
+ *                       customerCount:
+ *                         type: integer
+ *                         example: 50
+ *                       percentage:
+ *                         type: string
+ *                         example: 41.7%
+ *       400:
+ *         description: Missing or invalid query parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: organizationId query parameter is required
+ *       404:
+ *         description: Organization not found or no branches found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: No branches found for this organization
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error fetching branch performance data
+ *                 error:
+ *                   type: string
+ *                   example: Some internal server error message
+ */
+router.get("/branchperformance", getBranchPerformance);
 
 
 module.exports = router;

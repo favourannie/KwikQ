@@ -332,21 +332,7 @@ exports.deleteCustomer = async (req, res) => {
 
 exports.getElderlyCustomers = async (req, res) => {
   try {
-    const { branchId } = req.query; // ✅ fixed variable name
-
-    // Validate that branchId is provided
-    if (!branchId) {
-      return res.status(400).json({
-        message: 'branchId query parameter is required',
-      });
-    }
-
-    // ✅ Query elderly customers belonging to the specified branch
-    const elderlyCustomers = await CustomerInterface.find({
-      'formDetails.elderlyStatus': true,
-      branchId: branchId, // Assuming your customer model has a branchId field
-    });
-
+    const elderlyCustomers = await CustomerInterface.find({ 'formDetails.elderlyStatus': true });
     res.status(200).json({
       message: 'Elderly customers fetched successfully',
       count: elderlyCustomers.length,

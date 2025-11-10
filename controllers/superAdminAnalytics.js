@@ -268,3 +268,65 @@ exports.getServiceDistribution = async (req, res) => {
     });
   }
 };
+
+exports.getBranchPerformance = async (req, res) => {
+  try {
+    const { organizationId } = req.query;
+
+    if (!organizationId) {
+      return res.status(400).json({
+        message: "organizationId query parameter is required",
+      });
+    }
+
+    const organization = await organizationModel.findById(organizationId);
+    if (!organization) {
+      return res.status(404).json({ message: "Organization not found" });
+    }
+
+    const branches = await branchModel.find({ organizationId }, "_id branchName");
+    if (!branches || branches.length === 0) {
+      return res.status(404).json({ message: "No branches found for this organization" });
+    }
+
+    const branchData = await Promise.all(
+      branches.map(async (branch) => {
+        const customerCount = await CustomerInterface.countDocuments({ branchId: branch._id });
+        return {
+          branchId: branch._id,
+          branchName: branch.branchName,
+          customerCount,
+        };
+      })
+    );
+
+    const sortedBranches = branchData.sort((a, b) => b.customerCount - a.customerCount);
+    const totalCustomers = sortedBranches.reduce((sum, b) => sum + b.customerCount, 0);
+
+    const rankedBranches = sortedBranches.map((b, index) => ({
+      rank: index + 1,
+      branchName: b.branchName,
+      customerCount: b.customerCount,
+      percentage: totalCustomers ? ((b.customerCount / totalCustomers) * 100).toFixed(1) + "%" : "0%",
+    }));
+
+    const chartData = sortedBranches.map((b) => ({
+      branchName: b.branchName,
+      customerCount: b.customerCount,
+    }));
+
+    res.status(200).json({
+      message: "Branch performance data fetched successfully",
+      organizationId,
+      totalBranches: rankedBranches.length,
+      totalCustomers,
+      chartData,
+      branchRankings: rankedBranches,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching branch performance data",
+      error: error.message,
+    });
+  }
+};
