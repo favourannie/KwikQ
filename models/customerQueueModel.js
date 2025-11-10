@@ -36,6 +36,8 @@ formDetails:{
     enum: ['waiting', 'in_service', 'completed', 'canceled', 'no_show'],
     default: 'waiting',
   },
+  waitTime: {type: Number, default: 0},
+  serviceTime: {type: Number, default: 0},
   joinedAt: { type: Date, default: new Date() },
   servedAt: { type: Date },
   completedAt: { type: Date },

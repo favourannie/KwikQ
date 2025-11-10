@@ -1,9 +1,11 @@
 const branchModel = require("../models/branchModel");
 const organizationModel = require("../models/organizationModel");
+const dashboard = require("../models/dashboardModel")
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { registerOTP } = require("../utils/email");
 const { sendMail } = require("../middleware/brevo");
+const dashboardModel = require("../models/dashboardModel");
 
 exports.createOrganization = async (req, res) => {
   try {
@@ -34,7 +36,7 @@ exports.createOrganization = async (req, res) => {
       .toString()
       .padStart(6, "0");
 
-    const org = await organizationModel.create({
+    const org = new organizationModel({
       businessName: name,
       email,
       password: hashPassword,
@@ -50,7 +52,10 @@ exports.createOrganization = async (req, res) => {
     };
 
     await sendMail(detail);
-    await org.save();
+    await org.save()
+    const dashboard = await dashboardModel.create({
+      individualId: org._id
+    })
     const response = {
       businessName: org.businessName,
       email: org.email,
