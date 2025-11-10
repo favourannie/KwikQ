@@ -47,10 +47,10 @@ exports.createBranch = async (req, res) => {
       managerEmail,
       managerPhone,
     });
+    await newBranch.save()
 
     organization.branches.push(newBranch._id);
     await organization.save();
-
    
     
     const email = organization.email || organization.email ||organization.userEmail || organization.contactEmail;
@@ -106,9 +106,11 @@ exports.branchLogin = async (req, res) => {
       });
     }
 
-    const branch = await Branch.findOne({ managerEmail, branchCode });
-    const organization = branch.organizationId
-    console.log(organization)
+    const branch = await Branch.findOne({ managerEmail: managerEmail, branchCode: branchCode });
+    console.log(branch);
+    
+    // const organization = branch.organizationId
+    // console.log(organization)
     if (!branch) {
       return res.status(404).json({
         message: "Invalid manager email or branch code",
@@ -130,7 +132,8 @@ exports.branchLogin = async (req, res) => {
         branchCode: branch.branchCode,
         managerName: branch.managerName,
         managerEmail: branch.managerEmail
-      }, organization,
+      }, 
+      Organization,
       token
     });
   } catch (error) {
