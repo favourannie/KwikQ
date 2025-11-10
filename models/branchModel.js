@@ -45,12 +45,26 @@ const branchSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  subscriptionType: {
+    type: String,
+    enum: ["starter", "professional", "enterprise"],
+    lowerCase: true
+  },
+  subscriptionExpiredAt: {
+    type: Number
+  },
+  subscriptionDuration: {
+    type: String,
+    enum: ["monthly", "annually"],
+    lowerCase: true
+  },
  status: { type: String, enum: ['Active', 'Warning', 'Offline'], default: 'Active' },
   avgWaitTime: { type: Number, default: 0 },
   servedToday: { type: Number, default: 0 },
   activeQueue: { type: Number, default: 0 },
   lastUpdated: { type: Date, default: Date.now }
 });
+
 
 const branchModel = mongoose.model("branches", branchSchema);
 
