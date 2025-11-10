@@ -80,10 +80,10 @@ exports.initializePayment = async (req, res) => {
       payment,
     });
   } catch (error) {
-    console.error("Error initializing payment:", error.response?.data || error.message);
+    console.error("Error initializing payment:"+ error.response?.data || error.message);
     res.status(500).json({
       message: "Error initializing payment",
-      error: error.response?.data || error.message,
+      error: error.response?.data,
     });
   }
 };
