@@ -22,6 +22,9 @@ const qrCodeSchema = new mongoose.Schema({
     type: String,
     
   },
+  qrImageUrl: {
+    type: String,
+  },
 
   formLink: {
     type: String,

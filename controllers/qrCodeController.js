@@ -108,6 +108,20 @@ exports.generateQRCode = async (req, res) => {
   }
 };
 
+exports.qrCode = async(req,res)=>{
+  try {
+    const {id} = req.params
+    const business = await organizationModel.findById(id) || await branchModel.findById(id)
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        message: "Error generating or uploading QR code",
+        error: error.message,
+      });
+  }
+} 
+
 exports.getQueueLength = async(req, res)=>{
   try {
     const organizationId = req.params.id;

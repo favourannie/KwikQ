@@ -167,7 +167,7 @@ exports.login = async (req, res) => {
       isAdmin: org.isAdmin,
       organizationId: org._id
     };
-
+console.log("Org", org)
     const token = jwt.sign(
       {
         id: org._id,
@@ -180,7 +180,7 @@ exports.login = async (req, res) => {
     res.status(200).json({
       message: "Login successfull",
       data: {
-        name: org.name,
+        name: org.businessName,
          org: org._id
         },
       token,
