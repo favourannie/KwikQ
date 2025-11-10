@@ -60,7 +60,19 @@ const organizationSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
- 
+  subscriptionDuration: {
+    type: String,
+    enum: ["monthly", "annually"],
+    lowerCase: true
+  },
+  subscriptionType: {
+    type: String,
+    enum: ["freemium", "starter", "professional", "enterprise"],
+    lowerCase: true
+  },
+  subscriptionExpiredAt: {
+    type: Number
+  },
   branches: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "branches"
