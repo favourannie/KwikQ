@@ -1,10 +1,10 @@
-const watermark = 'https://res.cloudinary.com/ddmh8i1m1/image/upload/v1759258400/Untitled1_q0cjdo.bmp';
+const watermark = 'https://res.cloudinary.com/dbzzkaa97/image/upload/v1754353355/watermark_fdbzah.png';
 const logo = 'https://res.cloudinary.com/ddmh8i1m1/image/upload/v1760526861/KwikQ_Logo_1_mmzno5.png';
 const linkedIn = 'https://res.cloudinary.com/dbzzkaa97/image/upload/v1754433533/linkedIn_ggxxm4.png';
 const instagram = 'https://res.cloudinary.com/dbzzkaa97/image/upload/v1754433533/instagram_p8byzw.png';
 const facebook = 'https://res.cloudinary.com/dbzzkaa97/image/upload/v1754433532/facebook_rjeokq.png';
 
-exports.registerOTP = (otp, businessName) => {
+exports.registerOTP = (otp, firstname) => {
 return `
     <!DOCTYPE html>
 <html>
@@ -36,11 +36,10 @@ return `
         <tr>
           <td style="height: 350px">
             <h1 style="font-size: 35px; font-weight: bold; margin: 0 0 10px;">Email Verification</h1>
-            <h2 style="font-size: 20px; margin: 0 0 10px;">Welcome to KwikQ App <br/> <em>${businessName}</em>,</h2>
-            <p style="font-size: 17px; margin: 0 0 20px;">To complete your registration, Here's your 6-digit code, enter it to verify your email and unlock the KwikQ's fast experience!</p>
+            <h2 style="font-size: 20px; margin: 0 0 10px;">Hi ${firstname},</h2>
+            <p style="font-size: 17px; margin: 0 0 20px;">Here's your 6-digit code, enter it to verify your email.</p>
             <h2 style="font-size: 35px; font-weight: bold; background: #c2cfd3; padding: 10px; border-radius: 5px; text-align: center;">${otp}</h2>
-            <p style="font-size: 17px; margin: 20px 0px 10px 0px;">Need help? Reach out to our support team below.</p>
-            <p style="font-size: 17px;">Thank you for choosing KwikQ.</p>
+
           </td>
         </tr>
         <tr>
@@ -50,21 +49,19 @@ return `
             <tr>
               <td align="center">
                 <h3 style="margin: 0; font-size: 25px;">KwikQ</h3>
-                <p style="margin: 8px 0 20px; font-size: 12px;">
-                  <b> KwikQ</b>. Real-Time Queues for Real-Life Ease...
-                </p>
+    
                 <table cellpadding="5" cellspacing="0" style="margin: 10px 0; text-align: center;">
                   <tr>
                     <td style="font-size: 12px;">Follow us:</td>
                     <td><a href=""><img src="${linkedIn}" alt="LinkedIn" width="20" style="vertical-align: middle; margin-left: 10px;"></a></td>
-                    <td><a href=""><img src="${facebook}" alt="Facebook" width="20" style="vertical-align: middle; margin-left: 5px;"></a></td>
+                    <td><a href="https://web.facebook.com/profile.php?id=61578288375402"><img src="${facebook}" alt="Facebook" width="20" style="vertical-align: middle; margin-left: 5px;"></a></td>
                     <td><a href=""><img src="${instagram}" alt="Instagram" width="20" style="vertical-align: middle; margin-left: 5px;"></a></td>
                   </tr>
                 </table>
                 <p style="margin: 10px 0 0; font-size: 12px;">
-                  Contact us: &nbsp; +234 805 1897 781 &nbsp;
-                  <a href="mailto:supportkq@gmail.com" style="color: #ffffff; text-decoration: underline;">
-                    supportkq@gmail.com
+                  Contact us: &nbsp; +234 810 4914 850 &nbsp;
+                  <a href="mailto:info@kwikq.com" style="color: #ffffff; text-decoration: underline;">
+                    info@kwikq.com
                   </a>
                 </p>
               </td>
@@ -79,5 +76,5 @@ return `
     </center>
   </body>
 </html>
-    `;
+`
 };
