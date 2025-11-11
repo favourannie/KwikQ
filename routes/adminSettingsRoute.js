@@ -1,6 +1,7 @@
 const express = require("express")
-const { getBusinessDetails, updateBusinessDetails } = require("../controllers/adminSettingsController"
+const { getBusinessDetails, updateBusinessDetails, getOperatingHours, setWorkingDays } = require("../controllers/adminSettingsController"
 )
+const { authenticate } = require("../middleware/authenticate")
 const router = express.Router()
 
 /**
@@ -198,6 +199,133 @@ router.get("/business-details/:id", getBusinessDetails)
  *                   example: Cast to ObjectId failed for value...
  */
 
-
 router.patch("/business/:id", updateBusinessDetails )
+
+/**
+ * @swagger
+ * /api/v1/operating-hours:
+ *   patch:
+ *     tags:
+ *       - Business
+ *     summary: Set or update operating hours and working days
+ *     description: >
+ *       Allows a business to set its opening and closing times, working days, and timezone.
+ *       Updates existing settings if present, or creates new ones.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - openingTime
+ *               - closingTime
+ *               - workingDays
+ *             properties:
+ *               openingTime:
+ *                 type: string
+ *                 example: "09:00"
+ *               closingTime:
+ *                 type: string
+ *                 example: "17:00"
+ *               workingDays:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["Mon", "Tue", "Wed", "Thu", "Fri"]
+ *               timezone:
+ *                 type: string
+ *                 example: "Africa/Lagos"
+ *     responses:
+ *       200:
+ *         description: Operating hours updated successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Operating hours updated successfully"
+ *               data:
+ *                 _id: "63f1b3a123abc12345678901"
+ *                 openingTime: "09:00"
+ *                 closingTime: "17:00"
+ *                 workingDays: ["Mon", "Tue", "Wed", "Thu", "Fri"]
+ *                 timezone: "Africa/Lagos"
+ *                 updatedAt: "2025-11-11T23:59:59.000Z"
+ *       201:
+ *         description: Operating hours created successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Operating hours created successfully"
+ *               data:
+ *                 _id: "63f1b3a123abc12345678901"
+ *                 openingTime: "09:00"
+ *                 closingTime: "17:00"
+ *                 workingDays: ["Mon", "Tue", "Wed", "Thu", "Fri"]
+ *                 timezone: "Africa/Lagos"
+ *                 createdAt: "2025-11-11T23:59:59.000Z"
+ *       404:
+ *         description: Business not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Business not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Error updating business details."
+ *               error: "Error details"
+ *
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+router.patch("/operating-hours", authenticate, setWorkingDays);
+
+/**
+ * @swagger
+ * /api/v1/operating-hours:
+ *   get:
+ *     summary: Retrieve operating hours for the authenticated business
+ *     tags:
+ *       - Business
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Operating hours retrieved successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Operating hours retrieved successfully"
+ *               data:
+ *                 openingTime: "08:00"
+ *                 closingTime: "17:00"
+ *                 workingDays: ["Mon", "Tue", "Wed", "Thu", "Fri"]
+ *                 timezone: "Africa/Lagos"
+ *                 updatedAt: "2025-11-11T12:00:00.000Z"
+ *       404:
+ *         description: Business not found or operating hours not set
+ *         content:
+ *           application/json:
+ *             examples:
+ *               businessNotFound:
+ *                 value: { "message": "Business not found" }
+ *               hoursNotSet:
+ *                 value: { "message": "Operating hours not set yet" }
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Error retrieving operating hours"
+ *               error: "Error details"
+ */
+router.get("/operating-hours", authenticate, getOperatingHours)
 module.exports = router

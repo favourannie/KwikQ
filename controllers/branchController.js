@@ -5,6 +5,7 @@ const { branchMail } = require("../utils/branchTemplete");
 const { sendMail } = require("../middleware/brevo");
 const dashboardModel = require("../models/dashboardModel")
 const queuePointModel = require("../models/queueModel")
+const adminSettingsModel = require("../models/adminSettingsModel")
 exports.createBranch = async (req, res) => {
   try {
     console.log('requst user:', req.user)
@@ -58,7 +59,9 @@ exports.createBranch = async (req, res) => {
      const queuePoint = await queuePointModel.create({
           branchId: newBranch._id
         })
-   
+     const adminSettings = await adminSettingsModel.create({
+           branchId: newBranch._id
+         })
     
     const email = organization.email || organization.email ||organization.userEmail || organization.contactEmail;
      console.log("admin:", email);
