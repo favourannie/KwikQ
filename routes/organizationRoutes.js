@@ -196,7 +196,7 @@ router.post("/verify", verifyValidator, verifyOtp);
  *                 example: Pass@123
  *                 description: Account password
  *     responses:
- *       '200':
+ *       200:
  *         description: Login successful
  *         content:
  *           application/json:
@@ -207,13 +207,25 @@ router.post("/verify", verifyValidator, verifyOtp);
  *                   type: string
  *                   example: Login successful
  *                 data:
- *                   type: string
- *                   description: Organization's full name
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                       example: VCare Solutions
+ *                       description: Organization's business name
+ *                     email:
+ *                       type: string
+ *                       example: vcare@gmail.com
+ *                       description: Organization's registered email
+ *                     org:
+ *                       type: string
+ *                       example: 6913319f22359162861c618
+ *                       description: Organization ID
  *                 token:
  *                   type: string
  *                   description: JWT token valid for 3 days
  *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
- *       '400':
+ *       400:
  *         description: Invalid password
  *         content:
  *           application/json:
@@ -223,8 +235,8 @@ router.post("/verify", verifyValidator, verifyOtp);
  *                 message:
  *                   type: string
  *                   example: Invalid password
- *       '404':
- *         description: Organization not found
+ *       403:
+ *         description: Account not verified
  *         content:
  *           application/json:
  *             schema:
@@ -232,8 +244,18 @@ router.post("/verify", verifyValidator, verifyOtp);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization not found
- *       '500':
+ *                   example: Account not verified. Please verify your email before logging in.
+ *       404:
+ *         description: Organization not found / Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid credentials
+ *       500:
  *         description: Server Error
  *         content:
  *           application/json:
@@ -245,6 +267,7 @@ router.post("/verify", verifyValidator, verifyOtp);
  *                   example: Error signing in
  *                 error:
  *                   type: string
+ *                   example: Internal server error details
  */
 router.post("/login", login);
 

@@ -20,7 +20,27 @@ const adminSettingsSchema =  new mongoose.Schema({
         businessAddress:{
             type: String,
             trim: true
-        }
+        },
+    openingTime: { 
+    type: String, 
+  }, 
+  closingTime: { 
+    type: String, 
+    required: true 
+  }, 
+  workingDays: {
+    type: [String],
+    enum: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    default: ""
+  },
+  timezone: { 
+    type: String,
+     default: "Africa/Lagos"
+     },
+  createdAt: {
+    type: Date,
+    default: Date.now
+},
 }, {timestamps: true})
 
 module.exports = mongoose.model("adminSettings", adminSettingsSchema)
