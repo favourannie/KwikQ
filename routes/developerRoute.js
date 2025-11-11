@@ -42,11 +42,11 @@ const { registerValidator, verifyValidator, resendValidator } = require('../midd
  *       500:
  *         description: Server error
  */
-router.post('/developers/register',registerValidator, registerDeveloper);
+router.post('/developers/register', registerDeveloper);
 
-router.post('/verify',verifyValidator, devVerify );
+router.post('/verify', devVerify );
 
-router.post('/resendotp', resendValidator, resendOtp);
+router.post('/resendotp', resendOtp);
 
 router.post('/login', devLogin );
 
