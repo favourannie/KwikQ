@@ -43,8 +43,8 @@ exports.generateQRCode = async (req, res) => {
     }
      const formLink = `${
       process.env.CLIENT_URL 
-        ? `${process.env.CLIENT_URL}/#/queue_form?queue=${total}&id=${business._id}`
-        : `https://kwik-q.vercel.app/#/queue_form?queue=${total}&id=${business._id}`
+        ? `${process.env.CLIENT_URL}/#/users_form?queue=${total}&id=${business._id}`
+        : `https://kwik-q.vercel.app/#/users_form?queue=${total}&id=${business._id}`
     }`;
 console.log('something');
 
@@ -67,6 +67,7 @@ console.log("Public ID:", uploadResponse?.public_id);
     let newQRCode;
 
     console.log(uploadResponse?.public_id)
+
     if (business.role === "individual") {
       newQRCode = new QRCodeModel({
         individualId: individualId,
