@@ -9,16 +9,10 @@ const path = require("path");
 
 exports.generateQRCode = async (req, res) => {
   try {
-    const { organizationId,branchId } = req.query;
-
-      if (!organizationId && !branchId) {
-      return res.status(400).json({
-        message: "Please provide either organizationId or branchId in the query.",
-      });
-    }
+    const { organizationId,branchId } = req.body;
     const business =
-      (organizationId && (await organizationModel.findById(organizationId))) ||
-      (branchId && (await branchModel.findById(branchId)));
+      (await organizationModel.findById(organizationId)) ||
+      (await branchModel.findById(branchId));
 
     if (!business) {
       return res.status(400).json({ message: "Business not found" });
@@ -52,7 +46,7 @@ exports.generateQRCode = async (req, res) => {
 
     const qrImageBase64 = await QRCode.toDataURL(formLink);
     const base64Data = qrImageBase64.replace(/^data:image\/png;base64,/, ""); // remove header
-    let id = business._id;
+    let id
     if(business.role === "individual"){
       id = await organizationModel.findOne({ organizationId: organizationId
       })
@@ -61,8 +55,6 @@ exports.generateQRCode = async (req, res) => {
         branches: branchId
       })
     }
-
-    
     const uploadResponse = await cloudinary.uploader.upload(
       `data:image/png;base64,${base64Data}`,
       {
@@ -124,7 +116,6 @@ exports.generateQRCode = async (req, res) => {
       .json({
         message: "Error generating or uploading QR code",
         error: error.message,
-        stack: error.stack,
       });
   }
 };
