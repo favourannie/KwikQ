@@ -25,7 +25,7 @@ const adminQueueMgtRoute = require("./routes/adminQueueMgtRoute")
 const adminNotificationRouter = require("./routes/adminNotificationRoute")
 const adminHistoryRouter = require("./routes/adminHistoryRoute")
 const adminSettingsRouter = require("./routes/adminSettingsRoute")
-const developerRouter = require('./routes/developerRoute')
+// const developerRouter = require('./routes/developerRoute')
 const jwt = require("jsonwebtoken");
 
 
@@ -105,7 +105,7 @@ app.use('/api/v1', organizationRoutes);
 
 app.use('/api/v1/', analyticsRouter);
 app.use('/api/v1/', dashboardRouter);
-app.use('/api/v1/', developerRouter);
+// app.use('/api/v1/', developerRouter);
 app.use('/api/v1/', customerRouter);
 app.use('/api/v1/', qrCodeRoutes);
 app.use('/api/v1/', superAdminOverviewRoutes);
