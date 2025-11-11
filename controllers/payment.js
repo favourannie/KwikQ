@@ -10,8 +10,9 @@ exports.initializePayment = async (req, res) => {
   try {
     const { individualId, planType, billingCycle } = req.body;
     
-    // ✅ Automatically get organizationId from authenticated user
-    const organizationId = req.user?.organizationId || req.user?.user?.organizationId; 
+    const {organizationId} = req.params
+
+    console.log('org', organizationId);
 
     if (!organizationId) {
       return res.status(401).json({ message: "Unauthorized: organizationId not found in token" });

@@ -9,7 +9,7 @@ const {
 
 const { authenticate } = require("../middleware/authenticate");
 
-router.post("/initialize", authenticate, initializePayment);
+router.post("/initialize/", authenticate, initializePayment);
 router.get("/verify/:reference", verifyPayment);
 router.post("/webhook", verifyPaymentWebhook);
 router.get("/all", getAllPayments);
