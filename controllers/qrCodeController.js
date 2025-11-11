@@ -22,6 +22,7 @@ exports.generateQRCode = async (req, res) => {
       individualId: business?._id,
       branchId: business?.branchId,
     });
+    console.log(existingQRCode)
 
     if (existingQRCode) {
       return res.status(200).json({
