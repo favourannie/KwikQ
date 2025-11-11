@@ -8,13 +8,40 @@ const otpGen = require('otp-generator');
 
 exports.initializePayment = async (req, res) => {
   try {
-    const { individualId, org, planType, billingCycle } = req.body;
+    const { individualId, planType, billingCycle } = req.body;
+    
+    // ✅ Automatically get organizationId from authenticated user
+    const organizationId = req.user?.organizationId || req.user?.user?.organizationId; 
+
+    if (!organizationId) {
+      return res.status(401).json({ message: "Unauthorized: organizationId not found in token" });
+    }
+
+    // ✅ Fetch organization details
+    const organization = await organizationModel.findById(organizationId);
+    if (!organization) {
+      return res.status(404).json({ message: "Organization not found" });
+    }
 
     let amount;
 
     if (!billingCycle) {
       return res.status(400).json({ message: "billingCycle is required (monthly or annual)" });
     }
+    
+    if (!planType) {
+      return res.status(400).json({ message: "planType is required" });
+    }
+
+    if (!org) {
+      return res.status(400).json({ message: "Organization ID (org) is required" });
+    }
+
+    // // ✅ Fetch organization details here
+    // const organization = await organizationModel.findById(org);
+    // if (!organization) {
+    //   return res.status(404).json({ message: "Organization not found" });
+    // }
 
     const cycle = billingCycle.toLowerCase();
     const plan = planType.toLowerCase();
@@ -39,33 +66,45 @@ exports.initializePayment = async (req, res) => {
     // Generate unique payment reference
     const reference = `KWIKQ_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-    // Create payment request with Kora Pay API
-    const koraResponse = await axios.post(
-      'https://api.korapay.com/merchant/api/v1/charges/initialize',
-      {
-        amount,
+    const paymentData = {
+       amount,
         currency: "NGN",
         reference,
         narration: `Payment for ${plan} plan (${cycle})`,
         channels: ["card"],
         redirect_url: "https://yourapp.com/payment-success",
         customer: {
-          name: "Customer Name",
-          email: "customer@email.com",
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
+          name: organization.name || "Customer Name",
+          email: organization.email || "customer@email.com",
+    }
+  }
+   const { data } = await axios.post('https://api.korapay.com/merchant/api/v1/charges/initialize', paymentData, {
+      headers: {
+        Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}}`
       }
-    );
+    });
+
+
+
+    // // Create payment request with Kora Pay API
+    // const {data}= await axios.post(
+    //   'https://api.korapay.com/merchant/api/v1/charges/initialize',
+    //   {
+       
+    //     },
+    //   },
+    //   {
+    //     headers: {
+    //       Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}`,
+    //       "Content-Type": "application/json",
+    //     },
+    //   }
+    // );
 
     // Save payment record
     const payment = await paymentModel.create({
       individualId,
-      org,
+      org: organization._id,
       amount,
       reference,
       status: "Pending",
@@ -73,11 +112,16 @@ exports.initializePayment = async (req, res) => {
       billingCycle: cycle,
     });
 
+    if (data?.status === true) {
+      await payment.save();
+    }
+
     res.status(201).json({
       message: "Payment initialized successfully",
-      paymentLink: koraResponse.data?.data?.checkout_url,
-      reference,
-      payment,
+       data: {
+        reference: data?.data?.reference,
+        url: data?.data?.checkout_url
+      }
     });
   } catch (error) {
     console.error("Error initializing payment:"+ error.response?.data || error.message);

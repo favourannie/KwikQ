@@ -25,7 +25,8 @@ const adminQueueMgtRoute = require("./routes/adminQueueMgtRoute")
 const adminNotificationRouter = require("./routes/adminNotificationRoute")
 const adminHistoryRouter = require("./routes/adminHistoryRoute")
 const adminSettingsRouter = require("./routes/adminSettingsRoute")
-// const developerRouter = require('./routes/developerRoute')
+const developerRouter = require('./routes/developerRoute');
+const paymentRouter = require('./routes/paymentRoutes')
 const jwt = require("jsonwebtoken");
 
 
@@ -105,7 +106,7 @@ app.use('/api/v1', organizationRoutes);
 
 app.use('/api/v1/', analyticsRouter);
 app.use('/api/v1/', dashboardRouter);
-// app.use('/api/v1/', developerRouter);
+app.use('/api/v1/', developerRouter);
 app.use('/api/v1/', customerRouter);
 app.use('/api/v1/', qrCodeRoutes);
 app.use('/api/v1/', superAdminOverviewRoutes);
@@ -117,6 +118,7 @@ app.use("/api/v1/", adminQueueMgtRoute)
 app.use("/api/v1/", adminNotificationRouter)
 app.use("/api/v1/", adminHistoryRouter)
 app.use("/api/v1/", adminSettingsRouter)
+app.use("/api/v1/", paymentRouter)
 
 // Error handling middleware
 app.use((error, req, res, next) => {

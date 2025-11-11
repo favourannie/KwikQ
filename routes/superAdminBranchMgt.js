@@ -267,7 +267,54 @@ router.get("/branches/:id", authenticate, getBranchById);
  */
 router.get('/getallbranches', getAllBranchesWithStats);
 
-
-router.get('/getall', getAllBranches)
+/**
+ * @swagger
+ * /getall/{id}:
+ *   get:
+ *     summary: Retrieve all branches for an organization
+ *     description: Fetches all branches associated with a specific organization by its ID.
+ *     tags:
+ *       - Branches
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the organization
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of branches retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "64f7b2c3e5b9b2f4a8a3d6f0"
+ *                   name:
+ *                     type: string
+ *                     example: "Main Branch"
+ *                   address:
+ *                     type: string
+ *                     example: "123 Main St, City, Country"
+ *       500:
+ *         description: Failed to fetch branches
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to fetch branches"
+ *                 error:
+ *                   type: string
+ *                   example: "Database error"
+ */
+router.get('/getall', getAllBranches);
 
 module.exports = router;
