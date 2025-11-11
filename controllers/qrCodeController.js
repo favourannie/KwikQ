@@ -9,19 +9,21 @@ const path = require("path");
 
 exports.generateQRCode = async (req, res) => {
   try {
-    const { organizationId,branchId } = req.body;
+    const { individualId,branchId } = req.body;
     const business =
-      (await organizationModel.findById(organizationId)) ||
+      (await organizationModel.findById(individualId)) ||
       (await branchModel.findById(branchId));
 
     if (!business) {
       return res.status(400).json({ message: "Business not found" });
     }
 
-    let existingQRCode = await QRCodeModel.findOne({
-      individualId: business?._id,
-      branchId: business?.branchId,
-    });
+    let existingQRCode;
+    if(individualId){
+      existingQRCode = await QRCodeModel.findOne({individualId})
+    } else if(branchId){
+      existingQRCode = await QRCodeModel.findOne({branchId})
+    }
     if (existingQRCode) {
       return res.status(200).json({
         message: "Existing permanent QR code retrieved",
@@ -30,11 +32,12 @@ exports.generateQRCode = async (req, res) => {
         qrImageUrl: existingQRCode.qrImage,
       });
     }
-
+    console.log('existing');
+    
     const randomNumber = Math.floor(100000 + Math.random() * 900000);
     const qrCode = `KQ-${randomNumber}`;
     let total = await queueModel.find().length;
-
+    
     if(!total || total === 0){
       total = 0
     }
@@ -43,18 +46,11 @@ exports.generateQRCode = async (req, res) => {
         ? `${process.env.CLIENT_URL}/#/queue_form?queue=${total}&id=${business._id}`
         : `https://kwik-q.vercel.app/#/queue_form?queue=${total}&id=${business._id}`
     }`;
+console.log('something');
 
     const qrImageBase64 = await QRCode.toDataURL(formLink);
     const base64Data = qrImageBase64.replace(/^data:image\/png;base64,/, ""); // remove header
-    let id
-    if(business.role === "individual"){
-      id = await organizationModel.findOne({ organizationId: organizationId
-      })
-    } else if (business.role === "branches"){
-      id = await branchModel.findOne({
-        branches: branchId
-      })
-    }
+   const id = business._id
     const uploadResponse = await cloudinary.uploader.upload(
       `data:image/png;base64,${base64Data}`,
       {
@@ -64,17 +60,16 @@ exports.generateQRCode = async (req, res) => {
       },
     );
     
-        console.log(uploadResponse)
-    
-        console.log("Annie");
+console.log("Upload complete. Full response:", uploadResponse);
+console.log("Public ID:", uploadResponse?.public_id);
     // const url = `branch-${id}-${qrCode}`
     
     let newQRCode;
 
-    console.log(business)
+    console.log(uploadResponse?.public_id)
     if (business.role === "individual") {
       newQRCode = new QRCodeModel({
-        individualId: organizationId,
+        individualId: individualId,
         qrCode,
         formLink,
         qrImage: qrImageBase64,
@@ -110,7 +105,6 @@ exports.generateQRCode = async (req, res) => {
       qrImageUrl: uploadResponse.secure_url,
     });
   } catch (error) {
-    console.error("Error generating/uploading QR Code:", error);
     res
       .status(500)
       .json({
