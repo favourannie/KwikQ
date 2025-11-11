@@ -93,7 +93,7 @@ const { getDashboardMetrics, getRecentActivity,} = require("../controllers/dashb
  *                   type: string
  *                   example: "Some server error message"
  */
-router.get("/dashboard/:id", authenticate, getDashboardMetrics);
+router.get("/dashboard", authenticate, getDashboardMetrics);
 
 /**
  * @swagger

@@ -6,8 +6,8 @@ const dashboardModel = require("../models/dashboardModel");
 exports.getDashboardMetrics = async (req, res) => {
   try {
     const business =
-      (await organizationModel.findById(req.user.id)) ||
-      (await branchModel.findById(req.user.id));
+      await organizationModel.findById(req.user.id) ||
+       branchModel.findById(req.user.id);
 
     if (!business) return res.status(404).json({ message: "Business not found" });
 
@@ -115,6 +115,148 @@ exports.getDashboardMetrics = async (req, res) => {
     });
   }
 };
+
+// Helper function to calculate percentage change
+// const calculatePercentageChange = (current, previous) => {
+//     if (previous === 0) {
+//         return current > 0 ? 100 : 0;
+//     }
+//     return ((current - previous) / previous) * 100;
+// };
+
+
+// exports.getDashboardMetrics = async (req, res) => {
+//     try {
+//         // --- 1. Identify Business and Establish Query ---
+//         const business = 
+//             await organizationModel.findById(req.user.id) || 
+//             await branchModel.findById(req.user.id);
+
+//         if (!business) {
+//             return res.status(404).json({ message: "Business not found" });
+//         }
+
+//         // Dashboard check (kept as is)
+//         const dashboard = await dashboardModel.findOne({
+//             $or: [{ individualId: business._id }, { branchId: business._id }],
+//         });
+
+//         if (!dashboard) {
+//             return res.status(404).json({ message: "Dashboard not created" });
+//         }
+
+//         let query = {};
+//         if (business.role === "individual") query = { individualId: business._id };
+//         else if (business.role === "multi" || business.role === "branch")
+//             query = { branchId: business._id };
+
+
+//         // --- 2. Define Date Boundaries (Cleaner approach) ---
+//         const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+//         const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+        
+//         const yesterdayStart = new Date(todayStart); yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+//         const yesterdayEnd = todayStart; // yesterday ends exactly when today starts
+
+
+//         // --- 3. Fetch Metrics (Using destructuring for clarity) ---
+//         const [
+//             activeTodayCount, 
+//             servedTodayCustomers, 
+//             servedYesterdayCustomers
+//         ] = await Promise.all([
+//             // A. Active In Queue TODAY (Status: waiting or in_service, regardless of creation date)
+//             customerModel.countDocuments({
+//                 ...query,
+//                 status: { $in: ["waiting", "in_service"] },
+//             }),
+//             // B. Served Customers TODAY
+//             customerModel.find({
+//                 ...query,
+//                 status: "completed",
+//                 completedAt: { $gte: todayStart, $lt: tomorrowStart },
+//             }),
+//             // C. Served Customers YESTERDAY
+//             customerModel.find({
+//                 ...query,
+//                 status: "completed",
+//                 completedAt: { $gte: yesterdayStart, $lt: yesterdayEnd },
+//             }),
+//         ]);
+
+//         // NOTE: The previous logic for activeYesterday was complex. It compared 'active' customers
+//         // *created* yesterday. A more logical comparison for a real-time 'Active' metric (like 
+//         // the UI shows) is usually the *served* customers or a different time window comparison.
+//         // For simplicity and alignment with standard dashboard metrics, we'll keep the Served comparison.
+//         // We'll calculate a baseline for active count change (activeYesterdayCount) 
+//         // to make the percentage calculation possible. If you need the count from yesterday, you must 
+//         // query a snapshot or use a different 'status' logic.
+
+//         // Placeholder for activeYesterdayCount (using servedToday as a placeholder for comparison)
+//         // If 'activeYesterday' refers to the total customers created and still active at the end 
+//         // of yesterday, the existing query was incorrect. For this refactoring, we'll assume a value 
+//         // for `activeYesterdayCount` is available for calculation.
+//         // For demonstration, let's assume `activeYesterdayCount` is fetched from a simplified query 
+//         // (This query is not a true opposite of activeToday, but serves the percentage calculation):
+//         const activeYesterdayCount = await customerModel.countDocuments({
+//             ...query,
+//             status: { $in: ["waiting", "in_service"] },
+//             // A different filtering logic might be needed here depending on business requirement. 
+//             // We use the servedYesterday count as a proxy for the previous metric base:
+//         });
+        
+//         // --- 4. Compute Averages and Counts ---
+//         const servedTodayCount = servedTodayCustomers.length;
+//         const servedYesterdayCount = servedYesterdayCustomers.length;
+
+//         const avgWaitTimeToday = servedTodayCount
+//             ? servedTodayCustomers.reduce((acc, c) => acc + (parseFloat(c.waitTime) || 0), 0) / servedTodayCount
+//             : 0;
+
+//         const avgWaitTimeYesterday = servedYesterdayCount
+//             ? servedYesterdayCustomers.reduce((acc, c) => acc + (parseFloat(c.waitTime) || 0), 0) / servedYesterdayCount
+//             : 0;
+
+
+//         // --- 5. Compute Percentage Changes (using the helper) ---
+        
+//         // The original code calculated Active Change using a complex 'created yesterday and active' logic. 
+//         // We use the simpler version based on a fetched activeYesterdayCount.
+//         const activeChange = calculatePercentageChange(activeTodayCount, activeYesterdayCount);
+
+//         const servedChange = calculatePercentageChange(servedTodayCount, servedYesterdayCount);
+
+//         const waitTimeChange = calculatePercentageChange(avgWaitTimeToday, avgWaitTimeYesterday);
+
+
+//         // --- 6. Response ---
+//         res.status(200).json({
+//             message: "Dashboard metrics fetched successfully",
+//             data: {
+//                 activeInQueue: {
+//                     current: activeTodayCount,
+//                     percentageChange: Math.round(activeChange),
+//                 },
+//                 averageWaitTime: {
+//                     // Round to one decimal place, consistent with original logic
+//                     current: Math.round(avgWaitTimeToday * 10) / 10, 
+//                     percentageChange: Math.round(waitTimeChange),
+//                 },
+//                 servedToday: {
+//                     current: servedTodayCount,
+//                     percentageChange: Math.round(servedChange),
+//                 },
+//             },
+//         });
+//     } catch (error) {
+//         console.error("Error fetching dashboard metrics:", error);
+//         res.status(500).json({
+//             message: "Error getting dashboard metrics",
+//             error: error.message,
+//         });
+//     }
+// };
+
 
 exports.getRecentActivity = async (req, res) => {
   try {
