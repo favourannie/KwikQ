@@ -11,18 +11,18 @@ exports.initializePayment = async (req, res) => {
     const { individualId, planType, billingCycle } = req.body;
     
     // ✅ Automatically get organizationId from authenticated user
-    const organizationId = req.user?.organizationId || req.user?.user?.organizationId; 
+    const id = req.user?.id || req.user?._id
 
-    if (!organizationId) {
-      return res.status(401).json({ message: "Unauthorized: organizationId not found in token" });
+    if (!id) {
+      return res.status(401).json({ message: "Unauthorized: id not found in token" });
     }
 
     // ✅ Fetch organization details
-    const organization = await organizationModel.findById(organizationId);
-    if (!organization) {
-      return res.status(404).json({ message: "Organization not found" });
+    const business = await organizationModel.findById(id) || await branchModel.findById(id);
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
     }
-
+    
     let amount;
 
     if (!billingCycle) {
@@ -33,9 +33,6 @@ exports.initializePayment = async (req, res) => {
       return res.status(400).json({ message: "planType is required" });
     }
 
-    if (!org) {
-      return res.status(400).json({ message: "Organization ID (org) is required" });
-    }
 
     // // ✅ Fetch organization details here
     // const organization = await organizationModel.findById(org);
@@ -74,17 +71,38 @@ exports.initializePayment = async (req, res) => {
         channels: ["card"],
         redirect_url: "https://yourapp.com/payment-success",
         customer: {
-          name: organization.name || "Customer Name",
-          email: organization.email || "customer@email.com",
+          name: business.businessName || "Customer Name",
+          email: business.email || "customer@email.com",
     }
   }
    const { data } = await axios.post('https://api.korapay.com/merchant/api/v1/charges/initialize', paymentData, {
       headers: {
-        Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}}`
+        Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}`
       }
     });
-
-
+    let pay;
+    if(business.type === 'individual'){
+      pay = await paymentModel.create({
+        individualId: business._id,
+        org: 'individual',
+        amount,
+        reference,
+        status: "Pending",
+        planType: plan,
+        billingCycle: cycle,
+      });
+    }else{
+      pay = await paymentModel.create({
+        individualId: business._id,
+        org: 'multi',
+        amount,
+        reference,
+        status: "Pending",
+        planType: plan,
+        billingCycle: cycle,
+      });
+    }
+  
 
     // // Create payment request with Kora Pay API
     // const {data}= await axios.post(
@@ -102,18 +120,18 @@ exports.initializePayment = async (req, res) => {
     // );
 
     // Save payment record
-    const payment = await paymentModel.create({
-      individualId,
-      org: organization._id,
-      amount,
-      reference,
-      status: "Pending",
-      planType: plan,
-      billingCycle: cycle,
-    });
+    // const payment = await paymentModel.create({
+    //   individualId,
+    //   org: organization._id,
+    //   amount,
+    //   reference,
+    //   status: "Pending",
+    //   planType: plan,
+    //   billingCycle: cycle,
+    // });
 
     if (data?.status === true) {
-      await payment.save();
+      await pay.save();
     }
 
     res.status(201).json({
@@ -124,7 +142,7 @@ exports.initializePayment = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error initializing payment:"+ error.response?.data || error.message);
+    console.error("Error initializing payment:"+ error.message);
     res.status(500).json({
       message: "Error initializing payment",
       error: error.response?.data,
