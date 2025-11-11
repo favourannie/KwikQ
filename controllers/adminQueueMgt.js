@@ -100,7 +100,7 @@ exports.alertCustomer = async (req, res) => {
 
     res.status(200).json({ message: "Customer alerted successfully",
         data: {
-         name: queue.formDetails.fullName,
+         fullName: queue.formDetails.fullName,
          email: queue.formDetails.email
         }
      });
@@ -180,24 +180,37 @@ exports.skipCustomer = async (req, res) => {
 };
 
 
-exports.removeCustomer = async (req, res) => {
+exports.serveCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await adminQueueMgtModel.findByIdAndDelete(id);
-
-    if (!deleted) {
+    const customer = await CustomerInterface.findById(id)
+    if(!customer){
       return res.status(404).json({
-        message: "Customer not found or already removed",
+        message: "Customer not found"
+      })
+    }
+        if (customer.status !== "waiting" && customer.status !== "in_service") {
+      return res.status(400).json({
+        message: `Customer cannot be served. Current status: ${customer.status}`,
       });
     }
 
+    const served = await CustomerInterface.findOneAndUpdate({_id: id}, {status: "completed"}, {new: true})
+
+    const response = {
+      id: customer._id,
+      fullName: customer.formDetails.fullName,
+      email: customer.formDetails.email
+    }
+
     res.status(200).json({
-      message: "Customer removed successfully",
-      data: deleted,
-    });
+      message: "Customer served",
+      data: response,
+      served: served.status
+    })
   } catch (error) {
     res.status(500).json({
-      message: "Error removing customer",
+      message: "Error serving customer",
       error: error.message,
     });
   }
