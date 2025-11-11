@@ -11,10 +11,11 @@ const queueSchema = new mongoose.Schema({
     },
     name: {
         type: String,
-        default: "Queue-Point"
+        required: true
     },
-    queuePoint : {
-        type: Number
+    number : {
+        type: Number,
+        default: 0
     },
     waiting: {
         type: Number,

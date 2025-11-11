@@ -3,7 +3,8 @@ const Branch = require("../models/branchModel");
 const Organization = require("../models/organizationModel");
 const { branchMail } = require("../utils/branchTemplete");
 const { sendMail } = require("../middleware/brevo");
-
+const dashboardModel = require("../models/dashboardModel")
+const queuePointModel = require("../models/queueModel")
 exports.createBranch = async (req, res) => {
   try {
     console.log('requst user:', req.user)
@@ -35,7 +36,7 @@ exports.createBranch = async (req, res) => {
       return res.status(400).json({ message: "Branch already exists" });
     }
 
-    const newBranch = await Branch.create({
+    const newBranch = new Branch ({
       organizationId: organization._id,
       branchName,
       branchCode : Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -51,6 +52,12 @@ exports.createBranch = async (req, res) => {
 
     organization.branches.push(newBranch._id);
     await organization.save();
+    const dashboard = await dashboardModel.create({
+     branchId: newBranch._id
+    })
+     const queuePoint = await queuePointModel.create({
+          branchId: newBranch._id
+        })
    
     
     const email = organization.email || organization.email ||organization.userEmail || organization.contactEmail;

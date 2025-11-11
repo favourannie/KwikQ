@@ -22,14 +22,12 @@ exports.generateQRCode = async (req, res) => {
       individualId: business?._id,
       branchId: business?.branchId,
     });
-    console.log(existingQRCode)
-
     if (existingQRCode) {
       return res.status(200).json({
         message: "Existing permanent QR code retrieved",
         qrCode: existingQRCode.qrCode,
         formLink: existingQRCode.formLink,
-        qrImageUrl: existingQRCode.qrImageUrl,
+        qrImageUrl: existingQRCode.qrImage,
       });
     }
 
@@ -48,16 +46,29 @@ exports.generateQRCode = async (req, res) => {
 
     const qrImageBase64 = await QRCode.toDataURL(formLink);
     const base64Data = qrImageBase64.replace(/^data:image\/png;base64,/, ""); // remove header
-
+    let id
+    if(business.role === "individual"){
+      id = await organizationModel.findOne({ organizationId: organizationId
+      })
+    } else if (business.role === "branches"){
+      id = await branchModel.findOne({
+        branches: branchId
+      })
+    }
     const uploadResponse = await cloudinary.uploader.upload(
       `data:image/png;base64,${base64Data}`,
       {
         folder: "qrcodes",
-        public_id: `branch-${business?.branchId}-${qrCode}`,
+        public_id: `branch-${id}-${qrCode}`,
         overwrite: true,
-      }
+      },
     );
-
+    
+        console.log(uploadResponse)
+    
+        console.log("Annie");
+    // const url = `branch-${id}-${qrCode}`
+    
     let newQRCode;
 
     console.log(business)

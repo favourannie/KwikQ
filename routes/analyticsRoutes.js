@@ -111,6 +111,6 @@ const { authenticate } = require('../middleware/authenticate');
  *                   example: Branch ID not found or invalid date range
  */
 
-router.get('/analytics/:branchId', authenticate, getBranchAnalytics);
+router.get('/analytics/:id', authenticate, getBranchAnalytics);
 
 module.exports = router;

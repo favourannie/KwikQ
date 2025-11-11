@@ -1,5 +1,5 @@
 const express = require("express");
-const { getAllQueues, skipCustomer, removeCustomer, alertCustomer } = require("../controllers/adminQueueMgt");
+const { getAllQueues, skipCustomer, serveCustomer, alertCustomer } = require("../controllers/adminQueueMgt");
 const router = express.Router()
 
 /**
@@ -211,55 +211,84 @@ router.post("/skip/:id", skipCustomer)
 
 /**
  * @swagger
- * /api/v1/remove/{id}:
- *   delete:
- *     summary: Remove a customer from the queue
- *     description: Permanently deletes a customer from the admin queue management system by their unique ID.
+ * /api/v1/serve/{id}:
+ *   patch:
+ *     summary: Serve a customer
+ *     description: >
+ *       Updates a customer's queue status from **"waiting"** or **"in_service"** to **"completed"** based on their unique ID.
+ *       Returns basic customer information and their updated status.
  *     tags:
- *       - Queue Management
+ *       - Queue
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: Unique identifier of the customer to be removed.
+ *         description: The unique ID of the customer to serve
  *         schema:
  *           type: string
- *           example: "670bda72427c143018415849"
+ *           example: 6730e5a2a8f43b0012f4c1de
  *     responses:
  *       200:
- *         description: Customer removed successfully.
+ *         description: Customer served successfully
  *         content:
  *           application/json:
- *             example:
- *               message: "Customer removed successfully"
- *               data:
- *                 _id: "670bda72427c143018415849"
- *                 formDetails:
- *                   fullName: "Johnson Annie"
- *                   email: "johnsonfavour153@gmail.com"
- *                   phone: "09125772521"
- *                   serviceNeeded: "other"
- *                   additionalInfo: "Buss down braids"
- *                   priorityStatus: "pregnantWoman"
- *                 queueNumber: "Q-4156OPK"
- *                 status: "waiting"
- *                 joinedAt: "2025-11-05T23:14:58.416Z"
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Customer served
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: 6730e5a2a8f43b0012f4c1de
+ *                     fullName:
+ *                       type: string
+ *                       example: John Doe
+ *                     email:
+ *                       type: string
+ *                       example: johndoe@gmail.com
+ *                 served:
+ *                   type: string
+ *                   example: completed
+ *       400:
+ *         description: Customer cannot be served
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Customer cannot be served. 
  *       404:
- *         description: Customer not found or already removed.
+ *         description: Customer not found
  *         content:
  *           application/json:
- *             example:
- *               message: "Customer not found or already removed"
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Customer not found
  *       500:
- *         description: Server error while removing customer.
+ *         description: Internal server error while serving customer
  *         content:
  *           application/json:
- *             example:
- *               message: "Error removing customer"
- *               error: "Internal server error"
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error serving customer
+ *                 error:
+ *                   type: string
+ *                   example: Cast to ObjectId failed for value "abc123"
  */
 
-router.delete("/remove/:id", removeCustomer);
+router.patch("/serve/:id", serveCustomer);
 
 
 module.exports = router
