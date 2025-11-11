@@ -73,7 +73,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *       If a QR code already exists for the provided `organizationId` or `branchId`, it will return the existing QR code details instead.
  *
  *     tags:
- *       - QR Codes
+ *       - QR Code Management
  *
  *     parameters:
  *       - in: query
