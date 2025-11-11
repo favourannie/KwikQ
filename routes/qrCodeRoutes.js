@@ -67,42 +67,31 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  * @swagger
  * /api/v1/qrcode/generate:
  *   post:
+ *     summary: Generate or retrieve a permanent QR code for a business
+ *     description: >
+ *       This endpoint generates a new permanent QR code for either an **organization** or a **branch**.
+ *       If a QR code already exists for the provided `organizationId` or `branchId`, it will return the existing QR code details instead.
+ *
  *     tags:
  *       - QR Code Management
- *     summary: Generate QR code for a branch
- *     description: |
- *       Generates a unique QR code for a branch. If a QR code already exists for the branch,
- *       returns the existing one instead of creating a new one.
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/QRCodeRequest'
+ *
+ *     parameters:
+ *       - in: query
+ *         name: organizationId
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The unique ID of the organization. Either `organizationId` or `branchId` must be provided.
+ *       - in: query
+ *         name: branchId
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The unique ID of the branch. Either `organizationId` or `branchId` must be provided.
+ *
  *     responses:
- *       201:
- *         description: QR Code generated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: QR Code generated successfully
- *                 qrCode:
- *                   type: string
- *                   example: KQ-XYZ789
- *                 formLink:
- *                   type: string
- *                   example: https://qless.app/access/KQ-XYZ789
- *                 qrImage:
- *                   type: string
- *                   description: Base64 encoded QR code image
  *       200:
- *         description: Existing QR Code retrieved
+ *         description: Existing QR code found and returned.
  *         content:
  *           application/json:
  *             schema:
@@ -113,12 +102,36 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *                   example: Existing permanent QR code retrieved
  *                 qrCode:
  *                   type: string
+ *                   example: KQ-123456
  *                 formLink:
  *                   type: string
- *                 qrImage:
+ *                   example: https://kwik-q.vercel.app/#/queue_form?queue=10&id=653a5...
+ *                 qrImageUrl:
  *                   type: string
+ *                   example: https://res.cloudinary.com/demo/image/upload/v1234567890/qrcodes/branch-123456-KQ-123456.png
+ *
+ *       201:
+ *         description: New QR code generated and uploaded successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Permanent QR code uploaded successfully to Cloudinary
+ *                 qrCode:
+ *                   type: string
+ *                   example: KQ-654321
+ *                 formLink:
+ *                   type: string
+ *                   example: https://kwik-q.vercel.app/#/queue_form?queue=11&id=653a5...
+ *                 qrImageUrl:
+ *                   type: string
+ *                   example: https://res.cloudinary.com/demo/image/upload/v1234567890/qrcodes/branch-654321-KQ-654321.png
+ *
  *       400:
- *         description: Missing required fields
+ *         description: Bad request due to missing parameters or invalid role.
  *         content:
  *           application/json:
  *             schema:
@@ -126,11 +139,10 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Organization and Branch IDs are required
- *       401:
- *         description: Unauthorized - Authentication required
+ *                   example: Please provide either organizationId or branchId in the query.
+ *
  *       500:
- *         description: Server error
+ *         description: Internal server error during QR code generation or upload.
  *         content:
  *           application/json:
  *             schema:
@@ -138,7 +150,10 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error generating QR code
+ *                   example: Error generating or uploading QR code
+ *                 error:
+ *                   type: string
+ *                   example: Something went wrong while uploading to Cloudinary
  */
 router.post('/qrcode/generate', generateQRCode);
 

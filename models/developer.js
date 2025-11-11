@@ -9,12 +9,12 @@ const developerSchema = new mongoose.Schema({
       totalActiveSubscriptions: { type: Number, default: 0 },
       MonthlyRevenue: { type: Number, default: 0 },
       lastUpdated: { type: Date, default: Date.now },
-      metrics: { type: Schema.Types.Mixed, default: {} },
+      metrics: { type: mongoose.Schema.Types.Mixed, default: {} },
     },
 
     organizationId: [
       {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'organizations',
       },
     ],
@@ -25,7 +25,7 @@ const developerSchema = new mongoose.Schema({
         active: { type: Number, default: 0},
         onTrial: { type: Number, default: 0},
         mrr: { type: Number, default: 0},
-        organizationId: { type: Schema.Types.ObjectId, ref: 'organizations', required: true },
+        organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'organizations', required: true },
         joinedAt: { type: Date, default: Date.now },
       },
     ],
@@ -33,21 +33,21 @@ const developerSchema = new mongoose.Schema({
     
     userAccounts: [
       {
-        userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, },
         totalUsers: { type: Number, default: 0},
         activeUsers: { type: Number, default: 0},
         admins: { type: Number, default: 0 },
         suspended: { type: Number , default: 0},
         role: { type: String, enum: ['owner', 'admin', 'manager', 'support', 'dev'], default: 'admin' },
-        organizationId: { type: Schema.Types.ObjectId, ref: 'organizations' },
+        organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'organizations' },
         addedAt: { type: Date, default: Date.now },
       },
     ],
 
     subscriptions: [
       {
-        subscriptionId: { type: Schema.Types.ObjectId, ref: 'Subscription', required: true },
-        organizationId: { type: Schema.Types.ObjectId, ref: 'organizations' },
+        subscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription', required: true },
+        organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'organizations' },
         activeSubscriptions: { type: Number, default: 0},
         pastDue: { type: Number, default: 0},
         mmr: { type: Number, default: 0},
@@ -60,9 +60,9 @@ const developerSchema = new mongoose.Schema({
 
     pendingPayments: [
       {
-        paymentId: { type: Schema.Types.ObjectId, ref: 'Payment', required: true },
-        organizationId: { type: Schema.Types.ObjectId, ref: 'organizations' },
-        customerId: { type: Schema.Types.ObjectId, ref: 'Customer' },
+        paymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment', required: true },
+        organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'organizations' },
+        customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
         amount: { type: Number, required: true },
         currency: { type: String, default: 'NGN' },
         overDuePayment: {type: String, default: 0},
@@ -76,7 +76,7 @@ const developerSchema = new mongoose.Schema({
     },
 
     initiatedBy: {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Developer",
       required: true,
     },
@@ -122,7 +122,7 @@ Queueless Management System Support Team
 
     reminderLogs: [
       {
-        organizationId: { type: Schema.Types.ObjectId, ref: "Organization" },
+        organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization" },
         organizationName: { type: String },
         email: { type: String },
         status: { type: String, enum: ["sent", "failed"], default: "sent" },
@@ -142,7 +142,7 @@ Queueless Management System Support Team
     },
         reason: { type: String },
         addedAt: { type: Date, default: Date.now },
-        metadata: { type: Schema.Types.Mixed }, // gateway raw response, note, etc.
+        metadata: { type: mongoose.Schema.Types.Mixed }, // gateway raw response, note, etc.
       },
       
     ],
@@ -150,24 +150,43 @@ Queueless Management System Support Team
       type: String,
       trim: true,
     },
-    name: {
+    fullName: {
       type: String,
-      required: true,
-      trim: true,
-    },
-    password: {
-      type: String,
-      required: true,
+      required: false,
       trim: true,
     },
 
-     emailAddress: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true
-    },
+    email: {
+    type: String,
+    required: true, 
+    unique: true,
+    lowercase: true,
+    trim: true,
+    
+  },
+    password: {
+    type: String,
+    required: true, 
+    select: false
+  },
+   isVerified: {
+    type: Boolean,
+    default: false
+  },
+  otp: {
+    type: String
+  },
+  otpExpiredAt: {
+    type: Number
+  },
+   isAdmin: {
+    type: Boolean,
+    default: false
+  },
+    createdAt: {
+    type: Date,
+    default: Date.now
+  },
 
     role: {
       type: String,
