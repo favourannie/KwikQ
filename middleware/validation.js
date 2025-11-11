@@ -12,6 +12,11 @@ exports.registerValidator = (req, res, next) => {
       'string.empty': 'Role is required',
       'any.only': 'Role must be either "individual" or "multi"'
     }),
+    fullName: joi.string().min(3).trim().required().pattern(/^[A-Za-z\s]+$/).messages({
+      'string.empty': 'Full name is required',
+      'string.min': 'Full name must be at least 3 characters long',
+      'string.pattern.base': 'Fullname can only contain letters'
+    }),
     email: joi.string().email().pattern(/^[a-zA-Z0-9._%+-]+@gmail\.com$/).trim().required().messages({
       'string.empty': 'Email is required',
       'string.email': 'Please provide a valid email address',
