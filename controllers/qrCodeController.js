@@ -22,13 +22,12 @@ exports.generateQRCode = async (req, res) => {
       individualId: business?._id,
       branchId: business?.branchId,
     });
-
     if (existingQRCode) {
       return res.status(200).json({
         message: "Existing permanent QR code retrieved",
         qrCode: existingQRCode.qrCode,
         formLink: existingQRCode.formLink,
-        qrImageUrl: existingQRCode.qrImageUrl,
+        qrImageUrl: existingQRCode.qrImage,
       });
     }
 
