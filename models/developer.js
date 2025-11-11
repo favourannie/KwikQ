@@ -33,7 +33,7 @@ const developerSchema = new mongoose.Schema({
     
     userAccounts: [
       {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, },
         totalUsers: { type: Number, default: 0},
         activeUsers: { type: Number, default: 0},
         admins: { type: Number, default: 0 },
@@ -152,7 +152,7 @@ Queueless Management System Support Team
     },
     fullName: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
 
