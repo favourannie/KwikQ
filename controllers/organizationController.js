@@ -361,7 +361,7 @@ exports.getOrganizationsById = async (req, res) => {
                 message: "Organization not found",
             });
         }
-        const orgB = await Branch.find({organizationId: id})
+        const orgB = await branchModel.find({organizationId: id})
         res.status(200).json({
             message: "Organization fetched successfully",
             data: org,
