@@ -82,7 +82,7 @@ const router = express.Router()
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error fetching queue history: Cast to ObjectId failed for value "abc123"
+ *                   example: Error fetching queue history; Cast to ObjectId failed for value "abc123"
  *                 error:
  *                   type: string
  *                   example: Cast to ObjectId failed for value "abc123"
