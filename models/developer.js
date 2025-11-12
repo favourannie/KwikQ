@@ -190,7 +190,9 @@ Queueless Management System Support Team
 
     role: {
       type: String,
-      default: "developer",
+      lowercase: true,
+      trim: true,
+      enum: ["developer"]
     },
   },
 );
