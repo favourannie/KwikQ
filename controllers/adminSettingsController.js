@@ -34,7 +34,7 @@ exports.getBusinessDetails = async(req, res)=>{
     } else if (business.role === "branch") {
       const org = await organizationModel.findById(business.organizationId);
       details = {
-        businessName: business.branchName || org?.businessName,
+        businessName: business.businessName || org?.businessName,
         phoneNumber: business.phoneNumber,
         businessAddress: business.branchAddress,
         role: "branch",
@@ -110,7 +110,7 @@ exports.setWorkingDays = async(req,res)=>{
   try {
     const id = req.user.id
     const {openingTime, closingTime, workingDays, timezone} = req.body
-    const business = await organizationModel.findById(id) || await branchModel.findById(id)
+    const business = await organizaionModel.findById(id) || await branchModel.findById(id)
     if(!business){
       return res.status(404).json({
         message: "Business not found"
@@ -170,9 +170,9 @@ exports.getOperatingHours = async (req, res) => {
     }
     let hours;
     if(business.role === "individual"){
-      hours = await organizationModel.findOne({individualId: business._id})
+      hours = await adminSettingsModel.findOne({individualId: business._id})
     } else if( business.role === "multi"){
-      hours = await organizationModel.findOne({branchId: business._id})
+      hours = await adminSettingsModel.findOne({branchId: business._id})
     }
 
     if (!hours) return res.status(404).json({ message: "Operating hours not set yet" });
