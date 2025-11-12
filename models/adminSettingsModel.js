@@ -26,12 +26,11 @@ const adminSettingsSchema =  new mongoose.Schema({
   }, 
   closingTime: { 
     type: String, 
-    required: true 
   }, 
   workingDays: {
     type: [String],
     enum: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    default: ""
+    default: "Mon"
   },
   timezone: { 
     type: String,
