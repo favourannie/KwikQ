@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { registerDeveloper, devVerify, devLogin, resendOtp   } = require('../controllers/developer');
-const { registerValidator, verifyValidator, resendValidator } = require('../middleware/validation');
+const { DevValidator, verifyDevValidator, resendDevValidator } = require('../middleware/validateDev');
 
 /**
  * @swagger
@@ -96,7 +96,7 @@ const { registerValidator, verifyValidator, resendValidator } = require('../midd
  *                   type: string
  *                   example: Detailed error message
  */
-router.post('/developers/register', registerValidator,registerDeveloper);
+router.post('/developers/register', DevValidator,registerDeveloper);
 
 /**
  * @swagger
@@ -170,7 +170,7 @@ router.post('/developers/register', registerValidator,registerDeveloper);
  *                   type: string
  *                   example: Detailed error message
  */
-router.post('/devverify',verifyValidator, devVerify );
+router.post('/devverify',verifyDevValidator, devVerify );
 
 /**
  * @swagger
@@ -229,7 +229,7 @@ router.post('/devverify',verifyValidator, devVerify );
  *                   type: string
  *                   example: Detailed error message
  */
-router.post('/resendotp', resendValidator,resendOtp);
+router.post('/resendotp', resendDevValidator,resendOtp);
 
 /**
  * @swagger
