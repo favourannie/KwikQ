@@ -11,40 +11,26 @@ exports.getBusinessDetails = async(req, res)=>{
                 message: "Business not found"
             })
         }
-        
-       let details = {};
-
-    
-     if (business.role === "multi") {
-      const branches = await branchModel.find({ organizationId: business._id });
-      details = {
-        businessName: business.businessName,
-        phoneNumber: business.phoneNumber,
-        businessAddress: business.headOfficeAddress,
-        role: business.role,
-        branches,
-      };
-    } else if (business.role === "individual") {
-      details = {
-        businessName: business.businessName,
-        phoneNumber: business.phoneNumber,
-        businessAddress: business.headOfficeAddress,
-        role: business.role,
-      };
-    } else if (business.role === "branch") {
-      const org = await organizationModel.findById(business.organizationId);
-      details = {
-        businessName: business.businessName || org?.businessName,
-        phoneNumber: business.phoneNumber,
-        businessAddress: business.branchAddress,
-        role: "branch",
-        parentOrganization: org?.businessName || null,
-      };
-    }
-
+        let details
+        if(business.role === "individual"){
+          details = await adminSettingsModel.findOne({
+            individualId: business._id
+          })
+        } else if(business.role === "multi"){
+          details = await adminSettingsModel.findOne({
+            branchId: business._id
+          })
+        }console.log(details)
+        const update = {
+          name: details.businessName,
+          email: business.email,
+          address: details.businessAddress,
+          phone: details.phoneNumber,
+          time: details.timezone,
+        }
     return res.status(200).json({
       message: "Business details fetched successfully.",
-      data: details,
+      data: update,
     });
   } catch (error) {
     console.error("Error getting organization details:", error);
@@ -110,7 +96,7 @@ exports.setWorkingDays = async(req,res)=>{
   try {
     const id = req.user.id
     const {openingTime, closingTime, workingDays, timezone} = req.body
-    const business = await organizaionModel.findById(id) || await branchModel.findById(id)
+    const business = await organizationModel.findById(id) || await branchModel.findById(id)
     if(!business){
       return res.status(404).json({
         message: "Business not found"
