@@ -15,7 +15,7 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *       total branches, active queues, average wait time, and served customers for today and yesterday.  
  *       Requires authentication.
  *     tags:
- *       - Branch Management
+ *       - Super Admin Branch Management
  *     security:
  *       - bearerAuth: []  # Requires JWT or access token
  *     responses:
