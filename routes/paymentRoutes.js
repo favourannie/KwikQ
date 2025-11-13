@@ -101,7 +101,102 @@ const { authenticate } = require("../middleware/authenticate");
  *                   example: { code: "500", message: "KoraPay API error" }
  */
 router.post("/initialize/", authenticate, initializePayment);
-router.get("/verify/:reference", verifyPayment);
+
+/**
+ * @swagger
+ * /api/v1/verify/{reference}:
+ *   get:
+ *     summary: Verify a payment transaction
+ *     description: |
+ *       Verifies a payment using its transaction reference via the **Korapay API**, updates the payment record in the database, and returns the verification result.  
+ *       This route requires a valid authentication token.
+ *     tags:
+ *       - Payments
+ *     security:
+ *       - bearerAuth: []   # ⬅️ Requires JWT authentication
+ *     parameters:
+ *       - in: path
+ *         name: reference
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: TXN123456789
+ *         description: Unique transaction reference ID for the payment to be verified.
+ *     responses:
+ *       200:
+ *         description: Payment verification completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Payment verification completed
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     status:
+ *                       type: string
+ *                       example: success
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         reference:
+ *                           type: string
+ *                           example: TXN123456789
+ *                         amount:
+ *                           type: number
+ *                           example: 5000
+ *                         currency:
+ *                           type: string
+ *                           example: NGN
+ *                         customer:
+ *                           type: object
+ *                           properties:
+ *                             name:
+ *                               type: string
+ *                               example: John Doe
+ *                             email:
+ *                               type: string
+ *                               example: johndoe@email.com
+ *                         channel:
+ *                           type: string
+ *                           example: card
+ *                         paid_at:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2025-11-13T14:25:33.000Z"
+ *       400:
+ *         description: Invalid or missing reference parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Reference is required
+ *       500:
+ *         description: Error verifying payment
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error verifying payment
+ *                 error:
+ *                   type: object
+ *                   example:
+ *                     status: "failed"
+ *                     message: "Invalid transaction reference"
+ */
+router.get("/verify/:reference", authenticate, verifyPayment);
 router.post("/webhook", verifyPaymentWebhook);
 router.get("/all", getAllPayments);
 

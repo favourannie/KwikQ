@@ -164,7 +164,7 @@ exports.verifyPayment = async (req, res) => {
 
     const status = verifyResponse.data?.data?.status;
 
-    await Payment.findOneAndUpdate(
+    await paymentModel.findOneAndUpdate(
       { reference },
       { status },
       { new: true }
