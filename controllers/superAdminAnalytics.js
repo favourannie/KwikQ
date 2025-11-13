@@ -330,3 +330,195 @@ exports.getBranchPerformance = async (req, res) => {
     });
   }
 };
+
+exports.getBranchAnalytics = async (req, res) => {
+  try {
+    const orgId = req.user?.id;
+    if (!orgId) {
+      return res.status(401).json({ message: 'Organization ID required' });
+    }
+
+    const { branch = 'all', range = 'today' } = req.query;
+
+    // Time range boundaries
+    const now = moment();
+    let start, end, prevStart, prevEnd;
+
+    if (range === 'today') {
+      start = now.clone().startOf('day');
+      end = now.clone().endOf('day');
+      prevStart = now.clone().subtract(1, 'day').startOf('day');
+      prevEnd = now.clone().subtract(1, 'day').endOf('day');
+    } else if (range === 'week') {
+      start = now.clone().startOf('isoWeek');
+      end = now.clone().endOf('isoWeek');
+      prevStart = now.clone().subtract(1, 'week').startOf('isoWeek');
+      prevEnd = now.clone().subtract(1, 'week').endOf('isoWeek');
+    } else if (range === 'month') {
+      start = now.clone().startOf('month');
+      end = now.clone().endOf('month');
+      prevStart = now.clone().subtract(1, 'month').startOf('month');
+      prevEnd = now.clone().subtract(1, 'month').endOf('month');
+    }
+
+    const startDate = start.toDate();
+    const endDate = end.toDate();
+    const prevStartDate = prevStart.toDate();
+    const prevEndDate = prevEnd.toDate();
+
+    // Build base filter
+    const baseFilter = {
+      organizationId: orgId,
+      createdAt: { $gte: startDate, $lte: endDate },
+    };
+    const prevFilter = {
+      organizationId: orgId,
+      createdAt: { $gte: prevStartDate, $lte: prevEndDate },
+    };
+
+    if (branch !== 'all') {
+      baseFilter.branch = branch;
+      prevFilter.branch = branch;
+    }
+
+    //Total Customers
+    const totalCustomers = await Queue.countDocuments({
+      ...baseFilter,
+      status: 'Completed',
+    });
+    const prevTotal = await Queue.countDocuments({
+      ...prevFilter,
+      status: 'Completed',
+    });
+    const customerChange = prevTotal === 0
+      ? totalCustomers > 0 ? '+100%' : '0%'
+      : `${Math.round((totalCustomers - prevTotal) / prevTotal * 100)}%`;
+
+    //Avg Wait Time
+    const waitStats = await Queue.aggregate([
+      { $match: { ...baseFilter, status: 'Completed', waitTime: { $gt: 0 } } },
+      { $group: { _id: null, avg: { $avg: '$waitTime' } } },
+    ]);
+    const avgWaitTime = waitStats[0]?.avg ? Math.round(waitStats[0].avg) : 0;
+
+    const prevWaitStats = await Queue.aggregate([
+      { $match: { ...prevFilter, status: 'Completed', waitTime: { $gt: 0 } } },
+      { $group: { _id: null, avg: { $avg: '$waitTime' } } },
+    ]);
+    const prevAvgWait = prevWaitStats[0]?.avg ? Math.round(prevWaitStats[0].avg) : 0;
+    const waitImprovement = prevAvgWait === 0
+      ? avgWaitTime < 60 ? '-100%' : '0%'
+      : `${Math.round((prevAvgWait - avgWaitTime) / prevAvgWait * 100)}%`;
+
+    //Weekly Customer Flow Trends (Mon–Sun)
+    const trendData = await Queue.aggregate([
+      {
+        $match: {
+          ...baseFilter,
+          status: 'Completed',
+        },
+      },
+      {
+        $group: {
+          _id: { $dateTrunc: { date: '$createdAt', unit: 'day' } },
+          count: { $sum: 1 },
+          avgWait: { $avg: '$waitTime' },
+        },
+      },
+      { $sort: { '_id': 1 } },
+    ]);
+
+    // Fill missing days
+    const days = [];
+    let current = start.clone();
+    while (current <= end) {
+      const dayStr = current.format('YYYY-MM-DD');
+      const found = trendData.find(t => moment(t._id).format('YYYY-MM-DD') === dayStr);
+      days.push({
+        date: current.format('ddd'),
+        customers: found?.count || 0,
+        avgWait: found?.avgWait ? Math.round(found.avgWait) : 0,
+      });
+      current.add(1, 'day');
+    }
+
+    //Hourly Distribution (0–23)
+    const hourlyData = await Queue.aggregate([
+      {
+        $match: {
+          ...baseFilter,
+          status: 'Completed',
+        },
+      },
+      {
+        $group: {
+          _id: { $hour: '$createdAt' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id': 1 } },
+    ]);
+
+    const hours = Array.from({ length: 24 }, (_, i) => {
+      const found = hourlyData.find(h => h._id === i);
+      return {
+        hour: `${i}:00`,
+        customers: found?.count || 0,
+      };
+    });
+
+    //Branch List (for dropdown)
+    const branches = await Branch.find({ organizationId: orgId })
+      .select('_id branchName branchCode')
+      .sort({ branchName: 1 })
+      .lean();
+
+    res.status(201).json({
+      message:"Branch Analytics Fetched Successfully",
+      summary: {
+        totalCustomers: {
+        count: totalCustomers,
+        change: customerChange,
+        comparison: range === 'today' ? 'vs yesterday' : `vs last ${range}`,
+        trend: customerChange >= 0 ? 'up' : 'down'
+  },
+  avgWaitTime: {
+    time: avgWaitTime,
+    improvement: waitImprovement,
+    label: "improvement",
+    trend: waitImprovement < 0 ? 'up' : 'down' // less wait = better
+  }
+},
+      trends: {
+        labels: days.map(d => d.date),
+        customers: days.map(d => d.customers),
+        avgWait: days.map(d => d.avgWait),
+      },
+      hourly: {
+        labels: hours.map(h => h.hour),
+        customers: hours.map(h => h.customers),
+      },
+      filters: {
+        branch: branch === 'all' ? 'All Branches' : branches.find(b => b._id.toString() === branch)?.branchName || 'Unknown',
+        range,
+      },
+      branches: branches.map(b => ({
+        id: b._id,
+        name: `${b.branchName} (${b.branchCode})`,
+      })),
+      meta: {
+        generatedAt: new Date(),
+        range: {
+          start: startDate,
+          end: endDate,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Branch Analytics Error:', error);
+    res.status(500).json({
+      message: 'Error fetching analytics',
+      error: error.message,
+    });
+  }
+};
