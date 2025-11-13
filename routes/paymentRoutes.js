@@ -104,7 +104,7 @@ router.post("/initialize/", authenticate, initializePayment);
 
 /**
  * @swagger
- * /api/payment/verify/{reference}:
+ * /api/v1/verify/{reference}:
  *   get:
  *     summary: Verify a payment transaction
  *     description: |
