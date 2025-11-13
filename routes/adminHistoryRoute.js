@@ -4,22 +4,25 @@ const router = express.Router()
 
 /**
  * @swagger
- * /api/v1/history/{id}:
+ * /api/v1/queue/history/{id}:
  *   get:
- *     summary: Get queue history for a business
+ *     summary: Get queue history for an organization or branch
  *     description: >
- *       Fetches the queue history for an organization or branch by their unique ID.  
- *       Returns all customers with details like queue number, customer name, service type, timestamps, wait time, service time, and status.
+ *       Fetches the queue history for a given organization or branch.
+ *       Returns detailed customer queue data and performance metrics such as:
+ *       - Average wait time  
+ *       - Completed today  
+ *       - Cancelled / No-show count
  *     tags:
  *       - Queue
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The unique ID of the organization or branch
+ *         description: The organization or branch ID
  *         schema:
  *           type: string
- *           example: 6730e5a2a8f43b0012f4c1de
+ *           example: 67390fb30a1e03c93538eabc
  *     responses:
  *       200:
  *         description: Queue history fetched successfully
@@ -31,38 +34,52 @@ const router = express.Router()
  *                 message:
  *                   type: string
  *                   example: Queue history fetched successfully
- *                 count:
+ *                 metrics:
+ *                   type: object
+ *                   properties:
+ *                     avgWaitTime:
+ *                       type: integer
+ *                       example: 15
+ *                       description: Average wait time in minutes
+ *                     cancelledNoShow:
+ *                       type: integer
+ *                       example: 2
+ *                       description: Total number of cancelled or no-show customers
+ *                 completedToday:
  *                   type: integer
  *                   example: 5
+ *                   description: Number of customers who completed service today
  *                 data:
  *                   type: array
+ *                   description: List of customers in queue
  *                   items:
  *                     type: object
  *                     properties:
  *                       queueNumber:
  *                         type: string
- *                         example: A102
- *                       customerName:
+ *                         example: A12
+ *                       fullName:
  *                         type: string
  *                         example: John Doe
- *                       serviceType:
+ *                       service:
  *                         type: string
  *                         example: Account Opening
- *                       joinedDate:
- *                         type: string
- *                         example: 2025-11-11
- *                       joinedTime:
- *                         type: string
- *                         example: 10:30
- *                       waitTime:
- *                         type: string
- *                         example: 15 min
  *                       serviceTime:
  *                         type: string
- *                         example: 20 min
+ *                         example: 12 min
  *                       status:
  *                         type: string
+ *                         enum: [waiting, in_service, completed, canceled, no_show]
  *                         example: completed
+ *                       phone:
+ *                         type: string
+ *                         example: "+2348012345678"
+ *                       joinedAt:
+ *                         type: string
+ *                         example: "13 Nov 2025, 02:45:30 PM GMT+1"
+ *                       waitTime:
+ *                         type: string
+ *                         example: "10 min"
  *       404:
  *         description: Business not found
  *         content:
@@ -74,7 +91,7 @@ const router = express.Router()
  *                   type: string
  *                   example: Business not found
  *       500:
- *         description: Internal server error
+ *         description: Error fetching queue data
  *         content:
  *           application/json:
  *             schema:
@@ -82,10 +99,10 @@ const router = express.Router()
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error fetching queue history; Cast to ObjectId failed for value "abc123"
+ *                   example: Error fetching queue data
  *                 error:
  *                   type: string
- *                   example: Cast to ObjectId failed for value "abc123"
+ *                   example: Internal Server Error
  */
 
 router.get("/history/:id", getQueueHistory )
