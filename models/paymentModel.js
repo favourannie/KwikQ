@@ -34,9 +34,12 @@ const paymentSchema = new mongoose.Schema({
   nextBillingDate: Date,
   status: {
     type: String,
-    enum: ['Pending', 'Successful', 'Failed'],
+    enum: ['Pending', 'Successful', 'Failed', 'Overdue', 'Paid',],
     default: 'Pending'
-  }
+  },
+  startDate: { type: Date, default: Date.now },
+  endDate: { type: Date },
+  isActive: { type: Boolean, default: true },
 });
 
 const paymentModel = mongoose.model('payments', paymentSchema);
