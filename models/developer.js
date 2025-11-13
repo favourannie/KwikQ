@@ -18,6 +18,10 @@ const developerSchema = new mongoose.Schema({
         ref: 'organizations',
       },
     ],
+     org: {
+    type: String,
+    enum: [ 'individual', 'multi']
+       },
 
     allCustomers: [
       {

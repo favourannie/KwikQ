@@ -7,27 +7,20 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * /api/v1/branch/management/{id}:
+ * /api/v1/branchoverview:
  *   get:
- *     summary: Get branch management dashboard metrics for an organization
+ *     summary: Get Branch Management Overview
  *     description: >
- *       This endpoint retrieves dashboard data for all branches under a specific organization,
- *       including total branches, active queues, average wait time, and total customers served today.
+ *       Fetches an overview of all branches under an organization, including statistics like 
+ *       total branches, active queues, average wait time, and served customers for today and yesterday.  
+ *       Requires authentication.
  *     tags:
  *       - Branch Management
  *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: The organization ID.
- *         schema:
- *           type: string
- *           example: "672f0db85f9d9c3a5d3b7b2a"
+ *       - bearerAuth: []  # Requires JWT or access token
  *     responses:
  *       200:
- *         description: Dashboard data fetched successfully.
+ *         description: Branch management overview successfully fetched
  *         content:
  *           application/json:
  *             schema:
@@ -35,34 +28,83 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Dashboard data fetched successfully
- *                 data:
+ *                   example: Branch Overview Successfully Fetched
+ *                 summary:
  *                   type: object
  *                   properties:
  *                     totalBranches:
- *                       type: integer
- *                       example: 8
- *                     totalActiveQueues:
- *                       type: integer
- *                       example: 3
+ *                       type: string
+ *                       example: "8 +2 this month"
+ *                     activeQueues:
+ *                       type: string
+ *                       example: "15 +25% from yesterday"
  *                     avgWaitTime:
  *                       type: string
  *                       example: "12 min"
- *                     totalServedToday:
+ *                     servedToday:
+ *                       type: string
+ *                       example: "120 +15% from yesterday"
+ *                 branches:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: "671a32b4c53d1b00123abf90"
+ *                       branchName:
+ *                         type: string
+ *                         example: "Victoria Island Branch"
+ *                       branchCode:
+ *                         type: string
+ *                         example: "VIC-001"
+ *                       city:
+ *                         type: string
+ *                         example: "Lagos"
+ *                       state:
+ *                         type: string
+ *                         example: "Lagos State"
+ *                       address:
+ *                         type: string
+ *                         example: "10 Adeola Odeku Street, Victoria Island"
+ *                       managerName:
+ *                         type: string
+ *                         example: "Emeka Obi"
+ *                       status:
+ *                         type: string
+ *                         enum: [Active, Offline]
+ *                         example: "Active"
+ *                       lastUpdated:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-11-13T10:32:00.000Z"
+ *                       activeQueue:
+ *                         type: integer
+ *                         example: 5
+ *                       servedToday:
+ *                         type: integer
+ *                         example: 22
+ *                       avgWaitTime:
+ *                         type: integer
+ *                         example: 10
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     generatedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-11-13T07:32:00.000Z"
+ *                     organizationId:
+ *                       type: string
+ *                       example: "6721a8a7b78e4d001245b932"
+ *                     activeCount:
  *                       type: integer
- *                       example: 45
- *       400:
- *         description: Bad request — missing or invalid organization ID.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Invalid organization ID
+ *                       example: 6
+ *                     offlineCount:
+ *                       type: integer
+ *                       example: 2
  *       401:
- *         description: Unauthorized — missing or invalid token.
+ *         description: Unauthorized (missing or invalid token)
  *         content:
  *           application/json:
  *             schema:
@@ -70,9 +112,9 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Unauthorized
+ *                   example: Organization ID required
  *       500:
- *         description: Server error while fetching dashboard data.
+ *         description: Server error while fetching branch overview
  *         content:
  *           application/json:
  *             schema:
@@ -80,13 +122,13 @@ const { authenticate, adminAuth } = require('../middleware/authenticate');
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error fetching dashboard metrics
+ *                   example: Error fetching branch Overview
  *                 error:
  *                   type: string
- *                   example: Internal Server Error
+ *                   example: "TypeError: Cannot read property 'organizationId' of undefined"
  */
 
-router.get('/branch/management/:id/', authenticate, getBranchManagement);
+router.get('/branchoverview', authenticate, getBranchManagement);
 
 /**
  * paths:
@@ -269,7 +311,7 @@ router.get('/getallbranches', getAllBranchesWithStats);
 
 /**
  * @swagger
- * /getall/{id}:
+ * /api/v1/getall/{id}:
  *   get:
  *     summary: Retrieve all branches for an organization
  *     description: Fetches all branches associated with a specific organization by its ID.

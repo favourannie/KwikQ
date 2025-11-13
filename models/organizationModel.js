@@ -73,6 +73,10 @@ const organizationSchema = new mongoose.Schema({
   subscriptionExpiredAt: {
     type: Number
   },
+  status: { type: String, enum: ['active', 'trial', 'inactive'], default: 'trial' },
+  startDate: { type: Date, default: Date.now },
+  endDate: { type: Date },
+  isActive: { type: Boolean, default: true },
   branches: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "branches"

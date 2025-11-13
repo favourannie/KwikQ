@@ -4,40 +4,155 @@ const Organization = require('../models/organizationModel');
 const CustomerInterface = require('../models/customerQueueModel'); 
 const Queue = require('../models/customerQueueModel');
 // const queueModel = require('../models/queueModel');
+const moment = require('moment');
 
 
 exports.getBranchManagement = async (req, res) => {
+try {
+    const orgId = req.user?.id;
+    if (!orgId) {
+      return res.status(401).json({ message: 'Organization ID required' });
+    }
 
-  try {
-    const organizationId = req.params.id
-    const branches = await Branch.find({organizationId: organizationId});
-    const totalBranches = branches.length
+    const today = moment().startOf('day').toDate();
+    const yesterday = moment().subtract(1, 'day').startOf('day').toDate();
+    const thisMonth = moment().startOf('month').toDate();
 
-    const totalActiveQueues = await Branch.aggregate([
-      { $group: { _id: null, total: { $sum: "$activeQueues" } } }
-    ]);
+    const totalBranches = await Branch.countDocuments({ organizationId: orgId });
+    const totalThisMonth = await Branch.countDocuments({
+      organizationId: orgId,
+      createdAt: { $gte: thisMonth },
+    });
 
-    const avgWaitTime = await Branch.aggregate([
-      { $group: { _id: null, avg: { $avg: "$avgWaitTime" } } }
-    ]);
+    const activeQueues = await Queue.countDocuments({
+      branch: { $in: await Branch.find({ organizationId: orgId }).distinct('_id') },
+      status: { $in: ['waiting', 'serving'] },
+    });
 
-    const totalServedToday = await Branch.aggregate([
-      { $group: { _id: null, total: { $sum: "$servedToday" } } }
-    ]);
+    const completedToday = await Queue.find({
+      branch: { $in: await Branch.find({ organizationId: orgId }).distinct('_id') },
+      status: 'completed',
+      completedAt: { $gte: today },
+    }).select('waitStartTime serveStartTime completedAt');
 
-    return res.status(200).json({
-      message: "Dashboard data fetched successfully",
-      totalBranches,
-      totalActiveQueues: totalActiveQueues[0]?.total || 0,
-      avgWaitTime: avgWaitTime[0]?.avg?.toFixed(1) || 0,
-      totalServedToday: totalServedToday[0]?.total || 0
+    let avgWaitTimeMinutes = 0;
+    if (completedToday.length > 0) {
+      const totalWaitSeconds = completedToday.reduce((sum, q) => {
+        const start = q.serveStartTime || q.waitStartTime;
+        const end = q.completedAt;
+        return sum + (end - start) / 1000;
+      }, 0);
+      avgWaitTimeMinutes = Math.round(totalWaitSeconds / 60 / completedToday.length);
+    }
+
+    const servedToday = await Queue.countDocuments({
+      branch: { $in: await Branch.find({ organizationId: orgId }).distinct('_id') },
+      status: 'completed',
+      completedAt: { $gte: today },
+    });
+
+    const branchIds = await Branch.find({ organizationId: orgId }).distinct('_id');
+
+    const servedYesterday = await Queue.countDocuments({
+      branch: { $in: branchIds },
+      status: 'completed',
+      completedAt: { $gte: yesterday, $lt: today },
+    });
+    const servedChange = servedYesterday === 0
+      ? servedToday > 0 ? '+∞%' : '0%'
+      : `${Math.round((servedToday - servedYesterday) / servedYesterday * 100)}%`;
+
+    const activeQueuesYesterday = await Queue.countDocuments({
+      branch: { $in: branchIds },
+      status: { $in: ['waiting', 'serving'] },
+      createdAt: { $gte: yesterday, $lt: today },
+    });
+    const activeChange = activeQueuesYesterday === 0
+      ? activeQueues > 0 ? '+∞%' : '0%'
+      : `${Math.round((activeQueues - activeQueuesYesterday) / activeQueuesYesterday * 100)}%`;
+
+    const branches = await Branch.find({ organizationId: orgId }).sort({ branchName: 1 });
+    const branchStats = await Promise.all(
+      branches.map(async (branch) => {
+        const [active, served, avgWait] = await Promise.all([
+          Queue.countDocuments({
+            branch: branch._id,
+            status: { $in: ['waiting', 'serving'] },
+          }),
+          Queue.countDocuments({
+            branch: branch._id,
+            status: 'completed',
+            completedAt: { $gte: today },
+          }),
+          Queue.aggregate([
+            {
+              $match: {
+                branch: branch._id,
+                status: 'completed',
+                completedAt: { $gte: today },
+              },
+            },
+            {
+              $project: {
+                waitTime: {
+                  $divide: [
+                    { $subtract: ['$completedAt', { $ifNull: ['$serveStartTime', '$waitStartTime'] }] },
+                    60000,
+                  ],
+                },
+              },
+            },
+            { $group: { _id: null, avg: { $avg: '$waitTime' } } },
+          ]),
+        ]);
+
+        return {
+          _id: branch._id,
+          branchName: branch.branchName,
+          branchCode: branch.branchCode,
+          city: branch.city,
+          state: branch.state,
+          address: branch.address,
+          managerName: branch.managerName,
+          status: branch.status,
+          lastUpdated: branch.lastUpdated,
+          activeQueue: active,
+          servedToday: served,
+          avgWaitTime: avgWait[0]?.avg ? Math.round(avgWait[0].avg) : 0,
+        };
+      })
+    );
+
+    res.status(201).json({
+    message: "Branches Overview Successfully Fetched",
+        summary: {
+        totalBranches: totalBranches,
+        totalBranchesChange: `+${totalThisMonth} this month`,
+
+        activeQueues: activeQueues,
+        activeQueuesChange: `${activeChange >= 0 ? '+' : ''}${activeChange} from yesterday`,
+
+        avgWaitTime: `${avgWaitTimeMinutes} min`,
+
+         servedToday: servedToday,
+         servedTodayChange: `${servedChange >= 0 ? '+' : ''}${servedChange} from yesterday`
+        },
+      branches: branchStats,
+      meta: {
+        generatedAt: new Date(),
+        organizationId: orgId,
+        activeCount: branchStats.filter(b => b.status === 'Active').length,
+        offlineCount: branchStats.filter(b => b.status === 'Offline').length,
+      },
     });
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error);
-    res.status(500).json({ message: "Failed to fetch dashboard data", error: error.message });
+    console.error('Branch Management Error:', error);
+    res.status(500).json({
+      message: 'Error fetching branches Overview',
+      error: err.message,
+    });
   }
 };
-
 
  
 //    try {
