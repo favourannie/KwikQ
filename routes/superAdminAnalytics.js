@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {getDashboardMetrics, getFilteredDashboardData,getBranchPerformance,  getServiceDistribution } = require('../controllers/superAdminAnalytics');
+const {getDashboardMetrics, getFilteredDashboardData,getBranchPerformance,  getServiceDistribution,getBranchAnalytics } = require('../controllers/superAdminAnalytics');
 const { authenticate, adminAuth } = require('../middleware/authenticate');
 
 
@@ -211,7 +211,7 @@ router.get('/getfiltered',authenticate, getFilteredDashboardData)
  *     summary: Get service distribution
  *     description: Returns distribution of services across an organization or branch, including total counts and percentages.
  *     tags:
- *       - Services
+ *       - Super Admin Analytics Dashboard
  *     parameters:
  *       - in: query
  *         name: orgId
@@ -290,7 +290,7 @@ router.get('/getservicedistribution', getServiceDistribution );
  *     summary: Get branch performance for an organization
  *     description: Returns performance metrics for all branches under a specific organization, including customer counts, rankings, and chart data.
  *     tags:
- *       - Branch Performance
+ *       - Super Admin Analytics Dashboard
  *     parameters:
  *       - in: query
  *         name: organizationId
@@ -381,6 +381,178 @@ router.get('/getservicedistribution', getServiceDistribution );
  *                   example: Some internal server error message
  */
 router.get("/branchperformance", getBranchPerformance);
+
+/**
+ * @swagger
+ * /api/v1/branchanalytics:
+ *   get:
+ *     summary: Fetch branch analytics summary, trends, and hourly distributions
+ *     description: |
+ *       Returns customer flow statistics, wait time averages, and hourly distribution analytics for a branch or all branches.
+ *       Requires authentication. Data range can be set to **today**, **week**, or **month**.
+ *     tags: 
+ *       - Super Admin Analytics Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: branch
+ *         schema:
+ *           type: string
+ *           example: all
+ *         description: Specify branch ID or `'all'` for all branches.
+ *       - in: query
+ *         name: range
+ *         schema:
+ *           type: string
+ *           enum: [today, week, month]
+ *           example: today
+ *         description: Defines the time range for analytics data.
+ *     responses:
+ *       201:
+ *         description: Branch analytics data fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Branch Analytics Fetched Successfully
+ *                 summary:
+ *                   type: object
+ *                   properties:
+ *                     totalCustomers:
+ *                       type: object
+ *                       properties:
+ *                         count:
+ *                           type: integer
+ *                           example: 1790
+ *                         change:
+ *                           type: string
+ *                           example: "+12%"
+ *                         comparison:
+ *                           type: string
+ *                           example: "vs last week"
+ *                         trend:
+ *                           type: string
+ *                           enum: [up, down]
+ *                           example: up
+ *                     avgWaitTime:
+ *                       type: object
+ *                       properties:
+ *                         time:
+ *                           type: integer
+ *                           example: 11
+ *                         improvement:
+ *                           type: string
+ *                           example: "-8%"
+ *                         label:
+ *                           type: string
+ *                           example: improvement
+ *                         trend:
+ *                           type: string
+ *                           enum: [up, down]
+ *                           example: down
+ *                 trends:
+ *                   type: object
+ *                   description: Weekly customer flow and wait time trends
+ *                   properties:
+ *                     labels:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+ *                     customers:
+ *                       type: array
+ *                       items:
+ *                         type: integer
+ *                       example: [200, 220, 250, 270, 300, 280, 260]
+ *                     avgWait:
+ *                       type: array
+ *                       items:
+ *                         type: integer
+ *                       example: [12, 11, 10, 9, 10, 11, 12]
+ *                 hourly:
+ *                   type: object
+ *                   description: Hourly customer distribution (0–23 hours)
+ *                   properties:
+ *                     labels:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example: ["9:00", "10:00", "11:00", "12:00", "13:00"]
+ *                     customers:
+ *                       type: array
+ *                       items:
+ *                         type: integer
+ *                       example: [15, 40, 60, 55, 50]
+ *                 filters:
+ *                   type: object
+ *                   description: Filter context for the returned data
+ *                   properties:
+ *                     branch:
+ *                       type: string
+ *                       example: "All Branches"
+ *                     range:
+ *                       type: string
+ *                       example: "today"
+ *                 branches:
+ *                   type: array
+ *                   description: List of branches available for analytics selection
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         example: "654abc123def456789"
+ *                       name:
+ *                         type: string
+ *                         example: "Main Branch (MB001)"
+ *                 meta:
+ *                   type: object
+ *                   description: Metadata and timestamps for the analytics
+ *                   properties:
+ *                     generatedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-11-13T08:00:00.000Z"
+ *                     range:
+ *                       type: object
+ *                       properties:
+ *                         start:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2025-11-13T00:00:00.000Z"
+ *                         end:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2025-11-13T23:59:59.000Z"
+ *       401:
+ *         description: Unauthorized – Missing or invalid organization ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Organization ID required
+ *       500:
+ *         description: Server error while fetching analytics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error fetching analytics
+ *                 error:
+ *                   type: string
+ *                   example: Cannot read property 'id' of undefined
+ */
+router.get('/branchanalytics', authenticate, getBranchAnalytics);
 
 
 module.exports = router;
