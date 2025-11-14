@@ -282,7 +282,7 @@ router.get("/queue-points/:id", getQueuePoints)
  *                     example: "First time customer"
  *                   priorityStatus:
  *                     type: string
- *                     example: "elderly"
+ *                     example: "regularStandard"
  *
  *     responses:
  *       201:
