@@ -12,55 +12,49 @@ const generateQueueNumber = () => {
   const date = Date.now().toString().slice(-3);
   return `kQ-${date}${random}`;
 };
-
 exports.createCustomerQueue = async (req, res) => {
   try {
     const { formDetails } = req.body;
     const { id } = req.params;
 
+    // Fetch business
     let business = await organizationModel.findById(id);
     if (!business) business = await branchModel.findById(id);
-    const plan = await paymentModel.findOne({
-      individualId: business._id
-    }) || await paymentModel.findOne({
-      branchId: business._id
-    })
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
 
-    const {
-      fullName,
-      email,
-      phone,
-      serviceNeeded,
-      additionalInfo,
-      priorityStatus,
-    } = formDetails;
+    // Fetch active plan
+    const plan = await paymentModel.findOne({
+      individualId: business._id,
+      isActive: true
+    }) || await paymentModel.findOne({
+      branchId: business._id,
+      isActive: true
+    });
 
-    const allowedServices = [
-      "accountOpening",
-      "loanCollection",
-      "cardCollection",
-      "fundTransfer",
-      "accountUpdate",
-      "generalInquiry",
-      "complaintResolution",
-    ];
+    if (!plan) {
+      return res.status(400).json({ message: "No active plan found for this business" });
+    }
 
-    const finalService = allowedServices.includes(serviceNeeded)
-      ? serviceNeeded
-      : "other";
+    const planLimits = {
+      starter: 2,
+      professional: 5,
+      enterprise: 10,
+      freemium: 3
+    };
 
-      let queuePoints
-    if (business.role === "multi" && plan.planType === "starter") {
+    const maxQueuePoints = planLimits[plan.planType] || 3;
+    let queuePoints;
+    if (business.role === "multi") {
       queuePoints = await queuePointModel.find({ branchId: id }).sort({ createdAt: 1 });
-    } else if(business.role === "individual" && plan.planType === "starter") {
+    } else {
       queuePoints = await queuePointModel.find({ individualId: id }).sort({ createdAt: 1 });
     }
-    if (queuePoints.length < 2) {
-      const missing = 2 - queuePoints.length;
-      for (let i = 1; i <= missing; i++) {
+
+    const missingQueuePoints = maxQueuePoints - queuePoints.length;
+    if (missingQueuePoints > 0) {
+      for (let i = 1; i <= missingQueuePoints; i++) {
         const newQueue = await queuePointModel.create({
           name: `Queue ${queuePoints.length + i}`,
           ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
@@ -68,26 +62,24 @@ exports.createCustomerQueue = async (req, res) => {
         queuePoints.push(newQueue);
       }
     }
-    const filter =
-      business.role === "multi" ? { branchId: id } : { individualId: id };
-    const totalCustomers = await CustomerInterface.countDocuments(filter);
 
+    // If already at limit, use existing queue points
+    if (queuePoints.length === 0) {
+      return res.status(400).json({ message: `No queue points available for plan ${plan.planType}` });
+    }
+
+    // Assign customer to next queue point
+    const totalCustomers = await CustomerInterface.countDocuments(
+      business.role === "multi" ? { branchId: id } : { individualId: id }
+    );
     const serialNumber = String(totalCustomers + 1).padStart(3, "0");
-
-    const nextIndex = totalCustomers % 3;
+    const nextIndex = totalCustomers % queuePoints.length;
     const targetQueuePoint = queuePoints[nextIndex];
     const nextQueueNumber = generateQueueNumber();
 
     const newCustomer = await CustomerInterface.create({
       ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
-      formDetails: {
-        fullName,
-        email,
-        phone,
-        serviceNeeded: finalService,
-        additionalInfo,
-        priorityStatus,
-      },
+      formDetails,
       queueNumber: nextQueueNumber,
       serialNumber,
       joinedAt: new Date(),
@@ -102,7 +94,7 @@ exports.createCustomerQueue = async (req, res) => {
         queueNumber: newCustomer.queueNumber,
         serialNumber: `T-${newCustomer.serialNumber}`,
         queuePoint: targetQueuePoint.name,
-        serviceNeeded: finalService,
+        serviceNeeded: newCustomer.formDetails.serviceNeeded,
       },
     });
   } catch (error) {
