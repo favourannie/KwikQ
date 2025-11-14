@@ -34,7 +34,8 @@ exports.getAllQueues = async (req, res) => {
 
     queuePoints.forEach((queue) => {
       queue.customers.forEach((c) => {
-        if (c.status === "waiting") {
+        // 🔥 Return customers with status "waiting" OR "in_service"
+        if (["waiting", "in_service"].includes(c.status)) {
           const joinedAt = c.joinedAt ? new Date(c.joinedAt) : null;
           const waitTime =
             joinedAt
@@ -55,10 +56,11 @@ exports.getAllQueues = async (req, res) => {
       });
     });
 
+    // Sort oldest first
     customersInQueue.sort((a, b) => new Date(a.joinedAt) - new Date(b.joinedAt));
 
     res.status(200).json({
-      message: "Waiting customers fetched successfully",
+      message: "Customers currently in queue fetched successfully",
       count: customersInQueue.length,
       data: customersInQueue,
     });
