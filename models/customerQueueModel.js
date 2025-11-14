@@ -24,8 +24,9 @@ formDetails:{
   },
   additionalInfo: { type: String, required: false },
   priorityStatus: { type: String, 
-    enum: ["regularStandard", "elderlyOrDisabled", "pregnantWoman", "emergencyOrUrgent"]
-  },
+    enum: ["regularStandard", "elderlyOrDisabled", "pregnantWoman", "emergencyOrUrgent"],
+    default: "regularStandard"
+  }
   },
 
   // Queue tracking
