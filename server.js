@@ -103,6 +103,8 @@ app.get('/', (req, res) => {
 });
 
 // API routes
+app.use("/api/v1/", paymentRouter)
+
 app.use('/api/v1/', branchRouter);
 app.use('/api/v1', organizationRoutes);
 
@@ -120,7 +122,6 @@ app.use("/api/v1/", adminQueueMgtRoute)
 app.use("/api/v1/", adminNotificationRouter)
 app.use("/api/v1/", adminHistoryRouter)
 app.use("/api/v1/", adminSettingsRouter)
-app.use("/api/v1/", paymentRouter)
 app.use('/api/v1/', devdashboardRouter);
 
 // Error handling middleware
