@@ -133,6 +133,7 @@ exports.initializePayment = async (req, res) => {
     if (data?.status === true) {
       await pay.save();
     }
+    res.redirect(data?.data?.checkout_url)
 
     res.status(201).json({
       message: "Payment initialized successfully",
