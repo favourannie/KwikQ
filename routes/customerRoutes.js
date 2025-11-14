@@ -237,69 +237,56 @@ router.get("/queue-points/:id", getQueuePoints)
  * @swagger
  * /api/v1/create-queue/{id}:
  *   post:
- *     summary: Add a customer to a queue
- *     description: >
- *       This endpoint adds a new customer to a business queue (organization or branch) and automatically assigns them
- *       to one of three queue points (`Queue 1`, `Queue 2`, `Queue 3`) in a round-robin manner.  
- *       If fewer than three queue points exist, the system automatically creates them.  
- *       Each customer also receives a unique randomized queue number.
  *     tags:
  *       - Queue Management
+ *     summary: Create a customer queue entry
+ *     description: 
+ *       Adds a customer to the appropriate queue point based on business plan limits and auto-distributes them across available queue points.
+ *
  *     parameters:
- *       - name: id
- *         in: path
+ *       - in: path
+ *         name: id
  *         required: true
- *         description: The ID of the business (organization or branch).
+ *         description: Business ID (organization or branch)
  *         schema:
  *           type: string
+ *           example: "67a0bcf1123abc8899223344"
+ *
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - formDetails
  *             properties:
  *               formDetails:
  *                 type: object
- *                 required:
- *                   - fullName
- *                   - phone
- *                   - serviceNeeded
+ *                 description: Customer details submitted via form
  *                 properties:
  *                   fullName:
  *                     type: string
- *                     example: John Doe
+ *                     example: "John Doe"
  *                   email:
  *                     type: string
- *                     format: email
- *                     example: johndoe@example.com
+ *                     example: "john@example.com"
  *                   phone:
  *                     type: string
- *                     example: "+2348123456789"
+ *                     example: "08012345678"
  *                   serviceNeeded:
  *                     type: string
- *                     description: >
- *                       Service required by the customer.  
- *                       If it doesn't match any predefined service, it defaults to "other".
- *                     enum:
- *                       - accountOpening
- *                       - loanCollection
- *                       - cardCollection
- *                       - fundTransfer
- *                       - accountUpdate
- *                       - generalInquiry
- *                       - complaintResolution
- *                       - other
- *                     example: fundTransfer
+ *                     example: "accountOpening"
  *                   additionalInfo:
  *                     type: string
- *                     example: "Requesting quick assistance for large transaction"
+ *                     example: "First time customer"
  *                   priorityStatus:
- *                     type: boolean
- *                     example: false
+ *                     type: string
+ *                     example: "elderly"
+ *
  *     responses:
  *       201:
- *         description: Customer successfully added to a queue
+ *         description: Customer successfully added to queue
  *         content:
  *           application/json:
  *             schema:
@@ -307,21 +294,25 @@ router.get("/queue-points/:id", getQueuePoints)
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Customer added to Queue 2
+ *                   example: "Customer added to Queue 1"
  *                 data:
  *                   type: object
  *                   properties:
  *                     queueNumber:
  *                       type: string
- *                       example: Q-842XYZ1
+ *                       example: "kQ-483ABC1"
+ *                     serialNumber:
+ *                       type: string
+ *                       example: "T-001"
  *                     queuePoint:
  *                       type: string
- *                       example: Queue 2
+ *                       example: "Queue 1"
  *                     serviceNeeded:
  *                       type: string
- *                       example: fundTransfer
+ *                       example: "accountOpening"
+ *
  *       400:
- *         description: Invalid business role or missing data
+ *         description: Missing data or no active plan
  *         content:
  *           application/json:
  *             schema:
@@ -329,7 +320,8 @@ router.get("/queue-points/:id", getQueuePoints)
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Invalid business role. Must be 'multi' or 'individual'.
+ *                   example: "No active plan found for this business"
+ *
  *       404:
  *         description: Business not found
  *         content:
@@ -339,9 +331,10 @@ router.get("/queue-points/:id", getQueuePoints)
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Business not found
+ *                   example: "Business not found"
+ *
  *       500:
- *         description: Internal server error
+ *         description: Server error while assigning customer to a queue
  *         content:
  *           application/json:
  *             schema:
@@ -349,10 +342,10 @@ router.get("/queue-points/:id", getQueuePoints)
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error assigning customer to queue
+ *                   example: "Error assigning customer to queue"
  *                 error:
  *                   type: string
- *                   example: Cannot read properties of undefined (reading 'id')
+ *                   example: "Internal server error message"
  */
 
 router.post("/create-queue/:id", createCustomerQueue )
