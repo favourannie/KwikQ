@@ -23,8 +23,8 @@ formDetails:{
     enum: ["accountOpening", "loanCollection","cardCollection", "fundTransfer", "accountUpdate", "generalInquiry", "complaintResolution", "other" ] 
   },
   additionalInfo: { type: String, required: false },
-  priorityStatus: { type: String, 
-    enum: ["regularStandard", "elderlyOrDisabled", "pregnantWoman", "emergencyOrUrgent"],
+  priorityStatus: { 
+    type: String, 
     default: "regularStandard"
   }
   },
