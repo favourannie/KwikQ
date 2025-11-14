@@ -177,16 +177,6 @@ exports.getQueuePoints = async (req, res) => {
   }
 };
 
-exports.getAllCustomersInAQueue = async(req,res)=>{
-  try {
-    const {id} = req
-  } catch (error) {
-     res.status(500).json({
-      message: "Error fetching queue management",
-      error: error.message,
-    });
-  }
-}
 exports.createCustomer = async (req, res) => {
   try {
     const { organization, branch, formDetails } = req.body;
