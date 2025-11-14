@@ -322,7 +322,6 @@ exports.updateCustomer = async (req, res) => {
     });
   }
 };
-
 exports.deleteCustomer = async (req, res) => {
   try {
     const { id } = req.params;
@@ -332,7 +331,7 @@ exports.deleteCustomer = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized access" });
     }
 
-    let business =
+    const business =
       (await organizationModel.findById(userId)) ||
       (await branchModel.findById(userId));
 
@@ -345,31 +344,37 @@ exports.deleteCustomer = async (req, res) => {
         ? { _id: id, branchId: business._id }
         : { _id: id, individualId: business._id };
 
-    const deletedCustomer = await CustomerInterface.findByIdAndDelete(query);
+    const updatedCustomer = await CustomerInterface.findOneAndUpdate(
+      query,
+      { status: "canceled" }, 
+      { new: true }
+    );
 
-    if (!deletedCustomer) {
+    if (!updatedCustomer) {
       return res.status(404).json({
         message: "Customer not found in this business queue",
       });
     }
 
     res.status(200).json({
-      message: "Customer deleted successfully from queue",
+      message: "Customer status updated to canceled successfully",
       data: {
-        queueNumber: deletedCustomer.queueNumber,
-        customerName: deletedCustomer.formDetails?.fullName,
-        service: deletedCustomer.formDetails?.serviceNeeded,
-        status: deletedCustomer.status,
+        queueNumber: updatedCustomer.queueNumber,
+        customerName: updatedCustomer.formDetails?.fullName,
+        service: updatedCustomer.formDetails?.serviceNeeded,
+        status: updatedCustomer.status,
       },
     });
   } catch (error) {
-    console.error("Error deleting customer:", error);
+    console.error("Error updating customer status:", error);
     res.status(500).json({
-      message: "Error deleting customer from queue",
+      message: "Error updating customer status",
       error: error.message,
     });
   }
 };
+
+
 
 exports.getElderlyCustomers = async (req, res) => {
   try {

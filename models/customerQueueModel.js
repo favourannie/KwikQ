@@ -38,13 +38,24 @@ formDetails:{
   },
   waitTime: {type: Number, default: 0},
   serviceTime: {type: Number, default: 0},
-  joinedAt: { type: Date, default: new Date() },
+  joinedAt: { type: Date, default: Date.now },
   servedAt: { type: Date },
   completedAt: { type: Date },
 
   rating: { type: Number, min: 1, max: 5 },
 
 }, { timestamps: true });
+customerSchema.pre('save', function(next) {
+  if (this.isModified('servedAt') && this.servedAt && this.joinedAt) {
+    this.waitTime = Math.floor((this.servedAt - this.joinedAt) / 1000 / 60); // minutes
+  }
+
+  if (this.isModified('completedAt') && this.completedAt && this.servedAt) {
+    this.serviceTime = Math.floor((this.completedAt - this.servedAt) / 1000 / 60); // minutes
+  }
+
+  next();
+});
 
 const queueModel = mongoose.model('Customers', customerSchema);
 
