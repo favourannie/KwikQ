@@ -5,7 +5,6 @@ const CustomerInterface = require("../models/customerQueueModel");
 const organizationModel = require("../models/organizationModel");
 const branchModel = require("../models/branchModel");
 const { sendMail } = require("../middleware/brevo");
-
 exports.getAllQueues = async (req, res) => {
   try {
     const { id } = req.params;
@@ -35,11 +34,11 @@ exports.getAllQueues = async (req, res) => {
 
     queuePoints.forEach((queue) => {
       queue.customers.forEach((c) => {
-        if (["waiting", "in_service"].includes(c.status)) {
+        if (c.status === "waiting") {
           const joinedAt = c.joinedAt ? new Date(c.joinedAt) : null;
           const waitTime =
             joinedAt
-              ? Math.round((Date.now() - joinedAt.getTime()) / 60000) // in minutes
+              ? Math.round((Date.now() - joinedAt.getTime()) / 60000)
               : 0;
 
           customersInQueue.push({
@@ -59,7 +58,7 @@ exports.getAllQueues = async (req, res) => {
     customersInQueue.sort((a, b) => new Date(a.joinedAt) - new Date(b.joinedAt));
 
     res.status(200).json({
-      message: "Customers currently in queue fetched successfully",
+      message: "Waiting customers fetched successfully",
       count: customersInQueue.length,
       data: customersInQueue,
     });
