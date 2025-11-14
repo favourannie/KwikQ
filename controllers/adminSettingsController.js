@@ -20,7 +20,7 @@ exports.getBusinessDetails = async(req, res)=>{
           details = await adminSettingsModel.findOne({
             branchId: business._id
           })
-        }console.log(details)
+        }
         const update = {
           name: details.businessName,
           email: business.email,

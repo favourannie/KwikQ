@@ -430,24 +430,24 @@ router.put('/update-customer/:id', updateCustomer);
 /**
  * @swagger
  * /api/v1/delete-customer/{id}:
- *   delete:
- *     summary: Delete a customer from a business queue
- *     description: Deletes a specific customer from an organization or branch queue. Requires authentication.
+ *   patch:
+ *     summary: Soft-delete a customer from the queue
+ *     description: Updates a customer's status to "canceled" instead of deleting them from the database.
  *     tags:
- *       - Queue Management
+ *       - Customers
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: id
+ *       - name: id
+ *         in: path
  *         required: true
- *         description: The ID of the customer to delete
+ *         description: The ID of the customer to update
  *         schema:
  *           type: string
- *           example: 6733b9f148d1a22c86b5f22b
+ *           example: "64f5c2e8a1b2c3456789abcd"
  *     responses:
  *       200:
- *         description: Customer deleted successfully
+ *         description: Customer status updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -455,22 +455,22 @@ router.put('/update-customer/:id', updateCustomer);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Customer deleted successfully from queue
+ *                   example: "Customer status updated to canceled successfully"
  *                 data:
  *                   type: object
  *                   properties:
  *                     queueNumber:
  *                       type: string
- *                       example: kQ-555DOU0
+ *                       example: "Q1234"
  *                     customerName:
  *                       type: string
- *                       example: John Doe
+ *                       example: "John Doe"
  *                     service:
  *                       type: string
- *                       example: loanCollection
+ *                       example: "Account Opening"
  *                     status:
  *                       type: string
- *                       example: waiting
+ *                       example: "canceled"
  *       401:
  *         description: Unauthorized access
  *         content:
@@ -480,7 +480,7 @@ router.put('/update-customer/:id', updateCustomer);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Unauthorized access
+ *                   example: "Unauthorized access"
  *       404:
  *         description: Customer or business not found
  *         content:
@@ -490,9 +490,9 @@ router.put('/update-customer/:id', updateCustomer);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Customer not found in this business queue
+ *                   example: "Customer not found in this business queue"
  *       500:
- *         description: Server error while deleting customer
+ *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
@@ -500,13 +500,13 @@ router.put('/update-customer/:id', updateCustomer);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error deleting customer from queue
+ *                   example: "Error updating customer status"
  *                 error:
  *                   type: string
- *                   example: Internal Server Error
+ *                   example: "Some error message"
  */
 
-router.delete('/delete-customer/:id', authenticate,  deleteCustomer);
+router.patch('/delete-customer/:id', authenticate,  deleteCustomer);
 
 /**
  * @swagger
