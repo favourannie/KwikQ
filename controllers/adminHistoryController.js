@@ -118,7 +118,7 @@ exports.getQueueHistory = async (req, res) => {
           serviceTime: `${serviceTime} min`,
           status: c.status,
           phone: c.formDetails?.phone || "N/A",
-          joinedAt: joinedAtFormatted, // ✅ returns readable date and time
+          joinedAt: joinedAtFormatted, 
           waitTime: `${waitTime} min`,
         });
       });

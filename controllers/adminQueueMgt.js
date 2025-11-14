@@ -198,12 +198,12 @@ exports.serveCustomer = async (req, res) => {
 
     // Handle first-time serving
     if (customer.status === "waiting") {
-      customer.status = "in_service";
+      customer.status = "completed";
       customer.servedAt = new Date();
       await customer.save();
 
       return res.status(200).json({
-        message: "Customer moved to service",
+        message: "Customer served successfully.",
         data: {
           id: customer._id,
           status: customer.status,
@@ -212,12 +212,10 @@ exports.serveCustomer = async (req, res) => {
       });
     }
 
-    // Handle completion
     if (customer.status === "in_service") {
       customer.status = "completed";
       customer.completedAt = new Date();
 
-      // Calculate times
       if (customer.servedAt && customer.joinedAt) {
         customer.waitTime = Math.round(
           (customer.servedAt - customer.joinedAt) / (1000 * 60)
