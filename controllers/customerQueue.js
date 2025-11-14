@@ -2,7 +2,7 @@
 const CustomerInterface = require("../models/customerQueueModel");
 const organizationModel = require("../models/organizationModel");
 const branchModel = require("../models/branchModel");
-
+const paymentModel = require("../models/paymentModel")
 const queuePointModel = require("../models/queueModel");
 const Branch = require("../models/branchModel");
 const Organization = require("../models/organizationModel");
@@ -20,7 +20,11 @@ exports.createCustomerQueue = async (req, res) => {
 
     let business = await organizationModel.findById(id);
     if (!business) business = await branchModel.findById(id);
-
+    const plan = await paymentModel.findOne({
+      individualId: business._id
+    }) || await paymentModel.findOne({
+      branchId: business._id
+    })
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
@@ -49,14 +53,13 @@ exports.createCustomerQueue = async (req, res) => {
       : "other";
 
       let queuePoints
-    if (business.role === "multi") {
+    if (business.role === "multi" && plan.planType === "starter") {
       queuePoints = await queuePointModel.find({ branchId: id }).sort({ createdAt: 1 });
-    } else {
+    } else if(business.role === "individual" && plan.planType === "starter") {
       queuePoints = await queuePointModel.find({ individualId: id }).sort({ createdAt: 1 });
     }
-
-    if (queuePoints.length < 3) {
-      const missing = 3 - queuePoints.length;
+    if (queuePoints.length < 2) {
+      const missing = 2 - queuePoints.length;
       for (let i = 1; i <= missing; i++) {
         const newQueue = await queuePointModel.create({
           name: `Queue ${queuePoints.length + i}`,
@@ -65,31 +68,6 @@ exports.createCustomerQueue = async (req, res) => {
         queuePoints.push(newQueue);
       }
     }
-
-    // let queuePoints;
-    // let queuePoint;
-    // let newQueuePoint;
-
-    // if (business.subscriptionType === "starter") {
-    //   if (business.subscriptionExpiredAt < Date.now()) {
-    //     return res.status(400).json({
-    //       message: "Subscription expired",
-    //     });
-    //   } else {
-    //     queuePoints = await queuePointModel.find({
-    //       $or: [{ branchId: business._id }, { individualId: business._id }],
-    //     });
-
-    //     if (queuePoints.length >= 3) {
-    //       return res.status(400).json({
-    //         message: "Cannot create more than 2 queuepoints.",
-    //       });
-    //     }
-
-    //     queuePoint = await queuePointModel.fin
-    //   }
-    // }
-
     const filter =
       business.role === "multi" ? { branchId: id } : { individualId: id };
     const totalCustomers = await CustomerInterface.countDocuments(filter);
