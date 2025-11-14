@@ -6,7 +6,7 @@ const organizationModel = require("../models/organizationModel");
 const fs = require("fs");
 const cloudinary = require("../config/cloudinary");
 const path = require("path");
-
+const customerModel = require("../models/customerQueueModel")
 exports.generateQRCode = async (req, res) => {
   try {
     const { individualId,branchId } = req.body;
@@ -115,29 +115,26 @@ console.log("Public ID:", uploadResponse?.public_id);
   }
 };
 
-exports.qrCode = async(req,res)=>{
-  try {
-    const {id} = req.params
-    const business = await organizationModel.findById(id) || await branchModel.findById(id)
-  } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Error generating or uploading QR code",
-        error: error.message,
-      });
-  }
-} 
 
 exports.getQueueLength = async(req, res)=>{
   try {
-    const organizationId = req.params.id;
+    const id = req.params.id
+    const business = await organizationModel.findById(id) || await branchModel.findById(id)
+    if(!business){
+      return res.status(404).json({
+        message: "Business not found"
+      })
+    }
 
-    const data = await queueModel.find({organizationId:organizationId});
-    const totalQrCode = data.length
+    const data = await customerModel.find({
+      individualId: business._id,
+      
+    }) || await customerModel.find({
+      branchId: business._id
+    })
     res.status(200).json({
       message: "Successfully fetched total number of queues",
-      data: totalQrCode
+      data: data.length
     })
   } catch (error) {
     res.status(500).json({
