@@ -300,7 +300,7 @@ router.post('/qrcode/validate', validateQRCodeScan);
 
 /**
  * @swagger
- * /api/v1/get-queue-length/{id}:
+ * /api/v1/total-queues/{id}:
  *   get:
  *     tags:
  *       - Queue Management
