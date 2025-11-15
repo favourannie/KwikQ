@@ -4,7 +4,7 @@ const router = express.Router()
 
 /**
  * @swagger
- * /api/v1/queue/history/{id}:
+ * /api/v1/history/{id}:
  *   get:
  *     summary: Get queue history for an organization or branch
  *     description: >

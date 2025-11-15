@@ -38,10 +38,18 @@ formDetails:{
     default: 'waiting',
   },
   waitTime: {type: Number, default: 0},
-  serviceTime: {type: Number, default: 0},
+  serviceTime: {type: String, default: ""},
   joinedAt: { type: Date, default: Date.now },
   servedAt: { type: Date },
   completedAt: { type: Date },
+  start: {
+    type: Number,
+    default: 0
+  },
+  end: {
+    type: Number,
+    default: 0
+  },
 
   rating: { type: Number, min: 1, max: 5 },
 
