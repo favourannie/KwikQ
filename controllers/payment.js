@@ -71,7 +71,7 @@ console.log("plannner  ",plan)
         reference,
         // narration: `Payment for ${plan} plan (${cycle})`,
         // channels: ["card"],
-        redirect_url: `https://kwik-q.vercel.app/#/admin_dashboard/${reference}`,
+        redirect_url: `https://kwik-q.vercel.app/#/payment_succesful/${reference}`,
         customer: {
           name: business.businessName || "Customer Name",
           email: business.email || "customer@email.com",
@@ -173,6 +173,10 @@ exports.verifyPaymentWebhook = async (req,res)=>{
     if(event === "charge.success"){
       payment.status = "Successful"
       await payment.save();
+      const user = await organizationModel.findById(payment.individualId);
+      user.subscriptionType = payment.planType;
+      user.subscriptionDuration = payment.billingCycle;
+      await user.save();
      return res.status(200).json({
         message: 'Payment successful'
       })
