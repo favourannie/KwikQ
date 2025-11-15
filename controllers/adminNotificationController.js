@@ -7,12 +7,12 @@ exports.getNotifications = async (req, res) => {
 
     let filters = {};
 
-    if (role === "multi") {
+    if (role === "branch") {
       filters.branchId = id;
     } else if (role === "individual") {
       filters.individualId = id;
     } else {
-      return res.status(400).json({ message: "Role must be either 'multi' or 'individual'" });
+      return res.status(400).json({ message: "Role must be either 'branch' or 'individual'" });
     }
 
     const queueActivities = await CustomerInterface.find(filters)
