@@ -22,10 +22,10 @@ const router = express.Router()
  *       - name: role
  *         in: query
  *         required: true
- *         description: The business role type. Must be either 'multi' (branch) or 'individual' (single business)
+ *         description: The business role type. Must be either 'branch' (branch) or 'individual' (single business)
  *         schema:
  *           type: string
- *           enum: [multi, individual]
+ *           enum: [branch, individual]
  *     responses:
  *       200:
  *         description: Notifications fetched successfully
