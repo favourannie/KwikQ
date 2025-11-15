@@ -1,24 +1,30 @@
-const CustomerInterface = require("../models/customerQueueModel")
+const organizationModel = require("../models/organizationModel");
+const branchModel = require("../models/branchModel");
+const CustomerInterface = require("../models/customerQueueModel");
 
 exports.getNotifications = async (req, res) => {
   try {
     const { id } = req.params;
-    const { role } = req.query; 
 
+    let business = await branchModel.findById(id);
     let filters = {};
 
-    if (role === "multi") {
+    if (business) {
       filters.branchId = id;
-    } else if (role === "individual") {
-      filters.individualId = id;
     } else {
-      return res.status(400).json({ message: "Role must be either 'multi' or 'individual'" });
+      business = await organizationModel.findById(id);
+      if (business) {
+        filters.individualId = id;
+      } else {
+        return res.status(404).json({
+          message: "Business not found",
+        });
+      }
     }
 
     const queueActivities = await CustomerInterface.find(filters)
       .select("formDetails queueNumber joinedAt")
       .sort({ joinedAt: -1 });
-
 
     if (queueActivities.length === 0) {
       return res.status(200).json({
@@ -39,7 +45,6 @@ exports.getNotifications = async (req, res) => {
         isRead: false,
       };
     });
-
 
     const totalNotifications = notifications.length;
     const highPriorityCount = notifications.filter((n) => n.priority === "high").length;

@@ -17,7 +17,7 @@ exports.getAllQueues = async (req, res) => {
     }
 
     const query =
-      business.role === "multi"
+      business.role === "branch"
         ? { branchId: id }
         : { individualId: id };
 
@@ -34,7 +34,6 @@ exports.getAllQueues = async (req, res) => {
 
     queuePoints.forEach((queue) => {
       queue.customers.forEach((c) => {
-        // 🔥 Return customers with status "waiting" OR "in_service"
         if (["waiting", "in_service"].includes(c.status)) {
           const joinedAt = c.joinedAt ? new Date(c.joinedAt) : null;
           const waitTime =

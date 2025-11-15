@@ -1,31 +1,26 @@
 const express = require("express")
 const { getNotifications } = require("../controllers/adminNotificationController")
 const router = express.Router()
-
 /**
  * @swagger
- * /api/v1/notifications/{id}:
+ * /api/v1/get-notifications/{id}:
  *   get:
- *     summary: Get notifications for a business (organization or branch)
- *     description: |
- *       Fetches all queue-related notifications for a given organization or branch based on its role.  
- *       Returns total notifications, number of high-priority notifications, and details for each.
+ *     summary: Fetch queue notifications for a business (branch or individual)
+ *     description: >
+ *       Automatically detects whether the provided ID belongs to a **branch** or an **individual**.  
+ *       Returns notifications of customers who joined the queue, including priority levels.
+ *
  *     tags:
  *       - Notifications
+ *
  *     parameters:
- *       - name: id
- *         in: path
+ *       - in: path
+ *         name: id
  *         required: true
- *         description: The ID of the organization or branch to get notifications for
+ *         description: The ID of the business (branch or individual).
  *         schema:
  *           type: string
- *       - name: role
- *         in: query
- *         required: true
- *         description: The business role type. Must be either 'multi' (branch) or 'individual' (single business)
- *         schema:
- *           type: string
- *           enum: [multi, individual]
+ *
  *     responses:
  *       200:
  *         description: Notifications fetched successfully
@@ -36,13 +31,10 @@ const router = express.Router()
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Notifications fetched successfully
  *                 totalNotifications:
- *                   type: integer
- *                   example: 5
+ *                   type: number
  *                 highPriorityCount:
- *                   type: integer
- *                   example: 2
+ *                   type: number
  *                 data:
  *                   type: array
  *                   items:
@@ -50,22 +42,19 @@ const router = express.Router()
  *                     properties:
  *                       message:
  *                         type: string
- *                         example: John Doe joined the queue for loanCollection
  *                       queueNumber:
  *                         type: string
- *                         example: KQ-123ABC
  *                       createdAt:
  *                         type: string
  *                         format: date-time
- *                         example: 2025-11-06T21:30:00.000Z
  *                       priority:
  *                         type: string
- *                         example: high
+ *                         enum: [high, normal]
  *                       isRead:
  *                         type: boolean
- *                         example: false
- *       400:
- *         description: Invalid or missing role
+ *
+ *       404:
+ *         description: Business not found
  *         content:
  *           application/json:
  *             schema:
@@ -73,9 +62,9 @@ const router = express.Router()
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Role must be either 'multi' or 'individual'
+ *
  *       500:
- *         description: Server error fetching notifications
+ *         description: Server error while fetching notifications
  *         content:
  *           application/json:
  *             schema:
@@ -83,10 +72,8 @@ const router = express.Router()
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Error fetching notifications
  *                 error:
  *                   type: string
- *                   example: Internal server error
  */
 
 router.get("/notifications/:id", getNotifications)

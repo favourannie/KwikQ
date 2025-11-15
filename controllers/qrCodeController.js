@@ -115,34 +115,46 @@ console.log("Public ID:", uploadResponse?.public_id);
   }
 };
 
-
-exports.getQueueLength = async(req, res)=>{
+exports.getQueueLength = async (req, res) => {
   try {
-    const id = req.params.id
-    const business = await organizationModel.findById(id) || await branchModel.findById(id)
-    if(!business){
+    const id = req.params.id;
+
+    const business =
+      await organizationModel.findById(id) ||
+      await branchModel.findById(id);
+
+    if (!business) {
       return res.status(404).json({
-        message: "Business not found"
-      })
+        message: "Business not found",
+      });
     }
 
-    const data = await customerModel.find({
+    let data = await customerModel.find({
       individualId: business._id,
-      
-    }) || await customerModel.find({
-      branchId: business._id
-    })
+      status: { $in: ["waiting", "in_service"] }
+    });
+
+    if (!data.length) {
+      data = await customerModel.find({
+        branchId: business._id,
+        status: { $in: ["waiting", "in_service"] }
+      });
+    }
+
     res.status(200).json({
-      message: "Successfully fetched total number of queues",
-      data: data.length
-    })
+      message: "Successfully fetched total number of customers currently in queue",
+      data: data.length,
+    });
+
   } catch (error) {
     res.status(500).json({
       message: "Error getting queue length",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
+
+
 
 exports.validateQRCodeScan = async (req, res) => {
   try {

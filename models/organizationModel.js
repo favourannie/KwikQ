@@ -66,12 +66,14 @@ const organizationSchema = new mongoose.Schema({
   },
   subscriptionDuration: {
     type: String,
-    enum: ["monthly", "annually"],
+    enum: ["monthly", "annually", "free"],
+    default: "free",
     lowerCase: true
   },
   subscriptionType: {
     type: String,
     enum: ["freemium", "starter", "professional", "enterprise"],
+    default: "freemium",
     lowerCase: true
   },
   subscriptionExpiredAt: {
