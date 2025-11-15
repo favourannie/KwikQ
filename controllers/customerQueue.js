@@ -2,7 +2,7 @@
 const CustomerInterface = require("../models/customerQueueModel");
 const organizationModel = require("../models/organizationModel");
 const branchModel = require("../models/branchModel");
-const paymentModel = require("../models/paymentModel")
+const paymentModel = require("../models/paymentModel");
 const queuePointModel = require("../models/queueModel");
 const Branch = require("../models/branchModel");
 const Organization = require("../models/organizationModel");
@@ -15,16 +15,11 @@ const generateQueueNumber = () => {
 
 exports.createCustomerQueue = async (req, res) => {
   try {
-    const { formDetails } = req.body;
     const { id } = req.params;
+    const { formDetails } = req.body;
 
     let business = await organizationModel.findById(id);
     if (!business) business = await branchModel.findById(id);
-    const plan = await paymentModel.findOne({
-      individualId: business._id
-    }) || await paymentModel.findOne({
-      branchId: business._id
-    })
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
@@ -52,18 +47,30 @@ exports.createCustomerQueue = async (req, res) => {
       ? serviceNeeded
       : "other";
 
-      let queuePoints
-    if (business.role === "multi" && plan.planType === "starter") {
-      queuePoints = await queuePointModel.find({ branchId: id }).sort({ createdAt: 1 });
-    } else if(business.role === "individual" && plan.planType === "starter") {
-      queuePoints = await queuePointModel.find({ individualId: id }).sort({ createdAt: 1 });
+    let query = {};
+    let queuePoints;
+
+    if (business.role === "branch") {
+      query.branchId = business._id;
+      queuePoints = await queuePointModel.find(query).sort({ createdAt: 1 });
+      console.log("queue multi:", queuePoints);
+    } else if (business.role === "individual") {
+      query.individualId = business._id;
+      queuePoints = await queuePointModel.find(query).sort({ createdAt: 1 });
+      console.log("queue individual:", queuePoints);
     }
-    if (queuePoints.length < 2) {
+
+    console.log("result:", queuePoints);
+
+    if (queuePoints?.length < 2) {
+      console.log("queue 3", queuePoints);
       const missing = 2 - queuePoints.length;
       for (let i = 1; i <= missing; i++) {
         const newQueue = await queuePointModel.create({
           name: `Queue ${queuePoints.length + i}`,
-          ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
+          ...(business.role === "branch"
+            ? { branchId: id }
+            : { individualId: id }),
         });
         queuePoints.push(newQueue);
       }
@@ -106,13 +113,13 @@ exports.createCustomerQueue = async (req, res) => {
       },
     });
   } catch (error) {
+    console.log("Error assigning customer to queue:", error);
     res.status(500).json({
       message: "Error assigning customer to queue",
       error: error.message,
     });
   }
 };
-
 
 exports.getQueuePoints = async (req, res) => {
   try {
@@ -292,43 +299,45 @@ exports.updateCustomer = async (req, res) => {
   }
 };
 
-exports.deleteCustomer = async(req,res)=>{
+exports.deleteCustomer = async (req, res) => {
   try {
-    const userId = req.user.id
-    const {id} = req.params
+    const userId = req.user.id;
+    const { id } = req.params;
 
-    const business = await organizationModel.findById(userId) || await branchModel.findById(userId)
-    
-    if(!business) {
+    const business =
+      (await organizationModel.findById(userId)) ||
+      (await branchModel.findById(userId));
+
+    if (!business) {
       return res.status(404).json({
-        message: "Business not found"
-      })
+        message: "Business not found",
+      });
     }
-    const customer = await CustomerInterface.findOne({
-      individualId: business._id,
-      _id: id
-    }) || await CustomerInterface.findOne({
-      branchId: business._id,
-      _id: id
-    })
-    if(!customer){
+    const customer =
+      (await CustomerInterface.findOne({
+        individualId: business._id,
+        _id: id,
+      })) ||
+      (await CustomerInterface.findOne({
+        branchId: business._id,
+        _id: id,
+      }));
+    if (!customer) {
       return res.status(404).json({
-        message: "Customer not found in queue"
-      })
+        message: "Customer not found in queue",
+      });
     }
-    customer.status = "canceled"
-    await customer.save()
+    customer.status = "canceled";
+    await customer.save();
     res.status(200).json({
-      message: "Customer deleted successfully"
-    })
+      message: "Customer deleted successfully",
+    });
   } catch (error) {
     res.status(500).json({
-      message: "Error deleting customers"
-    })
+      message: "Error deleting customers",
+    });
   }
-}
-
-
+};
 
 exports.getElderlyCustomers = async (req, res) => {
   try {
