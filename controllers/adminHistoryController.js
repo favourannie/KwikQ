@@ -27,6 +27,7 @@ const calculateQueueMetrics = (queuePoints) => {
 
       totalWaitTime += waitTime;
       totalCustomers++;
+
       if (
         c.status === "completed" &&
         completedAt &&
@@ -93,11 +94,24 @@ exports.getQueueHistory = async (req, res) => {
         const servedAt = c.servedAt ? new Date(c.servedAt) : null;
         const completedAt = c.completedAt ? new Date(c.completedAt) : null;
 
-        const serviceTime =
-          servedAt && completedAt
-            ? Math.round((completedAt.getTime() - servedAt.getTime()) / 60000)
-            : 0;
+        /** -------------------------------
+         *     🧮 SERVICE TIME LOGIC
+         * -------------------------------
+         * completed → completedAt - servedAt
+         * in_service → live calculation
+         * everything else → 0
+         */
+        let serviceTime = 0;
 
+        if (servedAt && !completedAt && c.status === "in_service") {
+          serviceTime = Math.round((Date.now() - servedAt.getTime()) / 60000);
+        }
+
+        if (servedAt && completedAt && c.status === "completed") {
+          serviceTime = Math.round((completedAt.getTime() - servedAt.getTime()) / 60000);
+        }
+
+        // Format join time
         const joinedAtFormatted = joinedAt
           ? joinedAt.toLocaleString("en-GB", {
               day: "2-digit",
@@ -115,7 +129,7 @@ exports.getQueueHistory = async (req, res) => {
           queueNumber: c.queueNumber || "N/A",
           fullName: c.formDetails?.fullName || "Unknown",
           service: c.formDetails?.serviceNeeded || "N/A",
-          serviceTime: `${serviceTime} min`,
+          serviceTime: `${serviceTime} min`,   // <-- CORRECT VALUE NOW
           status: c.status,
           phone: c.formDetails?.phone || "N/A",
           joinedAt: joinedAtFormatted, 
