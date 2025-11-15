@@ -173,6 +173,10 @@ exports.verifyPaymentWebhook = async (req,res)=>{
     if(event === "charge.success"){
       payment.status = "Successful"
       await payment.save();
+      const user = await organizationModel.findById(payment.individualId);
+      user.subscriptionType = payment.planType;
+      user.subscriptionDuration = payment.billingCycle;
+      await user.save();
      return res.status(200).json({
         message: 'Payment successful'
       })
