@@ -34,7 +34,6 @@ exports.getAllQueues = async (req, res) => {
 
     queuePoints.forEach((queue) => {
       queue.customers.forEach((c) => {
-        // 🔥 Return customers with status "waiting" OR "in_service"
         if (["waiting", "in_service"].includes(c.status)) {
           const joinedAt = c.joinedAt ? new Date(c.joinedAt) : null;
           const waitTime =

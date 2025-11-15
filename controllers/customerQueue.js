@@ -12,49 +12,55 @@ const generateQueueNumber = () => {
   const date = Date.now().toString().slice(-3);
   return `kQ-${date}${random}`;
 };
+
 exports.createCustomerQueue = async (req, res) => {
   try {
     const { formDetails } = req.body;
     const { id } = req.params;
 
-    // Fetch business
     let business = await organizationModel.findById(id);
     if (!business) business = await branchModel.findById(id);
+    const plan = await paymentModel.findOne({
+      individualId: business._id
+    }) || await paymentModel.findOne({
+      branchId: business._id
+    })
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
 
-    // Fetch active plan
-    const plan = await paymentModel.findOne({
-      individualId: business._id,
-      isActive: true
-    }) || await paymentModel.findOne({
-      branchId: business._id,
-      isActive: true
-    });
+    const {
+      fullName,
+      email,
+      phone,
+      serviceNeeded,
+      additionalInfo,
+      priorityStatus,
+    } = formDetails;
 
-    if (!plan) {
-      return res.status(400).json({ message: "No active plan found for this business" });
-    }
+    const allowedServices = [
+      "accountOpening",
+      "loanCollection",
+      "cardCollection",
+      "fundTransfer",
+      "accountUpdate",
+      "generalInquiry",
+      "complaintResolution",
+    ];
 
-    const planLimits = {
-      starter: 2,
-      professional: 5,
-      enterprise: 10,
-      freemium: 3
-    };
+    const finalService = allowedServices.includes(serviceNeeded)
+      ? serviceNeeded
+      : "other";
 
-    const maxQueuePoints = planLimits[plan.planType] || 3;
-    let queuePoints;
-    if (business.role === "multi") {
+      let queuePoints
+    if (business.role === "multi" && plan.planType === "starter") {
       queuePoints = await queuePointModel.find({ branchId: id }).sort({ createdAt: 1 });
-    } else {
+    } else if(business.role === "individual" && plan.planType === "starter") {
       queuePoints = await queuePointModel.find({ individualId: id }).sort({ createdAt: 1 });
     }
-
-    const missingQueuePoints = maxQueuePoints - queuePoints.length;
-    if (missingQueuePoints > 0) {
-      for (let i = 1; i <= missingQueuePoints; i++) {
+    if (queuePoints.length < 2) {
+      const missing = 2 - queuePoints.length;
+      for (let i = 1; i <= missing; i++) {
         const newQueue = await queuePointModel.create({
           name: `Queue ${queuePoints.length + i}`,
           ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
@@ -62,24 +68,26 @@ exports.createCustomerQueue = async (req, res) => {
         queuePoints.push(newQueue);
       }
     }
+    const filter =
+      business.role === "multi" ? { branchId: id } : { individualId: id };
+    const totalCustomers = await CustomerInterface.countDocuments(filter);
 
-    // If already at limit, use existing queue points
-    if (queuePoints.length === 0) {
-      return res.status(400).json({ message: `No queue points available for plan ${plan.planType}` });
-    }
-
-    // Assign customer to next queue point
-    const totalCustomers = await CustomerInterface.countDocuments(
-      business.role === "multi" ? { branchId: id } : { individualId: id }
-    );
     const serialNumber = String(totalCustomers + 1).padStart(3, "0");
-    const nextIndex = totalCustomers % queuePoints.length;
+
+    const nextIndex = totalCustomers % 3;
     const targetQueuePoint = queuePoints[nextIndex];
     const nextQueueNumber = generateQueueNumber();
 
     const newCustomer = await CustomerInterface.create({
       ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
-      formDetails,
+      formDetails: {
+        fullName,
+        email,
+        phone,
+        serviceNeeded: finalService,
+        additionalInfo,
+        priorityStatus,
+      },
       queueNumber: nextQueueNumber,
       serialNumber,
       joinedAt: new Date(),
@@ -94,7 +102,7 @@ exports.createCustomerQueue = async (req, res) => {
         queueNumber: newCustomer.queueNumber,
         serialNumber: `T-${newCustomer.serialNumber}`,
         queuePoint: targetQueuePoint.name,
-        serviceNeeded: newCustomer.formDetails.serviceNeeded,
+        serviceNeeded: finalService,
       },
     });
   } catch (error) {
@@ -104,6 +112,7 @@ exports.createCustomerQueue = async (req, res) => {
     });
   }
 };
+
 
 exports.getQueuePoints = async (req, res) => {
   try {
@@ -282,57 +291,42 @@ exports.updateCustomer = async (req, res) => {
     });
   }
 };
-exports.deleteCustomer = async (req, res) => {
+
+exports.deleteCustomer = async(req,res)=>{
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.id
+    const {id} = req.params
 
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized access" });
-    }
-
-    const business =
-      (await organizationModel.findById(userId)) ||
-      (await branchModel.findById(userId));
-
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
-    const query =
-      business.role === "multi"
-        ? { _id: id, branchId: business._id }
-        : { _id: id, individualId: business._id };
-
-    const updatedCustomer = await CustomerInterface.findOneAndUpdate(
-      query,
-      { status: "canceled" }, 
-      { new: true }
-    );
-
-    if (!updatedCustomer) {
+    const business = await organizationModel.findById(userId) || await branchModel.findById(userId)
+    
+    if(!business) {
       return res.status(404).json({
-        message: "Customer not found in this business queue",
-      });
+        message: "Business not found"
+      })
     }
-
+    const customer = await CustomerInterface.findOne({
+      individualId: business._id,
+      _id: id
+    }) || await CustomerInterface.findOne({
+      branchId: business._id,
+      _id: id
+    })
+    if(!customer){
+      return res.status(404).json({
+        message: "Customer not found in queue"
+      })
+    }
+    customer.status = "canceled"
+    await customer.save()
     res.status(200).json({
-      message: "Customer status updated to canceled successfully",
-      data: {
-        queueNumber: updatedCustomer.queueNumber,
-        customerName: updatedCustomer.formDetails?.fullName,
-        service: updatedCustomer.formDetails?.serviceNeeded,
-        status: updatedCustomer.status,
-      },
-    });
+      message: "Customer deleted successfully"
+    })
   } catch (error) {
-    console.error("Error updating customer status:", error);
     res.status(500).json({
-      message: "Error updating customer status",
-      error: error.message,
-    });
+      message: "Error deleting customers"
+    })
   }
-};
+}
 
 
 
