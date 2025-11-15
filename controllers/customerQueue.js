@@ -137,7 +137,7 @@ exports.getQueuePoints = async (req, res) => {
 
     let queuePoints;
 
-    if (business.role === "multi") {
+    if (business.role === "branch") {
       queuePoints = await queuePointModel.find({ branchId: id }).lean();
     } else if (business.role === "individual") {
       queuePoints = await queuePointModel.find({ individualId: id }).lean();
