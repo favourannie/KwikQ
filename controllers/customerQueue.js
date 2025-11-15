@@ -1,4 +1,3 @@
-// const customerQueueModel = require('../models/customerQueueModel');
 const CustomerInterface = require("../models/customerQueueModel");
 const organizationModel = require("../models/organizationModel");
 const branchModel = require("../models/branchModel");
@@ -6,6 +5,8 @@ const paymentModel = require("../models/paymentModel");
 const queuePointModel = require("../models/queueModel");
 const Branch = require("../models/branchModel");
 const Organization = require("../models/organizationModel");
+
+
 
 const generateQueueNumber = () => {
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -18,12 +19,6 @@ exports.createCustomerQueue = async (req, res) => {
     const { id } = req.params;
     const { formDetails } = req.body;
 
-    let business = await organizationModel.findById(id);
-    if (!business) business = await branchModel.findById(id);
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
     const {
       fullName,
       email,
@@ -33,6 +28,7 @@ exports.createCustomerQueue = async (req, res) => {
       priorityStatus,
     } = formDetails;
 
+    // Allowed services
     const allowedServices = [
       "accountOpening",
       "loanCollection",
@@ -47,46 +43,54 @@ exports.createCustomerQueue = async (req, res) => {
       ? serviceNeeded
       : "other";
 
-    let query = {};
-    let queuePoints;
+    // Detect business: branch or individual
+    let business = await branchModel.findById(id);
+    let role, assignField;
 
-    if (business.role === "branch") {
-      query.branchId = business._id;
-      queuePoints = await queuePointModel.find(query).sort({ createdAt: 1 });
-      console.log("queue multi:", queuePoints);
-    } else if (business.role === "individual") {
-      query.individualId = business._id;
-      queuePoints = await queuePointModel.find(query).sort({ createdAt: 1 });
-      console.log("queue individual:", queuePoints);
+    if (business) {
+      role = "branch";
+      assignField = { branchId: id };
+    } else {
+      business = await organizationModel.findById(id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+      role = "individual";
+      assignField = { individualId: id };
     }
 
-    console.log("result:", queuePoints);
+    // Get queue points for the business
+    const queueQuery = role === "branch"
+      ? { branchId: id }
+      : { individualId: id };
 
-    if (queuePoints?.length < 2) {
-      console.log("queue 3", queuePoints);
-      const missing = 2 - queuePoints.length;
+    let queuePoints = await queuePointModel.find(queueQuery).sort({ createdAt: 1 });
+
+    // Create minimum of 2 queue points
+    if (queuePoints.length < 3) {
+      const missing = 3 - queuePoints.length;
       for (let i = 1; i <= missing; i++) {
         const newQueue = await queuePointModel.create({
           name: `Queue ${queuePoints.length + i}`,
-          ...(business.role === "branch"
-            ? { branchId: id }
-            : { individualId: id }),
+          ...assignField,
         });
         queuePoints.push(newQueue);
       }
     }
-    const filter =
-      business.role === "multi" ? { branchId: id } : { individualId: id };
-    const totalCustomers = await CustomerInterface.countDocuments(filter);
 
+    // Count customers for the business (used for serial/queue rotation)
+    const totalCustomers = await CustomerInterface.countDocuments(queueQuery);
     const serialNumber = String(totalCustomers + 1).padStart(3, "0");
 
-    const nextIndex = totalCustomers % 3;
+    // Determine which queue point the customer should join
+    const nextIndex = totalCustomers % queuePoints.length;
     const targetQueuePoint = queuePoints[nextIndex];
-    const nextQueueNumber = generateQueueNumber();
 
+    const queueNumber = generateQueueNumber();
+
+    // Create new customer
     const newCustomer = await CustomerInterface.create({
-      ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
+      ...assignField,
       formDetails: {
         fullName,
         email,
@@ -95,15 +99,16 @@ exports.createCustomerQueue = async (req, res) => {
         additionalInfo,
         priorityStatus,
       },
-      queueNumber: nextQueueNumber,
+      queueNumber,
       serialNumber,
       joinedAt: new Date(),
     });
 
+    // Push customer into the selected queue point
     targetQueuePoint.customers.push(newCustomer._id);
     await targetQueuePoint.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       message: `Customer added to ${targetQueuePoint.name}`,
       data: {
         queueNumber: newCustomer.queueNumber,
@@ -112,14 +117,16 @@ exports.createCustomerQueue = async (req, res) => {
         serviceNeeded: finalService,
       },
     });
+
   } catch (error) {
     console.log("Error assigning customer to queue:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Error assigning customer to queue",
       error: error.message,
     });
   }
 };
+
 
 exports.getQueuePoints = async (req, res) => {
   try {

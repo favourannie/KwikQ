@@ -3,7 +3,7 @@ const { getNotifications } = require("../controllers/adminNotificationController
 const router = express.Router()
 /**
  * @swagger
- * /api/v1/get-notifications/{id}:
+ * /api/v1/notifications/{id}:
  *   get:
  *     summary: Fetch queue notifications for a business (branch or individual)
  *     description: >
