@@ -30,7 +30,7 @@ const paymentSchema = new mongoose.Schema({
   },
   renewalDate: Date,
   paymentMethod: String,
-  planType: { type: String, enum: ['starter', 'professional', 'enterprise'],default: 'free' },
+  planType: { type: String, enum: ['starter', 'professional', 'enterprise', "freemium"],default: 'free' },
   nextBillingDate: Date,
   status: {
     type: String,
@@ -44,4 +44,4 @@ const paymentSchema = new mongoose.Schema({
 
 const paymentModel = mongoose.model('payments', paymentSchema);
 
-module.exports = paymentModel;
+module.exports = paymentModel; 

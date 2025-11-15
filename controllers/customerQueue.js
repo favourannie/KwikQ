@@ -2,7 +2,7 @@
 const CustomerInterface = require("../models/customerQueueModel");
 const organizationModel = require("../models/organizationModel");
 const branchModel = require("../models/branchModel");
-
+const paymentModel = require("../models/paymentModel")
 const queuePointModel = require("../models/queueModel");
 const Branch = require("../models/branchModel");
 const Organization = require("../models/organizationModel");
@@ -12,52 +12,49 @@ const generateQueueNumber = () => {
   const date = Date.now().toString().slice(-3);
   return `kQ-${date}${random}`;
 };
-
 exports.createCustomerQueue = async (req, res) => {
   try {
     const { formDetails } = req.body;
     const { id } = req.params;
 
+    // Fetch business
     let business = await organizationModel.findById(id);
     if (!business) business = await branchModel.findById(id);
-
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
 
-    const {
-      fullName,
-      email,
-      phone,
-      serviceNeeded,
-      additionalInfo,
-      priorityStatus,
-    } = formDetails;
+    // Fetch active plan
+    const plan = await paymentModel.findOne({
+      individualId: business._id,
+      isActive: true
+    }) || await paymentModel.findOne({
+      branchId: business._id,
+      isActive: true
+    });
 
-    const allowedServices = [
-      "accountOpening",
-      "loanCollection",
-      "cardCollection",
-      "fundTransfer",
-      "accountUpdate",
-      "generalInquiry",
-      "complaintResolution",
-    ];
+    if (!plan) {
+      return res.status(400).json({ message: "No active plan found for this business" });
+    }
 
-    const finalService = allowedServices.includes(serviceNeeded)
-      ? serviceNeeded
-      : "other";
+    const planLimits = {
+      starter: 2,
+      professional: 5,
+      enterprise: 10,
+      freemium: 3
+    };
 
-      let queuePoints
+    const maxQueuePoints = planLimits[plan.planType] || 3;
+    let queuePoints;
     if (business.role === "multi") {
       queuePoints = await queuePointModel.find({ branchId: id }).sort({ createdAt: 1 });
     } else {
       queuePoints = await queuePointModel.find({ individualId: id }).sort({ createdAt: 1 });
     }
 
-    if (queuePoints.length < 3) {
-      const missing = 3 - queuePoints.length;
-      for (let i = 1; i <= missing; i++) {
+    const missingQueuePoints = maxQueuePoints - queuePoints.length;
+    if (missingQueuePoints > 0) {
+      for (let i = 1; i <= missingQueuePoints; i++) {
         const newQueue = await queuePointModel.create({
           name: `Queue ${queuePoints.length + i}`,
           ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
@@ -66,50 +63,23 @@ exports.createCustomerQueue = async (req, res) => {
       }
     }
 
-    // let queuePoints;
-    // let queuePoint;
-    // let newQueuePoint;
+    // If already at limit, use existing queue points
+    if (queuePoints.length === 0) {
+      return res.status(400).json({ message: `No queue points available for plan ${plan.planType}` });
+    }
 
-    // if (business.subscriptionType === "starter") {
-    //   if (business.subscriptionExpiredAt < Date.now()) {
-    //     return res.status(400).json({
-    //       message: "Subscription expired",
-    //     });
-    //   } else {
-    //     queuePoints = await queuePointModel.find({
-    //       $or: [{ branchId: business._id }, { individualId: business._id }],
-    //     });
-
-    //     if (queuePoints.length >= 3) {
-    //       return res.status(400).json({
-    //         message: "Cannot create more than 2 queuepoints.",
-    //       });
-    //     }
-
-    //     queuePoint = await queuePointModel.fin
-    //   }
-    // }
-
-    const filter =
-      business.role === "multi" ? { branchId: id } : { individualId: id };
-    const totalCustomers = await CustomerInterface.countDocuments(filter);
-
+    // Assign customer to next queue point
+    const totalCustomers = await CustomerInterface.countDocuments(
+      business.role === "multi" ? { branchId: id } : { individualId: id }
+    );
     const serialNumber = String(totalCustomers + 1).padStart(3, "0");
-
-    const nextIndex = totalCustomers % 3;
+    const nextIndex = totalCustomers % queuePoints.length;
     const targetQueuePoint = queuePoints[nextIndex];
     const nextQueueNumber = generateQueueNumber();
 
     const newCustomer = await CustomerInterface.create({
       ...(business.role === "multi" ? { branchId: id } : { individualId: id }),
-      formDetails: {
-        fullName,
-        email,
-        phone,
-        serviceNeeded: finalService,
-        additionalInfo,
-        priorityStatus,
-      },
+      formDetails,
       queueNumber: nextQueueNumber,
       serialNumber,
       joinedAt: new Date(),
@@ -124,7 +94,7 @@ exports.createCustomerQueue = async (req, res) => {
         queueNumber: newCustomer.queueNumber,
         serialNumber: `T-${newCustomer.serialNumber}`,
         queuePoint: targetQueuePoint.name,
-        serviceNeeded: finalService,
+        serviceNeeded: newCustomer.formDetails.serviceNeeded,
       },
     });
   } catch (error) {
@@ -199,16 +169,6 @@ exports.getQueuePoints = async (req, res) => {
   }
 };
 
-exports.getAllCustomersInAQueue = async(req,res)=>{
-  try {
-    const {id} = req
-  } catch (error) {
-     res.status(500).json({
-      message: "Error fetching queue management",
-      error: error.message,
-    });
-  }
-}
 exports.createCustomer = async (req, res) => {
   try {
     const { organization, branch, formDetails } = req.body;
@@ -322,7 +282,6 @@ exports.updateCustomer = async (req, res) => {
     });
   }
 };
-
 exports.deleteCustomer = async (req, res) => {
   try {
     const { id } = req.params;
@@ -332,7 +291,7 @@ exports.deleteCustomer = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized access" });
     }
 
-    let business =
+    const business =
       (await organizationModel.findById(userId)) ||
       (await branchModel.findById(userId));
 
@@ -345,31 +304,37 @@ exports.deleteCustomer = async (req, res) => {
         ? { _id: id, branchId: business._id }
         : { _id: id, individualId: business._id };
 
-    const deletedCustomer = await CustomerInterface.findByIdAndDelete(query);
+    const updatedCustomer = await CustomerInterface.findOneAndUpdate(
+      query,
+      { status: "canceled" }, 
+      { new: true }
+    );
 
-    if (!deletedCustomer) {
+    if (!updatedCustomer) {
       return res.status(404).json({
         message: "Customer not found in this business queue",
       });
     }
 
     res.status(200).json({
-      message: "Customer deleted successfully from queue",
+      message: "Customer status updated to canceled successfully",
       data: {
-        queueNumber: deletedCustomer.queueNumber,
-        customerName: deletedCustomer.formDetails?.fullName,
-        service: deletedCustomer.formDetails?.serviceNeeded,
-        status: deletedCustomer.status,
+        queueNumber: updatedCustomer.queueNumber,
+        customerName: updatedCustomer.formDetails?.fullName,
+        service: updatedCustomer.formDetails?.serviceNeeded,
+        status: updatedCustomer.status,
       },
     });
   } catch (error) {
-    console.error("Error deleting customer:", error);
+    console.error("Error updating customer status:", error);
     res.status(500).json({
-      message: "Error deleting customer from queue",
+      message: "Error updating customer status",
       error: error.message,
     });
   }
 };
+
+
 
 exports.getElderlyCustomers = async (req, res) => {
   try {

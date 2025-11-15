@@ -5,7 +5,6 @@ const CustomerInterface = require("../models/customerQueueModel");
 const organizationModel = require("../models/organizationModel");
 const branchModel = require("../models/branchModel");
 const { sendMail } = require("../middleware/brevo");
-
 exports.getAllQueues = async (req, res) => {
   try {
     const { id } = req.params;
@@ -35,11 +34,12 @@ exports.getAllQueues = async (req, res) => {
 
     queuePoints.forEach((queue) => {
       queue.customers.forEach((c) => {
+        // 🔥 Return customers with status "waiting" OR "in_service"
         if (["waiting", "in_service"].includes(c.status)) {
           const joinedAt = c.joinedAt ? new Date(c.joinedAt) : null;
           const waitTime =
             joinedAt
-              ? Math.round((Date.now() - joinedAt.getTime()) / 60000) // in minutes
+              ? Math.round((Date.now() - joinedAt.getTime()) / 60000)
               : 0;
 
           customersInQueue.push({
@@ -56,6 +56,7 @@ exports.getAllQueues = async (req, res) => {
       });
     });
 
+    // Sort oldest first
     customersInQueue.sort((a, b) => new Date(a.joinedAt) - new Date(b.joinedAt));
 
     res.status(200).json({
@@ -73,41 +74,52 @@ exports.getAllQueues = async (req, res) => {
 };
 
 
-
-
 exports.alertCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const queue = await CustomerInterface.findById(id)
-    if (!queue) return res.status(404).json({ message: "Customer not found in queue" });
-//    const business =
-//       await organizationModel.findById(queue.individualId) ||
-//       await branchModel.findById(queue.branchId);
 
-//     if (!business || !business.email) {
-//       return res
-//         .status(404)
-//         .json({ message: "Business email not found for sender" });
-//     }
-    
-   const detail = {
-    //   sender: process.env.BREVO_USER,
+    // Find customer
+    const queue = await CustomerInterface.findById(id);
+    if (!queue)
+      return res.status(404).json({ message: "Customer not found in queue" });
+
+    // ---- MARK CUSTOMER AS IN SERVICE ----
+    // Only update if not already in service or completed
+    if (queue.status === "waiting") {
+      queue.status = "in_service";
+      queue.servedAt = new Date(); // ⏳ Start service
+      // waitTime will be auto-calculated by your Mongoose hook
+      await queue.save();
+    }
+
+    // ---- SEND EMAIL ALERT ----
+    const detail = {
       email: queue.formDetails.email,
       subject: "Queue Alert!!! Your Turn!",
       html: `Hello ${queue.formDetails.fullName}, please proceed to your service point to be attended to.`,
-    }
-    await sendMail(detail)
+    };
 
-    res.status(200).json({ message: "Customer alerted successfully",
-        data: {
-         fullName: queue.formDetails.fullName,
-         email: queue.formDetails.email
-        }
-     });
+    await sendMail(detail);
+
+    res.status(200).json({
+      message: "Customer alerted successfully",
+      data: {
+        fullName: queue.formDetails.fullName,
+        email: queue.formDetails.email,
+        status: queue.status,
+        servedAt: queue.servedAt,
+      },
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Error alerting customer", error: error.message });
+    console.error(error);
+    res.status(500).json({
+      message: "Error alerting customer",
+      error: error.message,
+    });
   }
 };
+
 
 // exports.alertCustomer = async (req, res) => {
 //   try {
@@ -178,36 +190,61 @@ exports.skipCustomer = async (req, res) => {
     res.status(500).json({ message: "Error skipping customer", error: error.message });
   }
 };
-
-
 exports.serveCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const customer = await CustomerInterface.findById(id)
-    if(!customer){
-      return res.status(404).json({
-        message: "Customer not found"
-      })
+    const customer = await CustomerInterface.findById(id);
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found" });
     }
-        if (customer.status !== "waiting" && customer.status !== "in_service") {
-      return res.status(400).json({
-        message: `Customer cannot be served. Current status: ${customer.status}`,
+
+    // Handle first-time serving
+    if (customer.status === "waiting") {
+      customer.status = "completed";
+      customer.servedAt = new Date();
+      await customer.save();
+
+      return res.status(200).json({
+        message: "Customer served successfully.",
+        data: {
+          id: customer._id,
+          status: customer.status,
+          servedAt: customer.servedAt,
+        },
       });
     }
 
-    const served = await CustomerInterface.findOneAndUpdate({_id: id}, {status: "completed"}, {new: true})
+    if (customer.status === "in_service") {
+      customer.status = "completed";
+      customer.completedAt = new Date();
 
-    const response = {
-      id: customer._id,
-      fullName: customer.formDetails.fullName,
-      email: customer.formDetails.email
+      if (customer.servedAt && customer.joinedAt) {
+        customer.waitTime = Math.round(
+          (customer.servedAt - customer.joinedAt) / (1000 * 60)
+        );
+      }
+      if (customer.completedAt && customer.servedAt) {
+        customer.serviceTime = Math.round(
+          (customer.completedAt - customer.servedAt) / (1000 * 60)
+        );
+      }
+
+      await customer.save();
+
+      return res.status(200).json({
+        message: "Customer marked as completed",
+        data: {
+          id: customer._id,
+          waitTime: `${customer.waitTime} min`,
+          serviceTime: `${customer.serviceTime} min`,
+          status: customer.status,
+        },
+      });
     }
 
-    res.status(200).json({
-      message: "Customer served",
-      data: response,
-      served: served.status
-    })
+    res.status(400).json({
+      message: `Customer cannot be served. Current status: ${customer.status}`,
+    });
   } catch (error) {
     res.status(500).json({
       message: "Error serving customer",
@@ -215,4 +252,3 @@ exports.serveCustomer = async (req, res) => {
     });
   }
 };
-

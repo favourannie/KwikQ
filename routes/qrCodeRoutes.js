@@ -300,15 +300,25 @@ router.post('/qrcode/validate', validateQRCodeScan);
 
 /**
  * @swagger
- * /api/v1/total-queues:
+ * /api/v1/total-queues/{id}:
  *   get:
- *     summary: Get total number of queues
- *     description: Retrieves the total number of queue records currently in the system.
  *     tags:
- *       - Queue
+ *       - Queue Management
+ *     summary: Get total number of customers in a business queue
+ *     description: Returns the total number of customers currently in queue for the specified business (organization or branch).
+ *     
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Business ID (organizationId or branchId)
+ *         schema:
+ *           type: string
+ *           example: "67a0bcd2988dfe3c12345678"
+ *
  *     responses:
  *       200:
- *         description: Successfully fetched total number of queues
+ *         description: Successfully fetched total queue length
  *         content:
  *           application/json:
  *             schema:
@@ -316,10 +326,22 @@ router.post('/qrcode/validate', validateQRCodeScan);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Total number of queue:"
+ *                   example: Successfully fetched total number of queues
  *                 data:
- *                   type: integer
- *                   example: 42
+ *                   type: number
+ *                   example: 25
+ *
+ *       404:
+ *         description: Business not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Business not found
+ *
  *       500:
  *         description: Error getting queue length
  *         content:
@@ -329,11 +351,11 @@ router.post('/qrcode/validate', validateQRCodeScan);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Error getting queue length"
+ *                   example: Error getting queue length
  *                 error:
  *                   type: string
- *                   example: "Internal server error"
+ *                   example: Internal server error
  */
 
-router.get("/total-queues", getQueueLength)
+router.get("/total-queues/:id", getQueueLength)
 module.exports = router;

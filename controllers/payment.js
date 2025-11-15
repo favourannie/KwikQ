@@ -8,6 +8,7 @@ const otpGen = require('otp-generator');
 
 exports.initializePayment = async (req, res) => {
   try {
+    console.log("beans cooker")
     const { individualId, planType, billingCycle } = req.body;
     
     // ✅ Automatically get organizationId from authenticated user
@@ -59,27 +60,28 @@ exports.initializePayment = async (req, res) => {
     } else {
       return res.status(400).json({ message: "Invalid plan type selected" });
     }
-
+ 
     // Generate unique payment reference
-    const reference = `KWIKQ_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const reference = `KWIKQ_${Date.now()}_${Math.floor(Math.random() * 1000)}`;console.log("my ammunt:",reference)
 
+console.log("plannner  ",plan)  
     const paymentData = {
        amount,
         currency: "NGN",
         reference,
-        narration: `Payment for ${plan} plan (${cycle})`,
-        channels: ["card"],
-        redirect_url: "https://yourapp.com/payment-success",
+        // narration: `Payment for ${plan} plan (${cycle})`,
+        // channels: ["card"],
+        redirect_url: `https://kwik-q.vercel.app/#/admin_dashboard/${reference}`,
         customer: {
           name: business.businessName || "Customer Name",
           email: business.email || "customer@email.com",
     }
   }
-   const { data } = await axios.post('https://api.korapay.com/merchant/api/v1/charges/initialize', paymentData, {
-      headers: {
-        Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}`
-      }
-    });
+  console.log(  "Authorization", `Bearer ${process.env.KORAPAY_SECRET_KEY}`) 
+   const { data } = await axios.post('https://api.korapay.com/merchant/api/v1/charges/initialize', paymentData,{
+    headers: {
+      Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}`}}
+  );
     let pay;
     if(business.type === 'individual'){
       pay = await paymentModel.create({
@@ -103,37 +105,10 @@ exports.initializePayment = async (req, res) => {
       });
     }
   
-
-    // // Create payment request with Kora Pay API
-    // const {data}= await axios.post(
-    //   'https://api.korapay.com/merchant/api/v1/charges/initialize',
-    //   {
-       
-    //     },
-    //   },
-    //   {
-    //     headers: {
-    //       Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}`,
-    //       "Content-Type": "application/json",
-    //     },
-    //   }
-    // );
-
-    // Save payment record
-    // const payment = await paymentModel.create({
-    //   individualId,
-    //   org: organization._id,
-    //   amount,
-    //   reference,
-    //   status: "Pending",
-    //   planType: plan,
-    //   billingCycle: cycle,
-    // });
-
     if (data?.status === true) {
       await pay.save();
     }
-    res.redirect(data?.data?.checkout_url)
+    // res.redirect(data?.data?.checkout_url)
 
     res.status(201).json({
       message: "Payment initialized successfully",
