@@ -17,7 +17,7 @@ exports.getAllQueues = async (req, res) => {
     }
 
     const query =
-      business.role === "multi"
+      business.role === "branch"
         ? { branchId: id }
         : { individualId: id };
 
