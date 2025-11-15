@@ -2,6 +2,8 @@ const QueuePoint = require('../models/queueModel');
 const customerModel = require('../models/customerQueueModel');
 const branchModel = require("../models/branchModel");
 const organizationModel = require("../models/organizationModel");
+const dayjs = require('dayjs');
+const duration = require('dayjs/plugin/duration');
 
 const calculateQueueMetrics = (queuePoints) => {
   const startOfToday = new Date();
@@ -14,6 +16,7 @@ const calculateQueueMetrics = (queuePoints) => {
   let totalWaitTime = 0;
   let totalCustomers = 0;
   let cancelledNoShow = 0;
+  let serviceTime;
   
   queuePoints.forEach((queue) => {
     queue.customers.forEach((c) => {
@@ -42,6 +45,11 @@ const calculateQueueMetrics = (queuePoints) => {
       }
     });
   });
+
+  dayjs.extend(duration);
+  queuePoints.forEach((e)=>{
+    e.serviceTime = dayjs.duration(parseInt(e.serviceTime));
+  })
 
   const avgWaitTime =
     totalCustomers > 0 ? Math.round(totalWaitTime / totalCustomers) : 0;
@@ -149,6 +157,7 @@ exports.getQueueHistory = async (req, res) => {
       metrics,
       completedToday: completed.length,
       data: customersInQueue,
+      service: queuePoints
     });
   } catch (error) {
     console.error("Error fetching history data:", error);

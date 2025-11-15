@@ -86,8 +86,8 @@ exports.alertCustomer = async (req, res) => {
     // Only update if not already in service or completed
     if (queue.status === "waiting") {
       queue.status = "in_service";
-      queue.servedAt = new Date(); // ⏳ Start service
-      // waitTime will be auto-calculated by your Mongoose hook
+      queue.servedAt = new Date(); 
+      queue.start = Date.now()
       await queue.save();
     }
 
@@ -227,7 +227,8 @@ exports.serveCustomer = async (req, res) => {
           (customer.completedAt - customer.servedAt) / (1000 * 60)
         );
       }
-
+      customer.end = Date.now()
+      customer.serviceTime = customer.end - customer.start;
       await customer.save();
 
       return res.status(200).json({
