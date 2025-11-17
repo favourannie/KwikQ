@@ -3,6 +3,7 @@ const customerModel = require('../models/customerQueueModel');
 const organizationModel = require('../models/organizationModel');
 const branchModel = require("../models/branchModel")
 
+const calculateAverageWaitTime = (customers) => { if (!customers || customers.length === 0) return 0; const totalWaitTime = customers.reduce((acc, customer) => { if (!customer.joinTime || !customer.serviceEndTime) return acc; const waitTime = (new Date(customer.serviceEndTime) - new Date(customer.joinTime)) / 60000; return acc + (waitTime > 0 ? waitTime : 0); }, 0); return Math.round((totalWaitTime / customers.length) * 10) / 10; };
 exports.getBranchAnalytics = async (req, res) => {
   try {
     const { id } = req.params;
