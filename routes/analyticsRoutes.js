@@ -4,7 +4,7 @@ const { authenticate } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * api/v1/analytics/{id}:
+ * /api/v1/analytics/{id}:
  *   get:
  *     summary: Get branch or individual analytics (last 7 days)
  *     description: Fetches analytics for a branch or individual organization for the last 7 days. 
