@@ -46,9 +46,6 @@ exports.getBranchAnalytics = async (req, res) => {
 
     const totalCustomers = customers.length;
 
-    // -----------------------------
-    //  Average Wait Time
-    // -----------------------------
     const avgWaitTime = calculateAverageWaitTime(
       customers.map(c => ({
         joinTime: c.joinedAt,
@@ -56,7 +53,7 @@ exports.getBranchAnalytics = async (req, res) => {
       }))
     );
 
-    // -----------------------------
+ 
     // Weekly Customer Volume
     // -----------------------------
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -67,9 +64,7 @@ exports.getBranchAnalytics = async (req, res) => {
       ).length
     }));
 
-    // -----------------------------
-    // Average Wait Time Trend
-    // -----------------------------
+
     const waitTrend = days.map(day => {
       const dayCustomers = customers.filter(
         c => new Date(c.joinedAt).getDay() === days.indexOf(day)
@@ -85,9 +80,7 @@ exports.getBranchAnalytics = async (req, res) => {
       return { day, value: trendValue };
     });
 
-    // -----------------------------
-    // Peak Hours (10AM, 12PM, 2PM, 4PM)
-    // -----------------------------
+
     const peakHours = ["10AM", "12PM", "2PM", "4PM"];
     const peakHourValues = peakHours.map(hour => {
       const targetHour = parseInt(hour);
@@ -98,9 +91,7 @@ exports.getBranchAnalytics = async (req, res) => {
       return { hour, count };
     });
 
-    // -----------------------------
-    // Service Type Distribution
-    // -----------------------------
+
     const serviceBucket = {};
     customers.forEach(c => {
       const service = c.formDetails?.serviceNeeded;
@@ -111,9 +102,6 @@ exports.getBranchAnalytics = async (req, res) => {
       ([name, value]) => ({ name, value })
     );
 
-    // -----------------------------
-    // Final Response (Matches Figma)
-    // -----------------------------
     res.status(200).json({
       message: "Analytics fetched successfully",
       data: {

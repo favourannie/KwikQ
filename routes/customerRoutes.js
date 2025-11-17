@@ -4,7 +4,8 @@ const {createCustomer, getAllCustomers, getCustomerById, updateCustomer, deleteC
     getElderlyCustomers, getPregnantCustomers, getByEmergencyLevel,
     createCustomerQueue,
     getQueuePoints} = require('../controllers/customerQueue');
-const {authenticate} = require("../middleware/authenticate")
+const {authenticate} = require("../middleware/authenticate");
+const { customerFormValidator } = require('../middleware/validation');
 /**
  * @swagger
  * components:
@@ -348,7 +349,7 @@ router.get("/queue-points/:id", getQueuePoints)
  *                   example: "Internal server error message"
  */
 
-router.post("/create-queue/:id", createCustomerQueue )
+router.post("/create-queue/:id",customerFormValidator,createCustomerQueue )
 /**
  * @swagger
  * /api/v1/get-customer/{id}:

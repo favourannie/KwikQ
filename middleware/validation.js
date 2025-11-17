@@ -90,6 +90,43 @@ exports.registerValidator = (req, res, next) => {
   next();
   }
 
+  exports.customerFormValidator = (req,res,next) => {
+      const schema = joi.object({
+    email: joi.string().email().trim().required().messages({
+      'string.empty': 'Email is required',
+      'string.email': 'Please provide a valid email address',
+    }),
+    fullName: joi.string()
+  .min(3)
+  .trim()
+  .pattern(/^[A-Za-z\s]+$/)
+  .required()
+  .messages({
+    'string.empty': 'Full name is required',
+    'string.min': 'Full name must be at least 3 characters long',
+    'string.pattern.base': 'Full name must contain only letters and spaces'
+  }),
+   phone: joi.string()
+  .min(11)
+  .trim()
+  .pattern(/^[0-9]+$/)
+  .required()
+  .messages({
+    'string.empty': 'Phone number is required',
+    'string.min': 'Phone number must be at least 11 digits long',
+    'string.pattern.base': 'Phone number must contain only numbers'
+  }),
+
+  }).unknown(true)
+    const { error } = schema.validate(req.body.formDetails, { abortEarly: true });
+  if (error) {
+    return res.status(400).json({
+      message: 'Validation error: ' + error.message
+    });
+  }
+  next();
+  }
+
 exports.verifyValidator = (req, res, next) => {
   const schema = joi.object({
     email: joi.string().email().trim().required().messages({
