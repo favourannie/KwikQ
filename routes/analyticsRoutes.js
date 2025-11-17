@@ -4,39 +4,23 @@ const { authenticate } = require('../middleware/authenticate');
 
 /**
  * @swagger
- * /api/v1/analytics/{branchId}:
+ * api/v1/analytics/{id}:
  *   get:
- *     summary: Get branch analytics data
- *     description: >
- *       Fetches analytics for a specific branch within a given date range.  
- *       Returns customer traffic trends, service type distributions,  
- *       peak hours, satisfaction rates, and average wait times.
+ *     summary: Get branch or individual analytics (last 7 days)
+ *     description: Fetches analytics for a branch or individual organization for the last 7 days. 
+ *                  Returns total customers, average wait time, customer traffic patterns, 
+ *                  peak hours, service type distribution, satisfaction rate, and an analytics snapshot.
  *     tags:
  *       - Analytics
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: branchId
+ *         name: id
  *         required: true
- *         description: The ID of the branch to get analytics for
  *         schema:
  *           type: string
- *           example: "671f72d8c9b9d32f0a1a4e5b"
- *       - in: query
- *         name: startDate
- *         required: false
- *         description: Start date for analytics data (defaults to 7 days before endDate)
- *         schema:
- *           type: string
- *           format: date
- *           example: "2025-10-01"
- *       - in: query
- *         name: endDate
- *         required: false
- *         description: End date for analytics data (defaults to current date)
- *         schema:
- *           type: string
- *           format: date
- *           example: "2025-10-11"
+ *         description: The organization ID or branch ID
  *     responses:
  *       200:
  *         description: Analytics fetched successfully
@@ -52,11 +36,11 @@ const { authenticate } = require('../middleware/authenticate');
  *                   type: object
  *                   properties:
  *                     totalCustomers:
- *                       type: integer
- *                       example: 120
+ *                       type: number
+ *                       example: 1144
  *                     avgWaitTime:
  *                       type: number
- *                       example: 8.5
+ *                       example: 11.9
  *                     weeklyCustomerVolume:
  *                       type: array
  *                       items:
@@ -64,21 +48,21 @@ const { authenticate } = require('../middleware/authenticate');
  *                         properties:
  *                           day:
  *                             type: string
- *                             example: "Mon"
+ *                             example: Mon
  *                           count:
- *                             type: integer
- *                             example: 25
+ *                             type: number
+ *                             example: 156
  *                     peakHours:
  *                       type: array
  *                       items:
  *                         type: object
  *                         properties:
  *                           hour:
- *                             type: integer
+ *                             type: number
  *                             example: 14
  *                           count:
- *                             type: integer
- *                             example: 30
+ *                             type: number
+ *                             example: 42
  *                     serviceTypesDistribution:
  *                       type: array
  *                       items:
@@ -86,16 +70,28 @@ const { authenticate } = require('../middleware/authenticate');
  *                         properties:
  *                           serviceType:
  *                             type: string
- *                             example: "Account Opening"
+ *                             example: Loan Inquiry
  *                           count:
- *                             type: integer
- *                             example: 15
+ *                             type: number
+ *                             example: 120
  *                     satisfactionRate:
- *                       type: number
- *                       example: 86.7
+ *                       type: string
+ *                       example: "87.5"
  *                     analytics:
  *                       type: object
- *                       description: Stored analytics document created for the branch
+ *                       description: Snapshot of the analytics saved to the database
+ *
+ *       404:
+ *         description: Business not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Business not found
+ *
  *       500:
  *         description: Error fetching analytics
  *         content:
@@ -108,7 +104,7 @@ const { authenticate } = require('../middleware/authenticate');
  *                   example: Error fetching analytics
  *                 error:
  *                   type: string
- *                   example: Branch ID not found or invalid date range
+ *                   example: Unexpected server error
  */
 
 router.get('/analytics/:id', authenticate, getBranchAnalytics);
