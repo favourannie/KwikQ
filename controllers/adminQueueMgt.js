@@ -77,21 +77,29 @@ exports.alertCustomer = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find customer
     const queue = await CustomerInterface.findById(id);
     if (!queue)
       return res.status(404).json({ message: "Customer not found in queue" });
 
-    // ---- MARK CUSTOMER AS IN SERVICE ----
-    // Only update if not already in service or completed
+    if (queue.status === "in_service") {
+      return res.status(400).json({
+        message: "Customer is already being attended to. No alert sent.",
+      });
+    }
+
+    if (queue.status === "completed" || queue.status === "no_show" || queue.status === "canceled") {
+      return res.status(400).json({
+        message: `Customer status is '${queue.status}', cannot alert.`,
+      });
+    }
+
     if (queue.status === "waiting") {
       queue.status = "in_service";
-      queue.servedAt = new Date(); 
-      queue.start = Date.now()
+      queue.servedAt = new Date();
+      queue.start = Date.now();
       await queue.save();
     }
 
-    // ---- SEND EMAIL ALERT ----
     const detail = {
       email: queue.formDetails.email,
       subject: "Queue Alert!!! Your Turn!",
@@ -118,6 +126,7 @@ exports.alertCustomer = async (req, res) => {
     });
   }
 };
+
 
 
 // exports.alertCustomer = async (req, res) => {

@@ -193,6 +193,7 @@ exports.getRecentActivity = async (req, res) => {
       );
 
       return {
+        fullName: c.formDetails?.fullName || "N/A",   // ✅ ADDED HERE
         queueNumber: c.queueNumber || "N/A",
         action,
         timeAgo: `${minutesAgo} min ago`,
