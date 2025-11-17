@@ -3,24 +3,42 @@ const customerModel = require('../models/customerQueueModel');
 const organizationModel = require('../models/organizationModel');
 const branchModel = require("../models/branchModel")
 
+const calculateAverageWaitTime = (customers) => {
+  if (!customers || customers.length === 0) return 0;
+
+  const totalWaitTime = customers.reduce((acc, customer) => {
+    if (!customer.joinTime || !customer.serviceEndTime) return acc;
+    const waitTime =
+      (new Date(customer.serviceEndTime) - new Date(customer.joinTime)) / 60000;
+    return acc + (waitTime > 0 ? waitTime : 0);
+  }, 0);
+
+  return Math.round((totalWaitTime / customers.length) * 10) / 10;
+};
+
 exports.getBranchAnalytics = async (req, res) => {
   try {
     const { id } = req.params;
-
     const org =
       (await organizationModel.findById(id)) ||
       (await branchModel.findById(id));
 
     if (!org) {
-      return res.status(404).json({ message: "Business not found" });
+      return res.status(404).json({
+        message: "Business not found",
+      });
     }
 
-    const end = new Date();
-    const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const { startDate, endDate } = req.query;
 
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // ✅ Query customers based on role
     let customers = [];
-
-    if (org.role === "branch") {
+    if (org.role === "multi") {
       customers = await customerModel.find({
         branchId: id,
         joinTime: { $gte: start, $lte: end },
@@ -30,45 +48,72 @@ exports.getBranchAnalytics = async (req, res) => {
         individualId: id,
         joinTime: { $gte: start, $lte: end },
       });
+    } else {
+      customers = await customerModel.find({
+        branchId: id,
+        joinTime: { $gte: start, $lte: end },
+      });
     }
 
+    // ✅ Count total customers correctly
     const totalCustomers = customers.length;
 
+    // ✅ Average wait time
     const avgWaitTime = calculateAverageWaitTime(customers);
 
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    // ✅ Weekly Volume Distribution
     const weeklyVolume = Array(7).fill(0);
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-    customers.forEach((c) => {
-      if (c.joinTime) weeklyVolume[new Date(c.joinTime).getDay()]++;
+    customers.forEach((customer) => {
+      if (customer.joinTime) {
+        const day = new Date(customer.joinTime).getDay();
+        weeklyVolume[day]++;
+      }
     });
 
-    const weeklyCustomerVolume = days.map((day, i) => ({
+    const weeklyCustomerVolume = days.map((day, index) => ({
       day,
-      count: weeklyVolume[i],
+      count: weeklyVolume[index],
     }));
 
+    // ✅ Peak Hours
     const hours = Array(24).fill(0);
-    customers.forEach((c) => {
-      if (c.joinTime) hours[new Date(c.joinTime).getHours()]++;
+    customers.forEach((customer) => {
+      if (customer.joinTime) {
+        const hour = new Date(customer.joinTime).getHours();
+        hours[hour]++;
+      }
     });
 
-    const peakHours = hours.map((count, hour) => ({ hour, count }));
+    const peakHours = hours.map((count, hour) => ({
+      hour,
+      count,
+    }));
 
+    // ✅ Service Types Distribution
     const serviceTypes = {};
-    customers.forEach((c) => {
-      const service = c.formDetails?.serviceNeeded || c.serviceNeeded;
-      if (service) serviceTypes[service] = (serviceTypes[service] || 0) + 1;
+    customers.forEach((customer) => {
+      const service =
+        customer.formDetails?.serviceNeeded || customer.serviceNeeded;
+      if (service) {
+        serviceTypes[service] = (serviceTypes[service] || 0) + 1;
+      }
     });
 
     const serviceTypesDistribution = Object.entries(serviceTypes).map(
-      ([serviceType, count]) => ({ serviceType, count })
+      ([serviceType, count]) => ({
+        serviceType,
+        count,
+      })
     );
 
+    // ✅ Satisfaction Rate
     const satisfiedCustomers = customers.filter(
       (c) => c.servedAt && c.completedAt && c.status === "completed"
     ).length;
 
+    // ✅ Save analytics snapshot
     const analytics = await analyticsModel.create({
       organization: org._id,
       branch: id,
@@ -89,6 +134,7 @@ exports.getBranchAnalytics = async (req, res) => {
         .slice(0, 5),
     });
 
+    // ✅ Final response
     res.status(200).json({
       message: "Analytics fetched successfully",
       data: {
