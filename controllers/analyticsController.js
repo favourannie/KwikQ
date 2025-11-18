@@ -15,10 +15,11 @@ const calculateAverageWaitTime = (customers) => {
 
   return Math.round((totalWaitTime / customers.length) * 10) / 10;
 };
+
 exports.getBranchAnalytics = async (req, res) => {
   try {
     const { id } = req.params;
-
+    
     const business =
       (await organizationModel.findById(id)) ||
       (await branchModel.findById(id));
@@ -91,7 +92,18 @@ exports.getBranchAnalytics = async (req, res) => {
       return { hour, count };
     });
 
+    const colors = [
+  "#4F46E5", 
+  "#10B981", 
+  "#F59E0B", 
+ "#EF4444", 
+ "#3B82F6", 
+  "#8B5CF6", 
+  "#14B8A6", 
+   "#F43F5E" 
+ ]
 
+let colorIndex = 0;
     const serviceBucket = {};
     customers.forEach(c => {
       const service = c.formDetails?.serviceNeeded;
@@ -99,7 +111,11 @@ exports.getBranchAnalytics = async (req, res) => {
     });
 
     const serviceDistribution = Object.entries(serviceBucket).map(
-      ([name, value]) => ({ name, value })
+      ([name, value]) =>{
+        const color = colors[colorIndex % colors.length];
+  colorIndex++;
+  return { name, value, color };
+      }
     );
 
     res.status(200).json({
