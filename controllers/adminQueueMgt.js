@@ -48,6 +48,7 @@ exports.getAllQueues = async (req, res) => {
             fullName: c.formDetails?.fullName || "Unknown",
             service: c.formDetails?.serviceNeeded || "N/A",
             phone: c.formDetails?.phone || "N/A",
+            status: c.status || "N/A",
             joinedAt: c.joinedAt || "N/A",
             waitTime: `${waitTime} min`,
           });
