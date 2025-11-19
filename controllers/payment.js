@@ -5,7 +5,8 @@ const branchModel = require('../models/branchModel');
 const paymentModel = require('../models/paymentModel');
 const axios = require('axios');
 const otpGen = require('otp-generator');
-
+const customPricing = require("../models/customPricing");
+const {sendMail} = require("../middleware/brevo")
 exports.initializePayment = async (req, res) => {
   try {
     console.log("beans cooker")
@@ -205,3 +206,68 @@ exports.getAllPayments = async (req, res) => {
     });
   }
 };
+
+exports.customPricing = async(req,res)=>{
+  try {
+    const {id} = req.params
+    const business = await organizationModel.findById(id) || await branchModel.findById(id);
+    if(!business) {
+      return res.status(404).json({
+        message: "Business not found"
+      })
+    }
+    const {companyName, fullName, workEmail, phoneNumber, companySize, industry, features, additionalInformation} = req.body
+
+    if(!companyName || !fullName || !workEmail || !phoneNumber || !companySize){
+       return res.status(400).json({
+        message: "Missing field"
+       })
+      }
+      let custom;
+
+      if(business.role === 'individual'){
+        custom = await customPricing.create({
+          individualId: business._id,
+          features,
+          additionalInformation,
+          org: 'individual',
+          companyName,
+          fullName,
+          workEmail,
+          phoneNumber,
+          companySize,
+          industry,
+          features,
+          additionalInformation
+        })
+      }else if(business.role === 'multi'){
+        custom = await customPricing.create({
+          branchId: business._id,
+          org: 'multi',
+          companyName,
+          fullName,
+          workEmail,
+          phoneNumber,
+          companySize,
+          industry,
+          features,
+          additionalInformation
+        })
+      }
+      await custom.save();
+      const detail = { email: custom.workEmail,  
+          subject: "Thank you! We've received your custom pricing request",
+         html: `Hello ${custom.fullName}, Your request is processing`, };
+      await sendMail(detail)
+      res.status(201).json({
+        message: "Custom pricing initiated successfully",
+        data: custom
+      })
+  } catch (error) {
+     res.status(500).json({
+      message: "Error initiating custom pricing",
+      error: error.message,
+    });
+  }
+}
+
