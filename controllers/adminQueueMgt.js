@@ -5,6 +5,7 @@ const CustomerInterface = require("../models/customerQueueModel");
 const organizationModel = require("../models/organizationModel");
 const branchModel = require("../models/branchModel");
 const { sendMail } = require("../middleware/brevo");
+const {alertCustomerTemplate} = require("../utils/email");
 exports.getAllQueues = async (req, res) => {
   try {
     const { id } = req.params;
@@ -88,12 +89,17 @@ exports.alertCustomer = async (req, res) => {
       });
     }
 
-    if (queue.status === "completed" || queue.status === "no_show" || queue.status === "canceled") {
+    if (
+      queue.status === "completed" ||
+      queue.status === "no_show" ||
+      queue.status === "canceled"
+    ) {
       return res.status(400).json({
         message: `Customer status is '${queue.status}', cannot alert.`,
       });
     }
 
+    // Update status to in_service
     if (queue.status === "waiting") {
       queue.status = "in_service";
       queue.servedAt = new Date();
@@ -101,13 +107,29 @@ exports.alertCustomer = async (req, res) => {
       await queue.save();
     }
 
-    const detail = {
-      email: queue.formDetails.email,
-      subject: "Queue Alert!!! Your Turn!",
-      html: `Hello ${queue.formDetails.fullName}, please proceed to your service point to be attended to.`,
-    };
+    // Fetch business name
+    let businessName = "Your Service Point"; // fallback
+    if (queue.branchId) {
+      const branch = await branchModel.findById(queue.branchId);
+      if (branch) businessName = branch.fullName || branch.name;
+    } else if (queue.individualId) {
+      const org = await organizationModel.findById(queue.individualId);
+      if (org) businessName = org.businessName || org.fullName;
+    }
 
-    await sendMail(detail);
+    const html = alertCustomerTemplate(
+      queue.formDetails.fullName,
+      businessName,
+      queue.queueNumber
+    );
+
+ 
+
+await sendMail({
+  email: queue.formDetails.email,
+  subject: "Queue Alert! Your Turn",
+  html,
+});
 
     res.status(200).json({
       message: "Customer alerted successfully",
@@ -127,6 +149,7 @@ exports.alertCustomer = async (req, res) => {
     });
   }
 };
+
 
 
 

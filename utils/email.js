@@ -5,79 +5,276 @@ const instagram = 'https://res.cloudinary.com/dbzzkaa97/image/upload/v1754433533
 const facebook = 'https://res.cloudinary.com/dbzzkaa97/image/upload/v1754433532/facebook_rjeokq.png';
 
 exports.registerOTP = (otp, businessName) => {
-return `
+  return `
     <!DOCTYPE html>
 <html>
- <head>
-    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>email</title>
-    <link rel="stylesheet" href="./index.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-      rel="stylesheet">
-      <style>
-        *{
-        margin: 0;
-        padding: 0;
-      }
-      </style>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>KwikQ — Email verification</title>
   </head>
-  <body style="margin: 0; padding: 0; background-color: transparent;">
-    <center style="width: 100%;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: transparent; font-family: Poppins, sans-serif;">
-        <tr>
-          <td style="margin: 0px">
-            <img src="${logo}" width="140">
-          </td> 
-        </tr>
-        <tr>
-          <td style="height: 350px">
-            <h1 style="font-size: 35px; font-weight: bold; margin: 0 0 10px;">Email Verification</h1>
-            <h2 style="font-size: 20px; margin: 0 0 10px;">Welcome to KwikQ App <br/> <em>${businessName}</em>,</h2>
-            <p style="font-size: 17px; margin: 0 0 20px;">To complete your registration, Here's your 6-digit code, enter it to verify your email and unlock the KwikQ's fast experience!</p>
-            <h2 style="font-size: 35px; font-weight: bold; background: #c2cfd3; padding: 10px; border-radius: 5px; text-align: center;">${otp}</h2>
-            <p style="font-size: 17px; margin: 20px 0px 10px 0px;">Need help? Reach out to our support team below.</p>
-            <p style="font-size: 17px;">Thank you for choosing KwikQ.</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="height: 250px; background: url(${watermark}) center / cover no-repeat;">
-              <table width="80%" cellpadding="0" cellspacing="0"
-            style="color: #ffffff; margin: 0 auto;">
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
+    "
+  >
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      width="100%"
+      style="background-color: #f4f6f8; padding: 20px 0"
+    >
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            cellpadding="0"
+            cellspacing="0"
+            width="600"
+            style="
+              width: 100%;
+              max-width: 600px;
+              background: #ffffff;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 2px 6px rgba(16, 24, 40, 0.08);
+            "
+          >
             <tr>
-              <td align="center">
-                <h3 style="margin: 0; font-size: 25px;">KwikQ</h3>
-                <p style="margin: 8px 0 20px; font-size: 12px;">
-                  <b> KwikQ</b>. Real-Time Queues for Real-Life Ease...
-                </p>
-                <table cellpadding="5" cellspacing="0" style="margin: 10px 0; text-align: center;">
+              <td style="padding: 20px 24px; border-bottom: 1px solid #eef2f7">
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                >
                   <tr>
-                    <td style="font-size: 12px;">Follow us:</td>
-                    <td><a href=""><img src="${linkedIn}" alt="LinkedIn" width="20" style="vertical-align: middle; margin-left: 10px;"></a></td>
-                    <td><a href=""><img src="${facebook}" alt="Facebook" width="20" style="vertical-align: middle; margin-left: 5px;"></a></td>
-                    <td><a href=""><img src="${instagram}" alt="Instagram" width="20" style="vertical-align: middle; margin-left: 5px;"></a></td>
+                    <td align="left" style="vertical-align: middle">
+                      <img
+                        src="https://res.cloudinary.com/dp75oveuw/image/upload/v1761195059/kwikq_logo-removebg-preview_ilmsvd.png"
+                        alt="brandName"
+                        width="150"
+                        style="
+                          display: block;
+                          border: 0;
+                          outline: none;
+                          text-decoration: none;
+                        "
+                      />
+                    </td>
+                    <td
+                      align="right"
+                      style="
+                        vertical-align: middle;
+                        color: #6b7280;
+                        font-size: 13px;
+                      "
+                    >
+                      Verification Code
+                    </td>
                   </tr>
                 </table>
-                <p style="margin: 10px 0 0; font-size: 12px;">
-                  Contact us: &nbsp; +234 805 1897 781 &nbsp;
-                  <a href="mailto:supportkq@gmail.com" style="color: #ffffff; text-decoration: underline;">
-                    supportkq@gmail.com
-                  </a>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding: 28px 24px 20px 24px">
+                <h1
+                  style="
+                    margin: 0 0 12px 0;
+                    font-size: 20px;
+                    color: #0f172a;
+                    font-weight: 600;
+                    line-height: 1.25;
+                  "
+                >
+                  Hi ${businessName},
+                </h1>
+
+                <p
+                  style="
+                    margin: 0 0 18px 0;
+                    color: #334155;
+                    font-size: 15px;
+                    line-height: 1.5;
+                  "
+                >
+                  Use the one-time verification code below to confirm your email
+                  for <strong>KwikQ</strong>. This code will expire in
+                  <strong>2 minutes</strong>.
+                </p>
+
+                <div
+                  style="
+                    margin: 18px 0 22px 0;
+                    padding: 18px 16px;
+                    border-radius: 8px;
+                    background: #f8fafc;
+                    border: 1px solid #e6eef6;
+                    text-align: center;
+                  "
+                >
+                  <div
+                    style="
+                      font-size: 28px;
+                      letter-spacing: 6px;
+                      font-weight: 700;
+                      color: #0b5cff;
+                    "
+                  >
+                    ${otp}
+                  </div>
+                  <div style="margin-top: 8px; font-size: 13px; color: #64748b">
+                    One-time passcode
+                  </div>
+                </div>
+
+                <p
+                  style="
+                    margin: 0 0 18px 0;
+                    color: #334155;
+                    font-size: 14px;
+                    line-height: 1.5;
+                  "
+                >
+                  If you did not request this code, you can safely ignore this
+                  email — no action is required. If you have questions, contact
+                  our support at
+                  <a
+                    href="mailto:{{supportEmail}}"
+                    style="color: #0b5cff; text-decoration: none"
+                    >KwikQ.com</a
+                  >.
+                </p>
+
+                <table
+                  role="presentation"
+                  cellpadding="0"
+                  cellspacing="0"
+                  width="100%"
+                  style="margin-top: 8px"
+                ></table>
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style="
+                  padding: 16px 24px 24px 24px;
+                  border-top: 1px solid #eef2f7;
+                  background: #fafbff;
+                "
+              >
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 12px;
+                    color: #94a3b8;
+                    line-height: 1.4;
+                  "
+                >
+                  This message was sent to you by
+                  <strong>KwikQ</strong>. If you did not create an account with
+                  us, please ignore this email.
+                </p>
+
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #94a3b8">
+                  © 2025 KwikQ. All rights reserved.
                 </p>
               </td>
             </tr>
           </table>
-          </td>
-        </tr>
-        <tr>
-          <td style="height: 5px; background-color: #f3bf04;"></td>
-        </tr>
-      </table>
-    </center>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>
     `;
 };
+
+exports.alertCustomerTemplate = (customerName, businessName, queueNumber) => {
+  return `
+<!DOCTYPE html>
+<html>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #f5f6fa;
+      font-family: Arial, sans-serif;
+    "
+  >
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding: 30px 0">
+      <tr>
+        <td align="center">
+          <table
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            style="background: #ffffff; border-radius: 8px; padding: 25px"
+          >
+            <tr>
+              <td align="center">
+                <h2 style="margin: 0; color: #0b5cff">KwikQ Alert</h2>
+                <p style="color: #4a4a4a; font-size: 14px; margin-top: 5px">
+                  It’s your turn to be served
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding-top: 20px">
+                <p style="font-size: 15px; color: #333">
+                  Hello <strong>${customerName}</strong>,<br /><br />
+                  You are next in line at <strong>${businessName}</strong>.
+                  Please proceed to the service point now.
+                </p>
+
+                <div
+                  style="
+                    margin: 25px 0;
+                    padding: 15px;
+                    background: #e9f1ff;
+                    border-left: 4px solid #0b5cff;
+                  "
+                >
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 16px;
+                      font-weight: bold;
+                      color: #0b5cff;
+                    "
+                  >
+                    Queue Number: ${queueNumber}
+                  </p>
+                </div>
+
+                <p style="font-size: 14px; color: #555">
+                  If you are not available, the next person will be called
+                  shortly.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding-top: 25px">
+                <p style="font-size: 12px; color: #999">
+                  © 2025 KwikQ — Queue made simple.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+  `;
+};
+

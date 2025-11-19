@@ -11,7 +11,7 @@ const Organization = require("../models/organizationModel");
 const generateQueueNumber = () => {
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   const date = Date.now().toString().slice(-3);
-  return `kQ-${date}${random}`;
+  return `KQ-${date}${random}`;
 };
 
 exports.createCustomerQueue = async (req, res) => {

@@ -40,7 +40,7 @@ const queueSchema = new mongoose.Schema({
         default: 0
     },
     
-}, {timeStamps: true})
+}, {timestamps: true})
 
 const queueModel = mongoose.model("queues", queueSchema);
 
