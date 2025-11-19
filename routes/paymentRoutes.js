@@ -4,7 +4,8 @@ const {
   initializePayment,
   verifyPayment,
   verifyPaymentWebhook,
-  getAllPayments
+  getAllPayments,
+  customPricing
 } = require("../controllers/payment");
 
 const { authenticate } = require("../middleware/authenticate");
@@ -200,4 +201,98 @@ router.get("/verify/:reference", authenticate, verifyPayment);
 router.post("/webhook", verifyPaymentWebhook);
 router.get("/all", getAllPayments);
 
+/**
+ * @swagger
+ * /api/v1/custom-pricing/{id}:
+ *   post:
+ *     summary: Submit a custom pricing request
+ *     description: Allows a business (organization or branch) to submit a custom pricing request.
+ *     tags:
+ *       - Custom Pricing
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The organization or branch ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - companyName
+ *               - fullName
+ *               - workEmail
+ *               - phoneNumber
+ *               - companySize
+ *             properties:
+ *               companyName:
+ *                 type: string
+ *                 example: "KwikQ Inc."
+ *               fullName:
+ *                 type: string
+ *                 example: "John Doe"
+ *               workEmail:
+ *                 type: string
+ *                 example: "john@kwikq.com"
+ *               phoneNumber:
+ *                 type: string
+ *                 example: "+2348012345678"
+ *               companySize:
+ *                 type: string
+ *                 example: "51-200"
+ *               industry:
+ *                 type: string
+ *                 example: "Banking"
+ *               features:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["Multi-Branch Support", "API Access"]
+ *               additionalInformation:
+ *                 type: string
+ *                 example: "We require analytics and priority support."
+ *     responses:
+ *       201:
+ *         description: Custom pricing request created successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Custom pricing initiated successfully"
+ *               data:
+ *                 _id: "67a12fe9d9f30023dca91144"
+ *                 companyName: "KwikQ Inc."
+ *                 fullName: "John Doe"
+ *                 workEmail: "john@kwikq.com"
+ *                 phoneNumber: "+2348012345678"
+ *                 companySize: "51-200"
+ *                 industry: "Banking"
+ *                 features:
+ *                   - "Multi-Branch Support"
+ *                 additionalInformation: "We require analytics and priority support."
+ *       400:
+ *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Missing field"
+ *       404:
+ *         description: Business not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Business not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Error initiating custom pricing"
+ *               error: "Internal server error"
+ */
+
+router.post("/custom-pricing/:id", customPricing)
 module.exports = router;
