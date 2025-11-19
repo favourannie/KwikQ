@@ -251,7 +251,7 @@ router.get("/all", getAllPayments);
  *                 type: array
  *                 items:
  *                   type: string
- *                 example: ["Multi-Branch Support", "API Access"]
+ *                 example: ["queue-management-system", "advanced-analytics-reporting", "multi-branch-management"]
  *               additionalInformation:
  *                 type: string
  *                 example: "We require analytics and priority support."
