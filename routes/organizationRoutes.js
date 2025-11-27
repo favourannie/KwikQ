@@ -95,7 +95,7 @@ router.post("/create", registerValidator, createOrganization);
  * /api/v1/verify:
  *   post:
  *     tags:
- *       - Authentication
+ *       - Organization Management
  *     summary: Verify organization email using OTP
  *     description: Validate mailbox OTP for organization account verification. The OTP must be valid and not expired.
  *     requestBody:
@@ -172,7 +172,7 @@ router.post("/verify", verifyValidator, verifyOtp);
  * /api/v1/login:
  *   post:
  *     tags:
- *       - Authentication
+ *       - Organization Management
  *     summary: Login organization account
  *     description: Authenticate an organization using email and password and return a JWT token valid for 3 days.
  *     requestBody:
@@ -277,7 +277,7 @@ router.post("/login", login);
  *   post:
  *     summary: Resend a new OTP to an organization's email.
  *     tags:
- *       - Authentication
+ *       - Organization Management
  *     requestBody:
  *       required: true
  *       content:
@@ -818,7 +818,7 @@ router.get("/organization-details/:id", getOnlyOrganizationsById)
  *     summary: Send OTP for password reset
  *     description: Sends a one-time password (OTP) to the organization's registered email to initiate the password reset process.
  *     tags:
- *       - Authentication
+ *       - Organization Management
  *     requestBody:
  *       required: true
  *       content:
@@ -879,7 +879,7 @@ router.post("/forgot-password", forgotPassword);
  *       This endpoint verifies the OTP code sent to the organization's registered email.
  *       Once verified, the organization can proceed to reset their password using the reset-password endpoint.
  *     tags:
- *       - Authentication
+ *       - Organization Management
  *     requestBody:
  *       required: true
  *       content:
@@ -942,7 +942,7 @@ router.post("/reset-password-otp", resetPasswordRequest);
  *     summary: Reset an organization's password
  *     description: Allows an organization to reset their password using their registered email.
  *     tags:
- *       - Authentication
+ *       - Organization Management
  *     requestBody:
  *       required: true
  *       content:
