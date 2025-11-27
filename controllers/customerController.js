@@ -1,7 +1,6 @@
 const CustomerInterface = require("../models/customerQueueModel");
 const organizationModel = require("../models/organizationModel");
 const branchModel = require("../models/branchModel");
-const paymentModel = require("../models/paymentModel");
 const queuePointModel = require("../models/queueModel");
 const Branch = require("../models/branchModel");
 const Organization = require("../models/organizationModel");
@@ -127,70 +126,6 @@ exports.createCustomerQueue = async (req, res) => {
   }
 };
 
-
-exports.getQueuePoints = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const business =
-      (await organizationModel.findById(id)) ||
-      (await branchModel.findById(id));
-
-    if (!business) {
-      return res.status(404).json({
-        message: "Business not found",
-      });
-    }
-
-    let queuePoints;
-
-    if (business.role === "branch") {
-      queuePoints = await queuePointModel.find({ branchId: id }).lean();
-    } else if (business.role === "individual") {
-      queuePoints = await queuePointModel.find({ individualId: id }).lean();
-    } else {
-      return res.status(400).json({
-        message: "Invalid business role",
-      });
-    }
-
-    if (!queuePoints || queuePoints.length === 0) {
-      return res.status(200).json({
-        message: "No queue points found for this business",
-        data: [],
-      });
-    }
-
-    let totalWaiting = 0;
-    const queuePointsWithCounts = [];
-
-    for (const point of queuePoints) {
-      const waitingCount = await CustomerInterface.countDocuments({
-        _id: { $in: point.customers },
-        status: "waiting",
-      });
-
-      totalWaiting += waitingCount;
-
-      queuePointsWithCounts.push({
-        _id: point._id,
-        name: point.name,
-        totalCustomers: point.customers?.length || 0,
-        waitingCount,
-      });
-    }
-    return res.status(200).json({
-      message: "Queue points fetched successfully",
-      totalWaiting,
-      data: queuePointsWithCounts,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error fetching queue points",
-      error: error.message,
-    });
-  }
-};
 
 exports.createCustomer = async (req, res) => {
   try {

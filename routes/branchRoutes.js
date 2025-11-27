@@ -353,7 +353,7 @@ router.delete('/delete-branch/:id', authenticate, deleteBranch);
  * /api/v1/branchlogin:
  *   post:
  *     tags:
- *       - Branch Authentication
+ *       - Branches
  *     summary: Branch login by manager email and branch code
  *     description: Authenticate a branch using the manager's email and branch code. Returns basic branch details on success.
  *     requestBody:

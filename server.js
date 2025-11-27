@@ -14,18 +14,9 @@ const session = require('express-session');
 const passport = require('passport');
 const superAdminOverviewRoutes = require('./routes/superAdminOverviewRoutes');
 const branchRouter = require('./routes/branchRoutes');
-const analyticsRouter = require('./routes/analyticsRoutes');
-const dashboardRouter = require('./routes/dashboardRoutes');
+const adminRouter = require('./routes/adminRoutes');
 const customerRouter = require('./routes/customerRoutes');
 const qrCodeRoutes = require('./routes/qrCodeRoutes');
-const superAdminOrgSettings = require('./routes/superAdminOrgSettings');
-const superAdminBranchMgt = require('./routes/superAdminBranchMgt');
-const superAdminAnalytics = require('./routes/superAdminAnalytics');
-const queueConfigRouter = require("./routes/queueConfigRoutes")
-const adminQueueMgtRoute = require("./routes/adminQueueMgtRoute")
-const adminNotificationRouter = require("./routes/adminNotificationRoute")
-const adminHistoryRouter = require("./routes/adminHistoryRoute")
-const adminSettingsRouter = require("./routes/adminSettingsRoute")
 const developerRouter = require('./routes/developerRoute');
 const paymentRouter = require('./routes/paymentRoutes');
 const devdashboardRouter = require('./routes/developerDashboard');
@@ -108,20 +99,11 @@ app.use("/api/v1/", paymentRouter)
 app.use('/api/v1/', branchRouter);
 app.use('/api/v1', organizationRoutes);
 
-app.use('/api/v1/', analyticsRouter);
-app.use('/api/v1/', dashboardRouter);
+app.use('/api/v1/', adminRouter);
 app.use('/api/v1/', developerRouter);
 app.use('/api/v1/', customerRouter);
 app.use('/api/v1/', qrCodeRoutes);
 app.use('/api/v1/', superAdminOverviewRoutes);
-app.use('/api/v1/', superAdminOrgSettings);
-app.use('/api/v1/', superAdminBranchMgt);
-app.use('/api/v1/', superAdminAnalytics);
-app.use("/api/v1/", queueConfigRouter)
-app.use("/api/v1/", adminQueueMgtRoute)
-app.use("/api/v1/", adminNotificationRouter)
-app.use("/api/v1/", adminHistoryRouter)
-app.use("/api/v1/", adminSettingsRouter)
 app.use('/api/v1/', devdashboardRouter);
 
 // Error handling middleware

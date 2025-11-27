@@ -3,9 +3,7 @@ const QRCodeModel = require("../models/qrCode");
 const branchModel = require("../models/branchModel");
 const queueModel = require("../models/queueModel");
 const organizationModel = require("../models/organizationModel");
-const fs = require("fs");
 const cloudinary = require("../config/cloudinary");
-const path = require("path");
 const customerModel = require("../models/customerQueueModel")
 exports.generateQRCode = async (req, res) => {
   try {

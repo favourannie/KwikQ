@@ -1,132 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const {createCustomer, getAllCustomers, getCustomerById, updateCustomer, deleteCustomer, 
+const { getAllCustomers, getCustomerById, updateCustomer, deleteCustomer, 
     getElderlyCustomers, getPregnantCustomers, getByEmergencyLevel,
     createCustomerQueue,
-    getQueuePoints} = require('../controllers/customerQueue');
+    } = require('../controllers/customerController');
 const {authenticate} = require("../middleware/authenticate");
 const { customerFormValidator } = require('../middleware/validation');
-/**
- * @swagger
- * components:
- *   schemas:
- *     Customer:
- *       type: object
- *       required:
- *         - organization
- *         - branch
- *         - formDetails
- *       properties:
- *         _id:
- *           type: string
- *           description: Auto-generated customer ID
- *         organization:
- *           type: string
- *           description: ID of the organization
- *         branch:
- *           type: string
- *           description: ID of the branch
- *         queueNumber:
- *           type: string
- *           description: Auto-generated queue number (format B001)
- *         formDetails:
- *           type: object
- *           required:
- *             - fullName
- *             - serviceNeeded
- *           properties:
- *             fullName:
- *               type: string
- *               description: Customer's full name
- *             serviceNeeded:
- *               type: string
- *               description: Service requested by the customer
- *             elderlyStatus:
- *               type: boolean
- *               description: Whether the customer is elderly
- *             pregnantStatus:
- *               type: boolean
- *               description: Whether the customer is pregnant
- *             emergencyLevel:
- *               type: string
- *               enum: [low, medium, high]
- *               description: Customer's emergency level
- */
 
-/**
- * @swagger
- * /api/v1/customer:
- *   post:
- *     tags:
- *       - Queue Management
- *     summary: Add a new customer to the queue
- *     description: Creates a new customer entry and assigns an auto-generated queue number
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - organization
- *               - branch
- *               - formDetails
- *             properties:
- *               organization:
- *                 type: string
- *                 description: Organization ID
- *               branch:
- *                 type: string
- *                 description: Branch ID
- *               formDetails:
- *                 type: object
- *                 required:
- *                   - fullName
- *                   - serviceNeeded
- *                 properties:
- *                   fullName:
- *                     type: string
- *                   email:
- *                     type: string
- *                   phone:
- *                     type: string 
- *                   serviceNeeded:
- *                     type: string
- *                   additionalInfo:
- *                     type: String
- *                   elderlyStatus:
- *                     type: boolean
- *                   pregnantStatus:
- *                     type: boolean
- *                   emergencyLevel:
- *                     type: boolean
- *     responses:
- *       201:
- *         description: Customer added to queue successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Customer added to queue successfully
- *                 queueNumber:
- *                   type: string
- *                   example: B001
- *                 data:
- *                   $ref: '#/components/schemas/Customer'
- *       400:
- *         description: Missing required fields or invalid input
- */
-router.post('/customer', createCustomer);
+// router.post('/customer', createCustomer);
 
 /**
  * @swagger
  * /api/v1/get-all-customers:
  *   get:
  *     tags:
- *       - Queue Management
+ *       - Customers
  *     summary: Get all customers in queue
  *     description: Retrieve all customers with organization and branch details
  *     responses:
@@ -152,94 +40,13 @@ router.post('/customer', createCustomer);
  */
 router.get('/get-all-customers', getAllCustomers);
 
-/**
- * @swagger
- * /api/v1/queue-points/{id}:
- *   get:
- *     summary: Get all queue points for a business (organization or branch)
- *     description: Retrieves all queue points associated with a given business ID (organization or branch). Also returns the total number of customers waiting across all queue points and the individual counts for each queue point.
- *     tags:
- *       - Queue Management
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the organization or branch whose queue points are being retrieved.
- *     responses:
- *       200:
- *         description: Successfully fetched all queue points.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Queue points fetched successfully
- *                 totalWaiting:
- *                   type: integer
- *                   example: 25
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                         example: 671a3bf9f3b87e123456789a
- *                       name:
- *                         type: string
- *                         example: Queue 1
- *                       totalCustomers:
- *                         type: integer
- *                         example: 12
- *                       waitingCount:
- *                         type: integer
- *                         example: 5
- *       400:
- *         description: Invalid business role or request.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Invalid business role
- *       404:
- *         description: Business not found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Business not found
- *       500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Error fetching queue points
- *                 error:
- *                   type: string
- *                   example: Cannot read properties of null (reading 'customers')
- */
-router.get("/queue-points/:id", getQueuePoints)
 
 /**
  * @swagger
  * /api/v1/create-queue/{id}:
  *   post:
  *     tags:
- *       - Queue Management
+ *       - Customers
  *     summary: Create a customer queue entry
  *     description: 
  *       Adds a customer to the appropriate queue point based on business plan limits and auto-distributes them across available queue points.
@@ -350,12 +157,13 @@ router.get("/queue-points/:id", getQueuePoints)
  */
 
 router.post("/create-queue/:id",customerFormValidator,createCustomerQueue )
+
 /**
  * @swagger
  * /api/v1/get-customer/{id}:
  *   get:
  *     tags:
- *       - Queue Management
+ *       - Customers
  *     summary: Get customer by ID
  *     description: Retrieve detailed information about a specific customer
  *     parameters:
@@ -388,7 +196,7 @@ router.get('/get-customer/:id', getCustomerById);
  * /api/v1/update-customer/{id}:
  *   put:
  *     tags:
- *       - Queue Management
+ *       - Customers
  *     summary: Update customer details
  *     description: Update customer information in the queue
  *     parameters:
@@ -430,7 +238,7 @@ router.put('/update-customer/:id', updateCustomer);
  *       Marks a customer as **canceled** inside the queue.  
  *       The authenticated business (organization or branch) must own the customer.
  *     tags:
- *       - Queue Management
+ *       - Customers
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -482,7 +290,7 @@ router.get('/delete-customer/:id', authenticate,  deleteCustomer);
  * /api/v1/filter/elderly:
  *   get:
  *     tags:
- *       - Queue Filters
+ *       - Customers
  *     summary: Get elderly customers
  *     description: Retrieve all customers marked with elderly status
  *     responses:
@@ -512,7 +320,7 @@ router.get('/filter/elderly', getElderlyCustomers);
  * /api/v1/filter/pregnant:
  *   get:
  *     tags:
- *       - Queue Filters
+ *       - Customers
  *     summary: Get pregnant customers
  *     description: Retrieve all customers marked with pregnant status
  *     responses:
@@ -539,7 +347,7 @@ router.get('/filter/pregnant', getPregnantCustomers);
  * /api/v1/filter/emergency/{level}:
  *   get:
  *     tags:
- *       - Queue Filters
+ *       - Customers
  *     summary: Get customers by emergency level
  *     description: Retrieve all customers with a specific emergency level
  *     responses:

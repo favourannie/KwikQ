@@ -208,7 +208,7 @@ router.get("/all", getAllPayments);
  *     summary: Submit a custom pricing request
  *     description: Allows a business (organization or branch) to submit a custom pricing request.
  *     tags:
- *       - Custom Pricing
+ *       - Payments
  *     parameters:
  *       - in: path
  *         name: id
