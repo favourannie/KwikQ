@@ -7,6 +7,7 @@ const axios = require('axios');
 const otpGen = require('otp-generator');
 const customPricing = require("../models/customPricing");
 const {sendMail} = require("../middleware/brevo")
+
 exports.initializePayment = async (req, res) => {
   try {
     console.log("beans cooker")
@@ -126,6 +127,70 @@ console.log("plannner  ",plan)
     });
   }
 };
+
+exports.verifyPayment = async (req, res) => {
+  try {
+    const { reference } = req.params;
+
+    const verifyResponse = await axios.get(
+      `https://api.korapay.com/merchant/api/v1/charges/${reference}`,
+      {
+        headers: { Authorization: `Bearer ${process.env.KORAPAY_SECRET_KEY}` },
+      }
+    );
+
+    const status = verifyResponse.data?.data?.status;
+
+    const payment = await paymentModel.findOneAndUpdate(
+      { reference },
+      { status },
+      { new: true }
+    );
+
+    if (!payment) {
+      return res.status(404).json({ message: "Payment record not found" });
+    }
+
+   if (status === "success") {
+      const businessId = payment.individualId; 
+      const business = await organizationModel.findById(businessId);
+
+      if (business) {
+        const plan = payment.planType;       
+        const cycle = payment.billingCycle;   
+
+        let expiresAt;
+        if (cycle === "monthly") {
+          expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
+        } else {
+          expiresAt = Date.now() + 365 * 24 * 60 * 60 * 1000; // 1 year
+        }
+
+        business.subscriptionDuration = cycle === "monthly" ? "monthly" : "annually";
+        business.subscriptionType = plan;  
+        business.subscriptionExpiredAt = expiresAt;
+        business.status = "active";
+        business.endDate = new Date(expiresAt);
+        business.isActive = true;
+
+        await business.save();
+      }
+    }
+
+    return res.status(200).json({
+      message: "Payment verification completed",
+      status,
+    });
+
+  } catch (error) {
+    console.error("Verification Error:", error.message);
+    return res.status(500).json({
+      message: "Error verifying payment",
+      error: error.response?.data || error.message,
+    });
+  }
+};
+
 
 exports.verifyPayment = async (req, res) => {
   try {
