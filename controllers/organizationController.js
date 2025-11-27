@@ -436,7 +436,8 @@ exports.updateOrganizationDetails = async (req, res) => {
       state,
       fullName,
       phoneNumber,
-      emailAddress: email
+      emailAddress: email,
+      isOnBoarded: true,
     }, {
       new: true,
     }).select("industryServiceType headOfficeAddress city state fullName phoneNumber emailAddress")
