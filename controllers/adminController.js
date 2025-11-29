@@ -837,9 +837,9 @@ exports.getQueuePoints = async (req, res) => {
     let queuePoints;
 
     if (business.role === "branch") {
-      queuePoints = await queuePointModel.find({ branchId: id }).lean();
+      queuePoints = await QueuePoint.find({ branchId: id }).lean();
     } else if (business.role === "individual") {
-      queuePoints = await queuePointModel.find({ individualId: id }).lean();
+      queuePoints = await QueuePoint.find({ individualId: id }).lean();
     } else {
       return res.status(400).json({
         message: "Invalid business role",
