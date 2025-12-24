@@ -857,7 +857,7 @@ exports.getQueuePoints = async (req, res) => {
     const queuePointsWithCounts = [];
 
     for (const point of queuePoints) {
-      const waitingCount = await CustomerInterface.countDocuments({
+      const waitingCount = await customerModel.countDocuments({
         _id: { $in: point.customers },
         status: "waiting",
       });
