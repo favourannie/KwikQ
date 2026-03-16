@@ -42,7 +42,7 @@ exports.generateQRCode = async (req, res) => {
      const formLink = `${
       process.env.CLIENT_URL 
         ? `${process.env.CLIENT_URL}/#/users_form/${total}/${business._id}`
-        : `https://kwik-q.vercel.app/#/users_form/${total}/${business._id}`
+        : `https://kwikq.vercel.app/#/users_form/${total}/${business._id}`
     }`;
 console.log('something');
 
