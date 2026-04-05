@@ -10,7 +10,7 @@ const adminSettingsModel = require("../models/adminSettingsModel")
 
 exports.createOrganization = async (req, res) => {
   try {
-    const { businessName, email, password, role } = req.body;
+    const { businessName, email, password, role, industryServiceType } = req.body;
     const name = businessName
   .split(' ')
   .filter(word => word.length > 0) // remove extra spaces
@@ -43,7 +43,8 @@ exports.createOrganization = async (req, res) => {
       password: hashPassword,
       otp: otp,
       otpExpiredAt: Date.now() + 1000 * 540,
-      role: role
+      role: role,
+      service: industryServiceType
     });
 
     const detail = {
@@ -66,6 +67,7 @@ exports.createOrganization = async (req, res) => {
     const response = {
       businessName: org.businessName,
       email: org.email,
+      service: org.industryServiceType
     };
     res.status(201).json({
       message: "Organization created successfully",
