@@ -7,6 +7,7 @@ const { sendMail } = require("../middleware/brevo");
 const {alertCustomerTemplate} = require("../utils/email");
 const adminSettingsModel = require("../models/adminSettingsModel")
 const queueConfigModel = require("../models/queueConfigModel");
+const moment = require("moment");
 const dayjs = require('dayjs');
 const duration = require('dayjs/plugin/duration');
 
@@ -54,175 +55,201 @@ exports.updateCustomerStatus = async (req, res) => {
   }
 };
 
+const mongoose = require("mongoose");
 
+exports.getDashboardMetrics = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const businessId = new mongoose.Types.ObjectId(userId);
 
+        const startOfToday = moment().startOf('day').toDate();
+        const endOfToday = moment().endOf('day').toDate();
 
-const calculateQueueMetrics = (queuePoints) => {
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+        const queryScope = {
+            $or: [{ individualId: businessId }, { branchId: businessId }]
+        };
 
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
+        const activeInQueue = await customerModel.countDocuments({ 
+            ...queryScope, 
+            status: "waiting" 
+        });
 
-  let completedToday = 0;
-  let totalWaitTime = 0;
-  let totalCustomers = 0;
-  let cancelledNoShow = 0;
+        const completedDocs = await customerModel.find({
+            ...queryScope,
+            status: "completed",
+            $or: [
+                { completedAt: { $gte: startOfToday, $lte: endOfToday } },
+                { updatedAt: { $gte: startOfToday, $lte: endOfToday } }
+            ]
+        });
 
-  queuePoints.forEach((queue) => {
-    queue.customers.forEach((c) => {
-      const joinedAt = c.joinedAt ? new Date(c.joinedAt) : null;
+        const servedToday = completedDocs.length;
+
+        const realTimeData = await customerModel.aggregate([
+            { 
+                $match: { 
+                    ...queryScope, 
+                    joinedAt: { $gte: startOfToday, $lte: endOfToday },
+                    status: { $in: ["waiting", "in_service", "completed"] }
+                } 
+            },
+            {
+                $project: {
+                    currentWait: {
+                        $cond: {
+                            if: { $eq: ["$status", "completed"] },
+                            then: { $ifNull: ["$waitTime", 0] },
+                            else: {
+                                $divide: [
+                                    { $subtract: [new Date(), "$joinedAt"] }, 
+                                    60000 
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            { $group: { _id: null, avgWait: { $avg: "$currentWait" } } }
+        ]);
+
+        const finalAvg = (realTimeData.length > 0 && realTimeData[0].avgWait) 
+            ? Math.round(realTimeData[0].avgWait) 
+            : 0;
+
+        res.status(200).json({
+            message: "Dashboard metrics retrieved successfully",
+            data: {
+                activeInQueue,
+                servedToday,
+                avgWaitTime: finalAvg
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error", error: error.message });
+    }
+};
+
+exports.getRecentActivity = async (req, res) => {
+    try {
+        const adminId = req.user.id;
+        
+        const activities = await customerModel.find({
+            $or: [{ individualId: adminId }, { branchId: adminId }]
+        })
+        .sort({ updatedAt: -1 })
+        .limit(10)
+        .lean();
+
+        const formatted = activities.map(item => ({
+            queueNumber: item.queueNumber || "N/A",
+            action: item.status.replace('_', ' ').toUpperCase(),
+            customerName: item.formDetails?.fullName || "Guest",
+            timeAgo: moment(item.updatedAt).fromNow()
+        }));
+
+        res.status(200).json({
+            message: "Recent activity fetched successfully",
+            count: formatted.length,
+            data: formatted
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching activity", error: error.message });
+    }
+};
+
+exports.getQueueHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let business = await organizationModel.findById(id);
+    if (!business) business = await branchModel.findById(id);
+
+    if (!business) {
+      return res.status(404).json({ message: "Business not found" });
+    }
+
+    const queryScope = {
+      $or: [{ individualId: id }, { branchId: id }]
+    };
+
+    const startOfToday = moment().startOf('day').toDate();
+
+    const allCustomersToday = await customerModel.find({
+      ...queryScope,
+      joinedAt: { $gte: startOfToday }
+    });
+
+    const historyData = await customerModel.find({
+      ...queryScope,
+      status: { $in: ["completed", "canceled", "no_show"] }
+    }).sort({ updatedAt: -1 }).limit(50);
+
+    let totalRealTimeWait = 0;
+    let eligibleForAvgCount = 0;
+    let cancelledNoShow = 0;
+    let completedTodayCount = 0;
+
+    allCustomersToday.forEach((c) => {
+      if (["waiting", "in_service", "completed"].includes(c.status)) {
+        let currentWait = 0;
+        if (c.status === "completed") {
+          currentWait = c.waitTime || 0;
+        } else {
+          const joinedAt = c.joinedAt ? new Date(c.joinedAt) : new Date(c.createdAt);
+          currentWait = Math.max(0, Math.round((Date.now() - joinedAt.getTime()) / 60000));
+        }
+        totalRealTimeWait += currentWait;
+        eligibleForAvgCount++;
+      }
+
+      if (c.status === "completed") completedTodayCount++;
+      if (c.status === "canceled" || c.status === "no_show") cancelledNoShow++;
+    });
+
+    const formattedData = historyData.map((c) => {
+      const joinedAt = c.joinedAt ? new Date(c.joinedAt) : new Date(c.createdAt);
+      const servedAt = c.servedAt ? new Date(c.servedAt) : null;
       const completedAt = c.completedAt ? new Date(c.completedAt) : null;
 
-      const waitTime = joinedAt
-        ? Math.round((Date.now() - joinedAt.getTime()) / 60000)
-        : 0;
-
-      totalWaitTime += waitTime;
-      totalCustomers++;
-
-      if (
-        c.status === "completed" &&
-        completedAt &&
-        completedAt >= startOfToday &&
-        completedAt <= endOfToday
-      ) {
-        completedToday++;
+      let serviceTimeMinutes = 0;
+      if (servedAt && completedAt) {
+        serviceTimeMinutes = Math.round((completedAt - servedAt) / 60000);
       }
-
-      if (["canceled", "no_show"].includes(c.status)) {
-        cancelledNoShow++;
-      }
-    });
-  });
-
-  const avgWaitTime =
-    totalCustomers > 0 ? Math.round(totalWaitTime / totalCustomers) : 0;
-
-  return { avgWaitTime, completedToday, cancelledNoShow };
-};
-
-
-// Get dashboard details
-exports.getDashboardMetrics = async (req, res) => {
-  try {
-    const id = req.user.id;
-    const business =
-      (await organizationModel.findById(id)) ||
-      (await branchModel.findById(id));
-
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
-    let active, served;
-    if (business.role === "individual") {
-      active = await customerModel.find({
-        individualId: business._id,
-        status: "waiting",
-      });
-
-      served = await customerModel.find({
-        individualId: business._id,
-        status: "completed",
-      });
-    } else if (business.role === "multi") {
-      active = await customerModel.find({
-        branchId: business._id,
-        status: "waiting",
-      });
-
-      served = await customerModel.find({
-        branchId: business._id,
-        status: "completed",
-      });
-    }
-
-    const queuePoints = [
-      { customers: [...active, ...served] }, // combine active and served customers
-    ];
-
-    const { avgWaitTime } = calculateQueueMetrics(queuePoints);
-
-    res.status(200).json({
-      message: "Dashboard metrics retrieved successfully",
-      data: {
-        activeInQueue: active.length,
-        servedToday: served.length,
-        avgWaitTime, 
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Error getting dashboard metrics",
-    });
-  }
-};
-
-
-// Get recent activity
-exports.getRecentActivity = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    let business =
-      (await organizationModel.findById(userId)) ||
-      (await branchModel.findById(userId));
-
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
-    const query =
-      business.role === "multi"
-        ? { branchId: business._id }
-        : { individualId: business._id };
-
-    const recentCustomers = await customerModel
-      .find(query)
-      .sort({ updatedAt: -1 })
-      .limit(10);
-
-    const activities = recentCustomers.map((c) => {
-      let action = "";
-
-      if (c.status === "completed") {
-        action = `Served`;
-      } else if (c.status === "waiting") {
-        action = `Joined queue`;
-      } else if (c.status === "in_service") {
-        action = `Being served`;
-      } else if (c.status === "alerted") {
-        action = `Alert sent`;
-      }
-
-      const minutesAgo = Math.max(
-        Math.round((Date.now() - new Date(c.updatedAt)) / 60000),
-        1
-      );
 
       return {
-        fullName: c.formDetails?.fullName || "N/A",   // ✅ ADDED HERE
         queueNumber: c.queueNumber || "N/A",
-        action,
-        timeAgo: `${minutesAgo}`,
+        fullName: c.formDetails?.fullName || "Unknown",
+        service: c.formDetails?.serviceNeeded || "General",
+        serviceTime: `${Math.max(0, serviceTimeMinutes)} min`,
+        status: c.status,
+        phone: c.formDetails?.phone || "N/A",
+        joinedAt: joinedAt.toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+          timeZoneName: "short",
+        }),
+        waitTime: `${c.waitTime || 0} min`,
       };
     });
 
     res.status(200).json({
-      message: "Recent activity fetched successfully",
-      count: activities.length,
-      data: activities,
+      message: "Queue history fetched successfully",
+      metrics: {
+        avgWaitTime: eligibleForAvgCount > 0 ? Math.round(totalRealTimeWait / eligibleForAvgCount) : 0,
+        cancelledNoShow: cancelledNoShow,
+      },
+      completedToday: completedTodayCount,
+      data: formattedData,
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Error fetching recent activity",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Error", error: error.message });
   }
 };
-
 // Get notifications
     exports.getNotifications = async (req, res) => {
       try {
@@ -1013,106 +1040,106 @@ const calculateQueue = (queuePoints) => {
   return { avgWaitTime, cancelledNoShow };
 };
 
-exports.getQueueHistory = async (req, res) => {
-  try {
-    const { id } = req.params;
+// exports.getQueueHistory = async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
-    let business = await organizationModel.findById(id);
-    if (!business) business = await branchModel.findById(id);
+//     let business = await organizationModel.findById(id);
+//     if (!business) business = await branchModel.findById(id);
 
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
+//     if (!business) {
+//       return res.status(404).json({ message: "Business not found" });
+//     }
 
-    const query =
-      business.role === "multi"
-        ? { branchId: id }
-        : { individualId: id };
+//     const query =
+//       business.role === "multi"
+//         ? { branchId: id }
+//         : { individualId: id };
 
-    const queuePoints = await QueuePoint.find(query).populate("customers");
+//     const queuePoints = await QueuePoint.find(query).populate("customers");
 
-    if (!queuePoints.length) {
-      return res.status(200).json({
-        message: "No customers currently in queue",
-        data: [],
-        metrics: { completedToday: 0, avgWaitTime: 0, cancelledNoShow: 0 },
-      });
-    }
+//     if (!queuePoints.length) {
+//       return res.status(200).json({
+//         message: "No customers currently in queue",
+//         data: [],
+//         metrics: { completedToday: 0, avgWaitTime: 0, cancelledNoShow: 0 },
+//       });
+//     }
 
-    const completed = await customerModel.find({
-      $or: [
-        { individualId: business._id, status: "completed" },
-        { branchId: business._id, status: "completed" },
-      ],
-    });
+//     const completed = await customerModel.find({
+//       $or: [
+//         { individualId: business._id, status: "completed" },
+//         { branchId: business._id, status: "completed" },
+//       ],
+//     });
 
-    const customersInQueue = [];
+//     const customersInQueue = [];
 
-    queuePoints.forEach((queue) => {
-      queue.customers.forEach((c) => {
-        const joinedAt = c.joinedAt ? new Date(c.joinedAt) : null;
-        const waitTime = joinedAt
-          ? Math.round((Date.now() - joinedAt.getTime()) / 60000)
-          : 0;
+//     queuePoints.forEach((queue) => {
+//       queue.customers.forEach((c) => {
+//         const joinedAt = c.joinedAt ? new Date(c.joinedAt) : null;
+//         const waitTime = joinedAt
+//           ? Math.round((Date.now() - joinedAt.getTime()) / 60000)
+//           : 0;
 
-        const servedAt = c.servedAt ? new Date(c.servedAt) : null;
-        const completedAt = c.completedAt ? new Date(c.completedAt) : null;
+//         const servedAt = c.servedAt ? new Date(c.servedAt) : null;
+//         const completedAt = c.completedAt ? new Date(c.completedAt) : null;
 
-        let serviceTime = 0;
+//         let serviceTime = 0;
 
-        if (servedAt && !completedAt && c.status === "in_service") {
-          serviceTime = Math.round((Date.now() - servedAt.getTime()) / 60000);
-        }
+//         if (servedAt && !completedAt && c.status === "in_service") {
+//           serviceTime = Math.round((Date.now() - servedAt.getTime()) / 60000);
+//         }
 
-        if (servedAt && completedAt && c.status === "completed") {
-          serviceTime = Math.round((completedAt.getTime() - servedAt.getTime()) / 60000);
-        }
+//         if (servedAt && completedAt && c.status === "completed") {
+//           serviceTime = Math.round((completedAt.getTime() - servedAt.getTime()) / 60000);
+//         }
 
-        // Format join time
-        const joinedAtFormatted = joinedAt
-          ? joinedAt.toLocaleString("en-GB", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: true,
-              timeZoneName: "short",
-            })
-          : "N/A";
+//         // Format join time
+//         const joinedAtFormatted = joinedAt
+//           ? joinedAt.toLocaleString("en-GB", {
+//               day: "2-digit",
+//               month: "short",
+//               year: "numeric",
+//               hour: "2-digit",
+//               minute: "2-digit",
+//               second: "2-digit",
+//               hour12: true,
+//               timeZoneName: "short",
+//             })
+//           : "N/A";
 
-        customersInQueue.push({
-          queueNumber: c.queueNumber || "N/A",
-          fullName: c.formDetails?.fullName || "Unknown",
-          service: c.formDetails?.serviceNeeded || "N/A",
-          serviceTime: `${serviceTime} min`,   // <-- CORRECT VALUE NOW
-          status: c.status,
-          phone: c.formDetails?.phone || "N/A",
-          joinedAt: joinedAtFormatted, 
-          waitTime: `${waitTime} min`,
-        });
-      });
-    });
+//         customersInQueue.push({
+//           queueNumber: c.queueNumber || "N/A",
+//           fullName: c.formDetails?.fullName || "Unknown",
+//           service: c.formDetails?.serviceNeeded || "N/A",
+//           serviceTime: `${serviceTime} min`,   // <-- CORRECT VALUE NOW
+//           status: c.status,
+//           phone: c.formDetails?.phone || "N/A",
+//           joinedAt: joinedAtFormatted, 
+//           waitTime: `${waitTime} min`,
+//         });
+//       });
+//     });
 
-    customersInQueue.sort(
-      (a, b) => new Date(a.joinedAt) - new Date(b.joinedAt)
-    );
+//     customersInQueue.sort(
+//       (a, b) => new Date(a.joinedAt) - new Date(b.joinedAt)
+//     );
 
-    const metrics = calculateQueue(queuePoints);
+//     const metrics = calculateQueue(queuePoints);
 
-    res.status(200).json({
-      message: "Queue history fetched successfully",
-      metrics,
-      completedToday: completed.length,
-      data: customersInQueue,
-      service: queuePoints
-    });
-  } catch (error) {
-    console.error("Error fetching history data:", error);
-    res.status(500).json({
-      message: "Error fetching history data",
-      error: error.message,
-    });
-  }
-};
+//     res.status(200).json({
+//       message: "Queue history fetched successfully",
+//       metrics,
+//       completedToday: completed.length,
+//       data: customersInQueue,
+//       service: queuePoints
+//     });
+//   } catch (error) {
+//     console.error("Error fetching history data:", error);
+//     res.status(500).json({
+//       message: "Error fetching history data",
+//       error: error.message,
+//     });
+//   }
+// };
